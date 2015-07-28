@@ -20,6 +20,7 @@ fhndl.sendMessage       = @sendMessage;
 fhndl.isConnected       = @isConnected;
 fhndl.saveData          = @saveData;
 fhndl.cleanUp           = @cleanUp;
+fhndl.processError      = @processError;
         
     function out = init(input1)
         debugLevel = input1;
@@ -218,10 +219,13 @@ fhndl.cleanUp           = @cleanUp;
     end
 
     function out = startRecording(qClearBuffer)
+        % by default do not clear recording buffer. For SMI, by the time
+        % user calls startRecording, we already have data recorded during
+        % calibration and validation in the buffer
         if nargin<1
             qClearBuffer = false;
         end
-        iView.stopRecording();
+        iView.stopRecording();      % make sure we're not already recording when we startRecording(), or we get an error
         if qClearBuffer
             iView.clearRecordingBuffer();
         end
@@ -288,7 +292,7 @@ fhndl.cleanUp           = @cleanUp;
     end
 
     function out = saveData(filename, description, user, overwrite)
-        ret = iView.saveData(filename, description, user, overwrite);
+        ret = iView.saveData([filename '.idf'], description, user, overwrite);
         if ret==1
             out = true;
         else
@@ -307,6 +311,11 @@ fhndl.cleanUp           = @cleanUp;
         % handle from smi, would be my guess (note that calling iV_Quit did
         % not fix it).
         % delete(smiSetup.logFileName);
+    end
+
+    function processError(returnCode,errorString)
+        % for SMI, anything that is not 1 is an error
+        assert(returnCode==1,'%s (error %d: %s)',errorString,returnCode,SMIErrCode2String(returnCode));
     end
 
 end
@@ -685,7 +694,7 @@ end
 
 function status = DoCalAndValSMI(iView,startRecording,stopRecording,ETSendMessageFun)
 % calibrate
-startRecording(true);
+startRecording(true);   % explicitly clear recording buffer
 ETSendMessageFun('CALIBRATION START');
 ret = iView.calibrate();
 ETSendMessageFun('CALIBRATION END');
@@ -713,7 +722,7 @@ function [status,out] = DoCalAndValPTB(wpnt,iView,calSetup,startRecording,stopRe
 % disable SMI key listeners, we'll deal with key presses
 iView.setUseCalibrationKeys(0);
 %% calibrate
-startRecording(true);
+startRecording(true);   % explicitly clear recording buffer
 % enter calibration mode
 ETSendMessageFun('CALIBRATION START');
 iView.calibrate();
