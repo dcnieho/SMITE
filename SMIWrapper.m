@@ -438,7 +438,8 @@ while true
     % available
     distL   = pSample.leftEye .eyePositionZ*(pSample.leftEye .diam/pSample.leftEye .diam)/10;
     distR   = pSample.rightEye.eyePositionZ*(pSample.rightEye.diam/pSample.rightEye.diam)/10;
-    avgDist = nanmean([distL distR]);
+    dists   = [distL distR];
+    avgDist = mean(dists(~isnan(dists)));
     % if missing, estimate where eye ould be in depth if user kept head yaw
     % constant
     if isnan(distL)
