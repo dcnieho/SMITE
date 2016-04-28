@@ -54,4 +54,4 @@ errMap = {
 'ERR_INITIALIZATION',400
 'ERR_FUNC_NOT_LOADED',401};
 
-err = GetValByKey(errMap(:,[2 1]),code);
+err = getValByKey(errMap(:,[2 1]),code);
