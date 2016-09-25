@@ -389,9 +389,9 @@ buttonSz    = [250 45];
 buttonOff   = 80;
 baseRect    = OffsetRect([0 0 buttonSz],scrInfo.center(1),yposBase-buttonSz(2)); % left is now at screen center, bottom at right height
 continueButRect     = OffsetRect(baseRect,-buttonOff/2-buttonSz(1),0);
-[~,~,~,continueButTextCache] = drawFormattedText2(wpnt,'continue (<i>space<i>)','center','center',0,[],[],[],OffsetRect(continueButRect,0,textSetup.lineCentOff));
+[~,~,~,continueButTextCache] = DrawMonospacedText(wpnt,'continue (<i>space<i>)','center','center',0,[],[],[],OffsetRect(continueButRect,0,textSetup.lineCentOff));
 eyeImageButRect     = OffsetRect(baseRect, buttonOff/2            ,0);
-[~,~,~,eyeImageButTextCache] = drawFormattedText2(wpnt,'eye image (<i>e<i>)'   ,'center','center',0,[],[],[],OffsetRect(eyeImageButRect,0,textSetup.lineCentOff));
+[~,~,~,eyeImageButTextCache] = DrawMonospacedText(wpnt,'eye image (<i>e<i>)'   ,'center','center',0,[],[],[],OffsetRect(eyeImageButRect,0,textSetup.lineCentOff));
 Screen('FillRect', wpnt, scrInfo.bgclr); % clear what we've just drawn
 eyeButClrs  = {[37  97 163],[11 122 244]};
 % these will be set up when the eye image is shown
@@ -499,11 +499,11 @@ while true
                 eyeImageRect    = OffsetRect(eyeImageRect,scrInfo.center(1)-eyeImageRect(3)/2,sidespace+RectHeight(boxRect)+margin);
                 % setup buttons for overlays in the eye image, draw text once to get cache
                 contourButRect      = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2));
-                [~,~,~,contourButTextCache]= drawFormattedText2(wpnt,'contour (<i>c<i>)' ,'center','center',0,[],[],[],OffsetRect(contourButRect,0,textSetup.lineCentOff));
+                [~,~,~,contourButTextCache]= DrawMonospacedText(wpnt,'contour (<i>c<i>)' ,'center','center',0,[],[],[],OffsetRect(contourButRect,0,textSetup.lineCentOff));
                 pupilButRect        = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*2-eoButMargin(2));
-                [~,~,~,pupilButTextCache]  = drawFormattedText2(wpnt,'pupil (<i>p<i>)'   ,'center','center',0,[],[],[],OffsetRect(pupilButRect,0,textSetup.lineCentOff));
+                [~,~,~,pupilButTextCache]  = DrawMonospacedText(wpnt,'pupil (<i>p<i>)'   ,'center','center',0,[],[],[],OffsetRect(pupilButRect,0,textSetup.lineCentOff));
                 reflexButRect       = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*3-eoButMargin(2)*2);
-                [~,~,~,reflexButTextCache] = drawFormattedText2(wpnt,'glint (<i>g<i>)'   ,'center','center',0,[],[],[],OffsetRect(reflexButRect,0,textSetup.lineCentOff));
+                [~,~,~,reflexButTextCache] = DrawMonospacedText(wpnt,'glint (<i>g<i>)'   ,'center','center',0,[],[],[],OffsetRect(reflexButRect,0,textSetup.lineCentOff));
                 Screen('FillRect', wpnt, scrInfo.bgclr); % clear what we've just drawn
                 qFirstTimeEyeImage = false;
             end
@@ -573,16 +573,16 @@ while true
     end
     % draw buttons
     Screen('FillRect',wpnt,[0 120   0],continueButRect);
-    drawFormattedText2(continueButTextCache);
+    DrawMonospacedText(continueButTextCache);
     Screen('FillRect',wpnt,eyeButClrs{logical(tex)+1},eyeImageButRect);
-    drawFormattedText2(eyeImageButTextCache);
+    DrawMonospacedText(eyeImageButTextCache);
     if tex
         Screen('FillRect',wpnt,eyeButClrs{overlays(1)+1},contourButRect);
-        drawFormattedText2(contourButTextCache);
+        DrawMonospacedText(contourButTextCache);
         Screen('FillRect',wpnt,eyeButClrs{overlays(2)+1},pupilButRect);
-        drawFormattedText2(pupilButTextCache);
+        DrawMonospacedText(pupilButTextCache);
         Screen('FillRect',wpnt,eyeButClrs{overlays(3)+1},reflexButRect);
-        drawFormattedText2(reflexButTextCache);
+        DrawMonospacedText(reflexButTextCache);
     end
     % drawing done, show
     Screen('Flip',wpnt);
@@ -827,7 +827,7 @@ Screen('TextSize',  wpnt, textSetup.size);
 Screen('TextStyle', wpnt, textSetup.style);
 % draw text with validation accuracy info
 valText = sprintf('<size=20>Accuracy  <color=ff0000>Left<color>: <size=18><font=Georgia><i>X<i><font><size> = %.2f°, <size=18><font=Georgia><i>Y<i><font><size> = %.2f°\nAccuracy <color=00ff00>Right<color>: <size=18><font=Georgia><i>X<i><font><size> = %.2f°, <size=18><font=Georgia><i>Y<i><font><size> = %.2f°',cal.validateAccuracy.deviationLX,cal.validateAccuracy.deviationLY,cal.validateAccuracy.deviationRX,cal.validateAccuracy.deviationRY);
-drawFormattedText2(wpnt,valText,'center',100,0,[],textSetup.vSpacing);
+DrawMonospacedText(wpnt,valText,'center',100,0,[],textSetup.vSpacing);
 % place buttons
 yposBase = round(scrInfo.rect(2)*.95);
 buttonSz  = [300 45];
@@ -837,9 +837,9 @@ acceptRect= OffsetRect(baseRect,-buttonOff/2-buttonSz(1),0);
 recalRect = OffsetRect(baseRect, buttonOff/2            ,0);
 % draw buttons
 Screen('FillRect',wpnt,[0 120 0],acceptRect);
-drawFormattedText2(wpnt,'accept (<i>a<i>)'       ,'center','center',0,[],[],[],OffsetRect(acceptRect,0,textSetup.lineCentOff));
+DrawMonospacedText(wpnt,'accept (<i>a<i>)'       ,'center','center',0,[],[],[],OffsetRect(acceptRect,0,textSetup.lineCentOff));
 Screen('FillRect',wpnt,[150 0 0],recalRect);
-drawFormattedText2(wpnt,'recalibrate (<i>esc<i>)','center','center',0,[],[],[],OffsetRect(recalRect ,0,textSetup.lineCentOff));
+DrawMonospacedText(wpnt,'recalibrate (<i>esc<i>)','center','center',0,[],[],[],OffsetRect(recalRect ,0,textSetup.lineCentOff));
 % drawing done, show
 Screen('Flip',wpnt);
 % setup cursors
