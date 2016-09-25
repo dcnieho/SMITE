@@ -5,6 +5,14 @@ function fhndl = SMIWrapper(smiSetup,scrInfo,textSetup)
 iView       = [];
 debugLevel  = false;
 
+if isnumeric(scrInfo) % bgColor only
+    thecolor = scrInfo;
+    clear scrInfo;
+    scrInfo.rect    = Screen('Rect',0); scrInfo.rect(1:2) = [];
+    scrInfo.center  = scrInfo.rect/2;
+    scrInfo.bgclr   = thecolor;
+end
+
 
 % setup function handles
 fhndl.init              = @init;
