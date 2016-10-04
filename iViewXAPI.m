@@ -42,6 +42,31 @@ f.stopRecording                 = @iV_StopRecording;
 f.validate                      = @iV_Validate;
 % for functions not specifically implemented in wrapper
 f.o                             = @iV_Other;
+
+% load in dll that we're wrapping here
+if ~libisloaded('iViewXAPI')
+    try
+    loadlibrary('iViewXAPI.dll', @iViewXAPIHeader);
+    catch %#ok<CTCH>
+        % iViewXAPI failed on Windows. Most likely cause would be "invalid
+        % MEX file error" due to iViewXAPI failing to link against
+        % required DLL's.
+        % The old drill: cd into (likely) location of DLL. Retry. If this
+        % was the culprit, then the linker should load, link and init
+        % iViewXAPI and we should succeed. Otherwise we fail again. Try
+        % some common paths...
+        wd = pwd;
+        if exist('C:\Program Files\SMI\iView X SDK\bin','dir')
+            cd('C:\Program Files\SMI\iView X SDK\bin');
+        elseif exist('C:\Program Files (x86)\SMI\iView X SDK\bin','dir')
+            cd('C:\Program Files (x86)\SMI\iView X SDK\bin');
+        else
+            error('failed to load iViewXAPI.dll, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
+        end
+        loadlibrary('iViewXAPI.dll', @iViewXAPIHeader);
+        cd(wd);
+    end
+end
 end
 
 

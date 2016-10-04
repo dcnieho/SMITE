@@ -37,75 +37,66 @@ fhndl.processError      = @processError;
         smiSetup.cal.fixBackColor = color2RGBA(smiSetup.cal.fixBackColor);
         smiSetup.cal.fixFrontColor= color2RGBA(smiSetup.cal.fixFrontColor);
         
-        if ~libisloaded('iViewXAPI')
-            loadlibrary('iViewXAPI.dll', @iViewXAPIHeader);
-        end
-
-        if libisloaded('iViewXAPI')
-            % Create structure with function wrappers
-            iView = iViewXAPI();
-            
-            % Create logger file
-            if debugLevel&&0    % forced switch off as 2 always crashes on the second invocation of setlog...
-                logLvl = 1+2+8+16;  % 4 shows many internal function calls as well. as long as the server i on, it is trying to track. so every x ms you have a record of the output of the function that calculates gaze position...
-            else
-                logLvl = 1;
-            end
-            ret = iView.setLogger(logLvl, smiSetup.logFileName);
-            if ret ~= 1
-                error('Logger at "%s" could not be opened (error %d: %s)',smiSetup.logFileName,ret,SMIErrCode2String(ret));
-            end
-            
-            % Connect to server
-            iView.disconnect();  % disconnect first, found this necessary as API otherwise apparently does not recognize it when eye tracker server crashed or closed by hand while connected. Well, calling 'iV_IsConnected' twice seems to work...
-            ret = iView.start(smiSetup.etApp);  % returns 1 when starting app, 4 if its already running
-            if ret==1
-                % eye tracker server starting, give it some time before
-                % trying to connect
-                iView.setConnectionTimeout(15);   % "timeout for how long iV_Connect tries to connect to iView eye tracking server." server startup is slow, give it a lot of time to try to connect.
-                WaitSecs(3); % bit of time before we try again, seems necessary even with long timeout
-            end
-            % connect
-            ret = connect(iView,smiSetup.connectInfo);
-            
-            switch ret
-                case 1
-                    % connected, we're good. nothing to do here
-                case 104
-                    error('SMI: Could not establish connection. Check if Eye Tracker is running (error 104: %s)',SMIErrCode2String(ret));
-                case 105
-                    error('SMI: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
-                case 123
-                    error('SMI: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
-                case 201
-                    error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error 200: %s)',SMIErrCode2String(ret));
-                otherwise
-                    error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
-            end
-            
-            % Set debug mode with iView.setupDebugMode(1) not supported on
-            % REDm it seems
-            
-            % setup device geometry
-            ret = iView.selectREDGeometry(smiSetup.geomProfile);
-            assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
-            % get info about the setup
-            [~,out.geom] = iView.getCurrentREDGeometry();
-            % get info about the system
-            [~,out.systemInfo] = iView.getSystemInfo();
-            % check operating at requested tracking frequency (the command
-            % to set frequency is only supported on the NG systems...)
-            assert(out.systemInfo.samplerate == smiSetup.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',smiSetup.freq,out.systemInfo.samplerate);
-            % setup track mode
-            ret = iView.setTrackingParameter(['ET_PARAM_' smiSetup.trackEye], ['ET_PARAM_' smiSetup.trackMode], 1);
-            assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
-            % switch off averaging filter so we get separate data for each
-            % eye
-            ret = iView.configureFilter('Average', 'Set', 0);
-            assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
+        % Load in plugin, create structure with function wrappers
+        iView = iViewXAPI();
+        
+        % Create logger file
+        if debugLevel&&0    % forced switch off as 2 always crashes on the second invocation of setlog...
+            logLvl = 1+2+8+16;  % 4 shows many internal function calls as well. as long as the server i on, it is trying to track. so every x ms you have a record of the output of the function that calculates gaze position...
         else
-            error('iViewXAPI.dll was NOT loaded')
+            logLvl = 1;
         end
+        ret = iView.setLogger(logLvl, smiSetup.logFileName);
+        if ret ~= 1
+            error('Logger at "%s" could not be opened (error %d: %s)',smiSetup.logFileName,ret,SMIErrCode2String(ret));
+        end
+        
+        % Connect to server
+        iView.disconnect();  % disconnect first, found this necessary as API otherwise apparently does not recognize it when eye tracker server crashed or closed by hand while connected. Well, calling 'iV_IsConnected' twice seems to work...
+        ret = iView.start(smiSetup.etApp);  % returns 1 when starting app, 4 if its already running
+        if ret==1
+            % eye tracker server starting, give it some time before
+            % trying to connect
+            iView.setConnectionTimeout(15);   % "timeout for how long iV_Connect tries to connect to iView eye tracking server." server startup is slow, give it a lot of time to try to connect.
+            WaitSecs(3); % bit of time before we try again, seems necessary even with long timeout
+        end
+        % connect
+        ret = connect(iView,smiSetup.connectInfo);
+        
+        switch ret
+            case 1
+                % connected, we're good. nothing to do here
+            case 104
+                error('SMI: Could not establish connection. Check if Eye Tracker is running (error 104: %s)',SMIErrCode2String(ret));
+            case 105
+                error('SMI: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
+            case 123
+                error('SMI: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
+            case 201
+                error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error 200: %s)',SMIErrCode2String(ret));
+            otherwise
+                error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
+        end
+        
+        % Set debug mode with iView.setupDebugMode(1) not supported on
+        % REDm it seems
+        
+        % setup device geometry
+        ret = iView.selectREDGeometry(smiSetup.geomProfile);
+        assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
+        % get info about the setup
+        [~,out.geom] = iView.getCurrentREDGeometry();
+        % get info about the system
+        [~,out.systemInfo] = iView.getSystemInfo();
+        % check operating at requested tracking frequency (the command
+        % to set frequency is only supported on the NG systems...)
+        assert(out.systemInfo.samplerate == smiSetup.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',smiSetup.freq,out.systemInfo.samplerate);
+        % setup track mode
+        ret = iView.setTrackingParameter(['ET_PARAM_' smiSetup.trackEye], ['ET_PARAM_' smiSetup.trackMode], 1);
+        assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
+        % switch off averaging filter so we get separate data for each eye
+        ret = iView.configureFilter('Average', 'Set', 0);
+        assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
     end
 
     function out = calibrate(wpnt)
