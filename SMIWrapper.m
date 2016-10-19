@@ -54,14 +54,20 @@ fhndl.processError      = @processError;
         % Connect to server
         iView.disconnect();  % disconnect first, found this necessary as API otherwise apparently does not recognize it when eye tracker server crashed or closed by hand while connected. Well, calling 'iV_IsConnected' twice seems to work...
         ret = iView.start(smiSetup.etApp);  % returns 1 when starting app, 4 if its already running
-        if ret==1
-            % eye tracker server starting, give it some time before
-            % trying to connect
-            iView.setConnectionTimeout(15);   % "timeout for how long iV_Connect tries to connect to iView eye tracking server." server startup is slow, give it a lot of time to try to connect.
-            WaitSecs(3); % bit of time before we try again, seems necessary even with long timeout
-        end
+        qStarting = ret==1;
+        
         % connect
         ret = connect(iView,smiSetup.connectInfo);
+        if qStarting && ret~=1
+            % in case eye tracker server is starting, give it some time
+            % before trying to connect, don't hammer it unnecessarily
+            iView.setConnectionTimeout(1);   % "timeout for how long iV_Connect tries to connect to iView eye tracking server." server startup is slow, give it a lot of time to try to connect.
+            count = 1;
+            while count < 30 && ret~=1
+                ret = connect(iView,smiSetup.connectInfo);
+                count = count+1;
+            end
+        end
         
         switch ret
             case 1
