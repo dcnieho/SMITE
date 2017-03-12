@@ -197,15 +197,24 @@ fhndl.processError      = @processError;
                 continue;
             end
             
+            % store calibration so user can select which one they want
+            iView.iV_SaveCalibration(num2str(kCal));
+            
             % get info about accuracy of calibration
             [~,out.attempt{kCal}.validateAccuracy] = iView.getAccuracy([], 0);
             % get validation image
             [~,out.attempt{kCal}.validateImage] = iView.getAccuracyImage();
             % show validation result and ask to continue
-            out.attempt{kCal}.valResultAccept = showValidateImage(wpnt,out.attempt{kCal},scrInfo,textSetup);
+            [out.attempt{kCal}.valResultAccept,selection] = showValidateImage(wpnt,out.attempt,kCal,scrInfo,textSetup);
             switch out.attempt{kCal}.valResultAccept
                 case 1
-                    % all good, we're done
+                    % all good, check correct calibration is leaded, and we're done
+                    if selection ~= kCal
+                        iView.iV_LoadCalibration(num2str(selection));
+                        % check correct one is loaded
+                        [~,validateAccuracy] = iView.getAccuracy([], 0);
+                        assert(isequal(validateAccuracy,out.attempt{selection}.validateAccuracy),'failed to load selected calibration');
+                    end
                     break;
                 case 2
                     % skip setup
@@ -795,81 +804,153 @@ while true
 end
 end
 
-function status = showValidateImage(wpnt,cal,scrInfo,textSetup)
+function [status,selection] = showValidateImage(wpnt,cal,kCal,scrInfo,textSetup)
 % status output:
 %  1: calibration/validation accepted, continue (a)
 %  2: just continue with task (shift+s)
 % -1: restart calibration (escape key)
 % -2: Exit completely (control+escape)
 
-% draw validation screen image
-tex   = Screen('MakeTexture',wpnt,cal.validateImage,[],8);   % 8 to prevent mipmap generation, we don't need it
-Screen('DrawTexture', wpnt, tex);   % its a fullscreen image, so just draw
-% setup text
-Screen('TextFont',  wpnt, textSetup.font);
-Screen('TextSize',  wpnt, textSetup.size);
-Screen('TextStyle', wpnt, textSetup.style);
-% draw text with validation accuracy info
-valText = sprintf('<size=20>Accuracy  <color=ff0000>Left<color>: <size=18><font=Georgia><i>X<i><font><size> = %.2f°, <size=18><font=Georgia><i>Y<i><font><size> = %.2f°\nAccuracy <color=00ff00>Right<color>: <size=18><font=Georgia><i>X<i><font><size> = %.2f°, <size=18><font=Georgia><i>Y<i><font><size> = %.2f°',cal.validateAccuracy.deviationLX,cal.validateAccuracy.deviationLY,cal.validateAccuracy.deviationRX,cal.validateAccuracy.deviationRY);
-DrawMonospacedText(wpnt,valText,'center',100,0,[],textSetup.vSpacing);
-% place buttons
-yposBase = round(scrInfo.rect(2)*.95);
-buttonSz  = [300 45];
-buttonOff = 80;
-baseRect= OffsetRect([0 0 buttonSz],scrInfo.center(1),yposBase-buttonSz(2)); % left is now at screen center, bottom at right height
-acceptRect= OffsetRect(baseRect,-buttonOff/2-buttonSz(1),0);
-recalRect = OffsetRect(baseRect, buttonOff/2            ,0);
-% draw buttons
-Screen('FillRect',wpnt,[0 120 0],acceptRect);
-DrawMonospacedText(wpnt,'accept (<i>a<i>)'       ,'center','center',0,[],[],[],OffsetRect(acceptRect,0,textSetup.lineCentOff));
-Screen('FillRect',wpnt,[150 0 0],recalRect);
-DrawMonospacedText(wpnt,'recalibrate (<i>esc<i>)','center','center',0,[],[],[],OffsetRect(recalRect ,0,textSetup.lineCentOff));
-% drawing done, show
-Screen('Flip',wpnt);
-% setup cursors
-cursors.rect    = {acceptRect.',recalRect.'};
-cursors.cursor  = [2 2];% Hand
-cursors.other   = 0;    % Arrow
-cursors.qReset  = false;
-% NB: don't reset cursor to invisible here as it will then flicker every
-% time you click something. default behaviour is good here
+% find how many valid calibrations we have:
+selection = kCal;
+iValid = find(cellfun(@(x) isfield(x,'calStatusSMI')&&strcmp(x.calStatusSMI,'calibrationValid'),cal));
 
-% get user response
-while true
-    [mouse,keyCode,which] = WaitClickOrButton(3,cursors);
-    if which=='M'
-        % don't care which button for now. determine if clicked on either
-        % of the buttons
-        qIn = inRect([mouse.x mouse.y],[acceptRect.' recalRect.']);
-        if any(qIn)
-            if qIn(1)
-                status = 1;
-            else
-                status = -1;
-            end
-            break;
-        end
-    elseif which=='K'
-        keys = KbName(keyCode);
-        if any(strcmpi(keys,'a'))
-            status = 1;
-            break;
-        elseif any(strcmpi(keys,'escape'))
-            if any(strcmpi(keys,'shift'))
-                status = -2;
-            else
-                status = -1;
-            end
-            break;
-        elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
-            % skip calibration
-            iView.abortCalibration();
-            status = 2;
-            break;
+qDoneCalibSelection = false;
+qSelectMenuOpen     = false;
+while ~qDoneCalibSelection
+    % draw validation screen image
+    tex   = Screen('MakeTexture',wpnt,cal{selection}.validateImage,[],8);   % 8 to prevent mipmap generation, we don't need it
+    Screen('DrawTexture', wpnt, tex);   % its a fullscreen image, so just draw
+    % setup text
+    Screen('TextFont',  wpnt, textSetup.font);
+    Screen('TextSize',  wpnt, textSetup.size);
+    Screen('TextStyle', wpnt, textSetup.style);
+    % draw text with validation accuracy info
+    valText = sprintf('<size=20>Accuracy  <color=ff0000>Left<color>: <size=18><font=Georgia><i>X<i><font><size> = %.2f°, <size=18><font=Georgia><i>Y<i><font><size> = %.2f°\nAccuracy <color=00ff00>Right<color>: <size=18><font=Georgia><i>X<i><font><size> = %.2f°, <size=18><font=Georgia><i>Y<i><font><size> = %.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+    DrawMonospacedText(wpnt,valText,'center',100,255,[],textSetup.vSpacing);
+    % place buttons
+    yposBase = round(scrInfo.rect(2)*.95);
+    buttonSz  = [300 45];
+    buttonOff = 80;
+    baseRect= OffsetRect([0 0 buttonSz],scrInfo.center(1),yposBase-buttonSz(2)); % left is now at screen center, bottom at right height
+    acceptRect= OffsetRect(baseRect,-buttonOff/2-buttonSz(1),0);
+    recalRect = OffsetRect(baseRect, buttonOff/2            ,0);
+    selectRect= OffsetRect([0 0 buttonSz],scrInfo.center(1)--buttonSz(1)/2,scrInfo.center(2)--buttonSz(2)/2);
+    % draw buttons
+    Screen('FillRect',wpnt,[0 120 0],acceptRect);
+    DrawMonospacedText(wpnt,'accept (<i>a<i>)'       ,'center','center',0,[],[],[],OffsetRect(acceptRect,0,textSetup.lineCentOff));
+    Screen('FillRect',wpnt,[150 0 0],recalRect);
+    DrawMonospacedText(wpnt,'recalibrate (<i>esc<i>)','center','center',0,[],[],[],OffsetRect(recalRect ,0,textSetup.lineCentOff));
+    if ~isscalar(iValid)
+        Screen('FillRect',wpnt,[150 0 0],selectRect);
+        DrawMonospacedText(wpnt,'select other cal (<i>c<i>)','center','center',0,[],[],[],OffsetRect(selectRect ,0,textSetup.lineCentOff));
+    end
+    % if selection menu open, draw on top
+    if qSelectMenuOpen
+        margin      = 10;
+        pad         = 3;
+        height      = 45;
+        nElem       = length(iValid);
+        totHeight   = nElem*(height+pad)-pad;
+        width       = 500;
+        % menu background
+        menuBackRect= [-.5*width+scrInfo.center(1)-margin -.5*totHeight+scrInfo.center(2)-margin .5*width+scrInfo.center(1)+margin .5*totHeight+scrInfo.center(2)+margin];
+        Screen('FillRect',wpnt,140,menuBackRect);
+        % menuRects
+        menuRects = repmat([-.5*width+scrInfo.center(1) -height/2 .5*width+scrInfo.center(1) height/2],length(iValid),1);
+        menuRects = menuRects+bsxfun(@times,[height*([0:nElem-1]+.5)+[0:nElem-1]*pad-totHeight/2].',[0 1 0 1]);
+        Screen('FillRect',wpnt,110,menuRects.');
+        % text in each rect
+        for c=1:length(iValid)
+            str = sprintf('(%1$d): <color=ff0000>Left<color>: <size=%2$d><font=Georgia><i>X<i><font><size>: %3$.2f°, <size=%2$d><font=Georgia><i>Y<i><font><size>: %$4.2f°.  <color=00ff00>Right<color>: <size=%2$d><font=Georgia><i>X<i><font><size>: %5$.2f°, <size=%2$d><font=Georgia><i>Y<i><font><size>: %6$.2f°',c,textSetup.size,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
+            DrawMonospacedText(wpnt,str,'center','center',0,[],[],[],OffsetRect(menuRects(c,:),0,textSetup.lineCentOff));
         end
     end
+    % drawing done, show
+    Screen('Flip',wpnt);
+    % setup cursors
+    if qSelectMenuOpen
+        cursors.rect    = {menuRects.'};
+        cursors.cursor  = 2*ones(size(menuRects,1));    % 2: Hand
+    else
+        cursors.rect    = {acceptRect.',recalRect.',selectRect.'};
+        cursors.cursor  = [2 2 2];  % 2: Hand
+    end
+    cursors.other   = 0;    % 0: Arrow
+    cursors.qReset  = false;
+    % NB: don't reset cursor to invisible here as it will then flicker every
+    % time you click something. default behaviour is good here
+    
+    % get user response
+    while true
+        [mouse,keyCode,which] = WaitClickOrButton(3,cursors);
+        if which=='M'
+            % don't care which button for now. determine if clicked on either
+            % of the buttons
+            if qSelectMenuOpen
+                iIn = find(inRect([mouse.x mouse.y],[menuRects.' menuBackRect.']));
+                if ~isempty(qIn) && iIn<=length(iValid)
+                    selection = iValid(iIn);
+                    break;
+                else
+                    qSelectMenuOpen = false;
+                    break;
+                end
+            else
+                qIn = inRect([mouse.x mouse.y],[acceptRect.' recalRect.']);
+                if any(qIn)
+                    if qIn(1)
+                        status = 1;
+                        qDoneCalibSelection = true;
+                    elseif qIn(2)
+                        status = -1;
+                        qDoneCalibSelection = true;
+                    elseif qIn(3)
+                        qSelectMenuOpen     = true;
+                    end
+                    break;
+                end
+            end
+        elseif which=='K'
+            keys = KbName(keyCode);
+            if qSelectMenuOpen
+                if any(strcmpi(keys,'escape'))
+                    qSelectMenuOpen = false;
+                    break;
+                elseif ismember(keys,{'1','2','3','4','5','6','7','8','9'})
+                    idx = str2double(keys);
+                    selection = iValid(idx);
+                    qSelectMenuOpen = false;
+                    break;
+                end
+            else
+                if any(strcmpi(keys,'a'))
+                    status = 1;
+                    qDoneCalibSelection = true;
+                    break;
+                elseif any(strcmpi(keys,'escape'))
+                    if any(strcmpi(keys,'shift'))
+                        status = -2;
+                    else
+                        status = -1;
+                    end
+                    qDoneCalibSelection = true;
+                    break;
+                elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
+                    % skip calibration
+                    iView.abortCalibration();
+                    status = 2;
+                    qDoneCalibSelection = true;
+                    break;
+                elseif any(strcmpi(keys,'c')) && ~isscalar(iValid)
+                    qSelectMenuOpen = true;
+                    break;
+                end
+            end
+        end
+    end
+    % done, clean up
+    Screen('Close',tex);
 end
-% done, clean up
-Screen('Close',tex);
 HideCursor;
 end
