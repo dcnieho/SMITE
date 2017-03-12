@@ -25,8 +25,10 @@ f.getSample                     = @iV_GetSample;
 f.getSystemInfo                 = @iV_GetSystemInfo;
 f.getTrackingMonitor            = @iV_GetTrackingMonitor;
 f.getTrackingStatus             = @iV_GetTrackingStatus;
-f.pauseRecording                = @iV_PauseRecording;
 f.isConnected                   = @iV_IsConnected;
+f.loadCalibration               = @iV_LoadCalibration;
+f.pauseRecording                = @iV_PauseRecording;
+f.saveCalibration               = @iV_SaveCalibration;
 f.saveData                      = @iV_SaveData;
 f.selectREDGeometry             = @iV_SelectREDGeometry;
 f.sendImageMessage              = @iV_SendImageMessage;
@@ -193,8 +195,16 @@ function ret = iV_IsConnected()
 ret = calllib('iViewXAPI', 'iV_IsConnected');
 end
 
+function ret = iV_LoadCalibration(name)
+ret = calllib('iViewXAPI', 'iV_LoadCalibration', name);
+end
+
 function ret = iV_PauseRecording()
 ret = calllib('iViewXAPI', 'iV_PauseRecording');
+end
+
+function ret = iV_SaveCalibration(name)
+ret = calllib('iViewXAPI', 'iV_SaveCalibration', name);
 end
 
 function ret = iV_SaveData(filename, description, user, overwrite)
