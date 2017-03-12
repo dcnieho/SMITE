@@ -120,7 +120,7 @@ fhndl.processError      = @processError;
             CalibrationData.visualization = 1;
         end
         ret = iView.setupCalibration(CalibrationData);
-        assert(ret==1,'SMI: error setting up calibration (error %d: %s)',ret,SMIErrCode2String(ret));
+        processError(ret,'SMI: Error setting up calibration');
         
         % change calibration points if wanted
         if ~isempty(smiSetup.cal.pointPos)
@@ -235,41 +235,27 @@ fhndl.processError      = @processError;
             iView.clearRecordingBuffer();
         end
         ret = iView.startRecording();
-        if ret==1
-            out = true;
-        else
-            error('SMI: Error starting recording (error %d: %s)',ret,SMIErrCode2String(ret));
-        end
+        out = true;
+        processError(ret,'SMI: Error starting recording');
         WaitSecs(.1); % give it some time to get started. not needed according to doc, but never hurts
     end
 
     function out = pauseRecording()
         ret = iView.pauseRecording();
-        if ret==1
-            out = true;
-        else
-            % error as we can't save when still recording
-            error('SMI: Error pausing recording (error %d: %s)',ret,SMIErrCode2String(ret));
-        end
+        out = true;
+        processError(ret,'SMI: Error pausing recording');
     end
 
     function out = continueRecording(message)
         ret = iView.continueRecording(message);
-        if ret==1
-            out = true;
-        else
-            error('SMI: Error continuing recording (error %d: %s)',ret,SMIErrCode2String(ret));
-        end
+        out = true;
+        processError(ret,'SMI: Error continuing recording');
     end
 
     function out = stopRecording()
         ret = iView.stopRecording();
-        if ret==1
-            out = true;
-        else
-            % error as we can't save when still recording
-            error('SMI: Error stopping recording (error %d: %s)',ret,SMIErrCode2String(ret));
-        end
+        out = true;
+        processError(ret,'SMI: Error stopping recording');
     end
 
     function out = isConnected()
@@ -288,21 +274,14 @@ fhndl.processError      = @processError;
         % consider using that directly in your code for best timing
         % ret = iView.sendImageMessage(str);
         ret = calllib('iViewXAPI','iV_SendImageMessage',str);
-        if ret==1
-            out = true;
-        else
-            warning('SMI: Error sending message to data file (error %d: %s)',ret,SMIErrCode2String(ret));
-            out = false;
-        end
+        out = true;
+        processError(ret,'SMI: Error sending message to data file');
     end
 
     function out = saveData(filename, description, user, overwrite)
+        out = true;
         ret = iView.saveData([filename '.idf'], description, user, overwrite);
-        if ret==1
-            out = true;
-        else
-            error('SMI: Error saving data (error %d: %s)',ret,SMIErrCode2String(ret));
-        end
+        processError(ret,'SMI: Error saving data');
     end
 
     function out = cleanUp()
@@ -529,7 +508,7 @@ while true
     
     % do drawing
     % draw box
-    Screen('FillRect',wpnt,0,boxRect);
+    Screen('FillRect',wpnt,80,boxRect);
     % draw distance
     if ~isnan(avgDist)
         Screen('TextSize',  wpnt, 10);
