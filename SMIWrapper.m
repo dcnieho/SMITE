@@ -105,7 +105,12 @@ fhndl.processError      = @processError;
         assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
     end
 
-    function out = calibrate(wpnt)
+    function out = calibrate(wpnt,qClearBuffer)
+        % by default don't clear recording buffer. You DO NOT want to do
+        % that when recalibrating
+        if nargin<1
+            qClearBuffer = false;
+        end
         % setup calibration
         CalibrationData = getSMIStructEnum('CalibrationStruct');
         CalibrationData.method = smiSetup.cal.nPoint;
@@ -166,11 +171,11 @@ fhndl.processError      = @processError;
             
             % calibrate and validate
             if nargin>0&&smiSetup.cal.qUsePTB
-                [out.attempt{kCal}.calStatus,temp] = DoCalAndValPTB(wpnt,iView,smiSetup.cal,@startRecording,@stopRecording,@sendMessage);
+                [out.attempt{kCal}.calStatus,temp] = DoCalAndValPTB(wpnt,iView,smiSetup.cal,@startRecording,qClearBuffer,@stopRecording,@sendMessage);
                 warning('off','catstruct:DuplicatesFound')  % field already exists but is empty, will be overwritten with the output from the function here
                 out.attempt{kCal} = catstruct(out.attempt{kCal},temp);
             else
-                out.attempt{kCal}.calStatus = DoCalAndValSMI(iView,@startRecording,@stopRecording,@sendMessage);
+                out.attempt{kCal}.calStatus = DoCalAndValSMI(iView,@startRecording,qClearBuffer,@stopRecording,@sendMessage);
             end
             switch out.attempt{kCal}.calStatus
                 case 1
@@ -690,9 +695,9 @@ if validity
 end
 end
 
-function status = DoCalAndValSMI(iView,startRecording,stopRecording,ETSendMessageFun)
+function status = DoCalAndValSMI(iView,startRecording,qClearBuffer,stopRecording,ETSendMessageFun)
 % calibrate
-startRecording(true);   % explicitly clear recording buffer
+startRecording(qClearBuffer);   % explicitly clear recording buffer
 ETSendMessageFun('CALIBRATION START');
 ret = iView.calibrate();
 ETSendMessageFun('CALIBRATION END');
@@ -716,11 +721,11 @@ end
 stopRecording();
 end
 
-function [status,out] = DoCalAndValPTB(wpnt,iView,calSetup,startRecording,stopRecording,ETSendMessageFun)
+function [status,out] = DoCalAndValPTB(wpnt,iView,calSetup,startRecording,qClearBuffer,stopRecording,ETSendMessageFun)
 % disable SMI key listeners, we'll deal with key presses
 iView.setUseCalibrationKeys(0);
 %% calibrate
-startRecording(true);   % explicitly clear recording buffer
+startRecording(qClearBuffer);
 % enter calibration mode
 ETSendMessageFun('CALIBRATION START');
 iView.calibrate();
