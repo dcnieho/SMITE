@@ -108,7 +108,7 @@ fhndl.processError      = @processError;
     function out = calibrate(wpnt,qClearBuffer)
         % by default don't clear recording buffer. You DO NOT want to do
         % that when recalibrating
-        if nargin<1
+        if nargin<2
             qClearBuffer = false;
         end
         % setup calibration
