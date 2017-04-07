@@ -177,6 +177,10 @@ fhndl.processError      = @processError;
             else
                 out.attempt{kCal}.calStatus = DoCalAndValSMI(iView,@startRecording,qClearBuffer,@stopRecording,@sendMessage);
             end
+            % qClearbuffer should now become false even if it was true, as
+            % buffer has been cleared in calibration lines above
+            qClearBuffer = false;
+            % check returned action state
             switch out.attempt{kCal}.calStatus
                 case 1
                     % all good, continue
