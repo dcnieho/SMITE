@@ -321,7 +321,9 @@ fhndl.processError      = @processError;
 
     function processError(returnCode,errorString)
         % for SMI, anything that is not 1 is an error
-        assert(returnCode==1,'%s (error %d: %s)',errorString,returnCode,SMIErrCode2String(returnCode));
+        if returnCode~=1
+            error('%s (error %d: %s)',errorString,returnCode,SMIErrCode2String(returnCode));
+        end
     end
 
 end
