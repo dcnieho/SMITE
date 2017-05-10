@@ -730,7 +730,7 @@ end
 function [status,out] = DoCalAndValPTB(wpnt,iView,calSetup,startRecording,qClearBuffer,stopRecording,ETSendMessageFun)
 % disable SMI key listeners, we'll deal with key presses
 iView.setUseCalibrationKeys(0);
-%% calibrate
+% calibrate
 startRecording(qClearBuffer);
 % enter calibration mode
 ETSendMessageFun('CALIBRATION START');
@@ -742,7 +742,7 @@ if status~=1
     return;
 end
 
-%% validate
+% validate
 % enter validation mode
 ETSendMessageFun('VALIDATION START');
 iView.validate();
@@ -787,7 +787,7 @@ while true
         break;
     end
     pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
-    drawfixpoints(wpnt,pos,{'.','.'},{calSetup.fixBackSize calSetup.fixFrontSize},{calSetup.fixBackColor calSetup.fixFrontColor},1);
+    drawfixpoints(wpnt,pos,{'thaler'},{[calSetup.fixBackSize calSetup.fixFrontSize]},{{calSetup.fixBackColor calSetup.fixFrontColor}},0);
     
     out.point(end+1) = pCalibrationPoint.number;
     out.flips(end+1) = Screen('Flip',wpnt,nextFlipT);
@@ -904,14 +904,17 @@ while ~qDoneCalibSelection
     % time you click something. default behaviour is good here
     
     % get user response
+    cursor = cursorUpdater(cursors);
     while true
-        [mouse,keyCode,which] = WaitClickOrButton(3,cursors);
-        if which=='M'
+        [keyPressed,~,keyCode]  = KbCheck();
+        [mx,my,buttons]         = GetMouse;
+        cursor.update(mx,my);
+        if any(buttons)
             % don't care which button for now. determine if clicked on either
             % of the buttons
             qBreak = false;
             if qSelectMenuOpen
-                iIn = find(inRect([mouse.x mouse.y],[menuRects.' menuBackRect.']),1);   % press on button is also in rect of whole menu, so we get multiple returns here in this case. ignore all but first, which is the actual menu button pressed
+                iIn = find(inRect([mx my],[menuRects.' menuBackRect.']),1);   % press on button is also in rect of whole menu, so we get multiple returns here in this case. ignore all but first, which is the actual menu button pressed
                 if ~isempty(iIn) && iIn<=length(iValid)
                     selection = iValid(iIn);
                     qSelectMenuOpen = false;
@@ -922,7 +925,7 @@ while ~qDoneCalibSelection
                 end
             end
             if ~qSelectMenuOpen     % if just pressed outside the menu, check if pressed any of these menu buttons
-                qIn = inRect([mouse.x mouse.y],[acceptRect.' recalRect.' selectRect.']);
+                qIn = inRect([mx my],[acceptRect.' recalRect.' selectRect.']);
                 if any(qIn)
                     if qIn(1)
                         status = 1;
@@ -939,7 +942,7 @@ while ~qDoneCalibSelection
             if qBreak
                 break;
             end
-        elseif which=='K'
+        elseif keyPressed
             keys = KbName(keyCode);
             if qSelectMenuOpen
                 if any(strcmpi(keys,'escape'))
@@ -979,8 +982,11 @@ while ~qDoneCalibSelection
                 break;
             end
         end
+        
+        WaitSecs('YieldSecs',.01);  % don't spin too fast
     end
     % done, clean up
+    cursor.reset();
     Screen('Close',tex);
 end
 if status~=1
