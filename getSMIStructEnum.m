@@ -42,7 +42,7 @@ if ismember(type,{'SystemInfoStruct','SpeedModeStruct','CalibrationPointStruct',
     out = libstruct(type,init);
     
     
-elseif ismember(type,{'CalibrationPointUsageStatusEnum','CalibrationStatusEnum','ETDevice','FilterAction','ETApplication','FilterType','REDGeometryEnum'})
+elseif ismember(type,{'CalibrationPointUsageStatusEnum','CalibrationStatusEnum','ETDevice','FilterAction','ETApplication','FilterType','REDGeometryEnum','RecordingState','TrackingMode'})
     % enums. Note that matlab will give you a
     % char, not an int32 back when you call enumPtr.Value;
     % to initialize, both the string for the enum value and the

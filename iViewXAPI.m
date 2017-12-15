@@ -43,16 +43,21 @@ f.startRecording                = @iV_StartRecording;
 f.stopRecording                 = @iV_StopRecording;
 f.validate                      = @iV_Validate;
 % for functions not specifically implemented in wrapper
-f.o                             = @iV_Other;
+f.o                             = @nonWrappedForwarder;
 
 % load in dll that we're wrapping here
 if ~libisloaded('iViewXAPI')
+    input = {@iViewXAPIHeader,'alias','iViewXAPI'};
+    if strcmp(computer('arch'), 'win64')
+        libfile = 'iViewXAPI64.dll';
+    else
+        libfile = 'iViewXAPI.dll';
+    end
     try
-    loadlibrary('iViewXAPI.dll', @iViewXAPIHeader);
+    loadlibrary(libfile, input{:});
     catch %#ok<CTCH>
-        % iViewXAPI failed on Windows. Most likely cause would be "invalid
-        % MEX file error" due to iViewXAPI failing to link against
-        % required DLL's.
+        % iViewXAPI failed. Most likely cause would be "invalid MEX file
+        % error" due to iViewXAPI failing to link against required DLL's.
         % The old drill: cd into (likely) location of DLL. Retry. If this
         % was the culprit, then the linker should load, link and init
         % iViewXAPI and we should succeed. Otherwise we fail again. Try
@@ -65,7 +70,7 @@ if ~libisloaded('iViewXAPI')
         else
             error('failed to load iViewXAPI.dll, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
         end
-        loadlibrary('iViewXAPI.dll', @iViewXAPIHeader);
+        loadlibrary(libfile, input{:});
         cd(wd);
     end
 end
@@ -73,7 +78,7 @@ end
 
 
 % for functions not specifically implemented below
-function ret = iV_Other(fun,varargin)
+function ret = nonWrappedForwarder(fun,varargin)
 ret = calllib('iViewXAPI', fun, varargin{:});
 end
 
@@ -127,7 +132,7 @@ if nargin==0
     pImageData = getSMIStructEnum('ImageStruct');
 end
 ret = calllib('iViewXAPI', 'iV_GetAccuracyImage', pImageData);
-image = getImage(ret,pImageData);
+image = getImage(ret,pImageData,'BGR');
 end
 
 function ret = iV_GetCurrentCalibrationPoint(calibrationPoint)
@@ -159,7 +164,7 @@ if nargin==0
     pImageData = getSMIStructEnum('ImageStruct');
 end
 ret = calllib('iViewXAPI', 'iV_GetEyeImage', pImageData);
-image = getImage(ret,pImageData);
+image = getImage(ret,pImageData,'mono');
 end
 
 function [ret,sample] = iV_GetSample(pSampleData)
@@ -180,7 +185,7 @@ end
 
 function [ret,image] = iV_GetTrackingMonitor(pImageData)
 ret = calllib('iViewXAPI', 'iV_GetTrackingMonitor', pImageData);
-image = getImage(ret,pImageData);
+image = getImage(ret,pImageData,'BGR');
 end
 
 function [ret,tStatus] = iV_GetTrackingStatus(pTrackingStatus)
@@ -228,6 +233,8 @@ ret = calllib('iViewXAPI', 'iV_SetLogger', logLevel, filename);
 end
 
 function ret = iV_SetTrackingParameter(ET_PARAM_EYE, ET_PARAM, value)
+% for ET_PARAM_EYE and ET_PARAM, can input the string values in the map
+% below, or the corresponding numerical values directly
 map = {
     'ET_PARAM_EYE_LEFT',0
     'ET_PARAM_EYE_RIGHT',1
@@ -293,7 +300,7 @@ ret = calllib('iViewXAPI', 'iV_Validate');
 end
 
 
-function image = getImage(ret,pImageData)
+function image = getImage(ret,pImageData,type)
 if ret~=1
     image = [];
     return;
@@ -304,17 +311,30 @@ if isa(pImageData.imageBuffer,'lib.pointer')
 else
     assert(numel(pImageData.imageBuffer)==pImageData.imageSize,'You can only reuse ImageStructs for images of same size')
 end
+
 % get image data to manipulate. NB: do not write to pImageData.imageBuffer,
-% or you'llleak the original buffer!
+% or you'l leak the original buffer!
 image = pImageData.imageBuffer;
-if pImageData.imageSize==pImageData.imageWidth*pImageData.imageHeight
-    % grayscale
-    image = reshape(image,pImageData.imageWidth,pImageData.imageHeight).';
-elseif pImageData.imageSize==pImageData.imageWidth*pImageData.imageHeight*3
-    % three-color plane image
-    % its returned in BGR format apparently, flip(...,3) to turn to RGB
-    image = flip(permute(...
-        reshape(image,3,pImageData.imageWidth,pImageData.imageHeight),...
-        [3 2 1]),3);
+
+switch type
+    case 'mono'
+        % iV_GetEyeImage
+        % 
+        % grayscale, one row of pixels at a time. Transpose to conform with
+        % matlab conventions.
+        image = reshape(image,pImageData.imageWidth,pImageData.imageHeight).';
+    case 'BGR'
+        % iV_GetTrackingMonitor, iV_GetAccuracyImage,
+        % iV_GetCalibrationQualityImage
+        %
+        % BGR format, [B G R B G R ...] one row of pixels at a time. Turn
+        % into three planes and then flip(...,3) to change BGR into RGB
+        image = flip(permute(...
+            reshape(image,3,pImageData.imageWidth,pImageData.imageHeight),...
+            [3 2 1]),3);
+    case 'RGB'
+        % iV_GetSceneVideo
+        % 
+        % untested/implemented. 
 end
 end
