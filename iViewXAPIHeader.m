@@ -243,8 +243,8 @@ fcns.name{fcnNum}='iV_DeleteStandAloneGeometry'; fcns.RHS{fcnNum}={'int8Ptr'}; i
 % extern " C " int iV_SetSceneVideoCallback ( pDLLSetSceneVideo pSceneVideoCallbackFunction ); 
 % extern " C " int iV_SetTrackingMonitorCallback ( pDLLSetTrackingMonitor pTrackingMonitorCallbackFunction ); 
 
-% all LHS are 'int32' and all calltype are 'stdcall' for 32bit and 'Thunk'
-% for 64 bit. set at once. Also set thunklibname for 64bit
+% all LHS are 'int32'. All calltype are 'stdcall' for 32bit and 'Thunk' for
+% 64 bit. Set at once. Also set thunklibname for 64bit
 [fcns.LHS{:}] = deal('int32');
 if q64Bit
     [fcns.calltype{:}] = deal('Thunk');
