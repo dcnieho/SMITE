@@ -1,49 +1,109 @@
-% If function is not listed, use 'calllib' function to call it, or the o()
-% fhndl with the function to call as string in the first input
-
-% To list the available function use 'libfunctions iViewXAPI'
-
-
 function f = iViewXAPI()
-f.abortCalibration              = @iV_AbortCalibration;
-f.acceptCalibrationPoint        = @iV_AcceptCalibrationPoint;
-f.calibrate                     = @iV_Calibrate;
-f.clearRecordingBuffer          = @iV_ClearRecordingBuffer;
-f.configureFilter               = @iV_ConfigureFilter;
-f.connect                       = @iV_Connect;
-f.connectLocal                  = @iV_ConnectLocal;
-f.continueRecording             = @iV_ContinueRecording;
-f.disconnect                    = @iV_Disconnect;
-f.getAccuracy                   = @iV_GetAccuracy;
-f.getAccuracyImage              = @iV_GetAccuracyImage;
-f.getCalibrationPoint           = @iV_GetCalibrationPoint;
-f.getCalibrationStatus          = @iV_GetCalibrationStatus;
-f.getCurrentCalibrationPoint    = @iV_GetCurrentCalibrationPoint;
-f.getCurrentREDGeometry         = @iV_GetCurrentREDGeometry;
-f.getEyeImage                   = @iV_GetEyeImage;
-f.getSample                     = @iV_GetSample;
-f.getSystemInfo                 = @iV_GetSystemInfo;
-f.getTrackingMonitor            = @iV_GetTrackingMonitor;
-f.getTrackingStatus             = @iV_GetTrackingStatus;
-f.isConnected                   = @iV_IsConnected;
-f.loadCalibration               = @iV_LoadCalibration;
-f.pauseRecording                = @iV_PauseRecording;
-f.saveCalibration               = @iV_SaveCalibration;
-f.saveData                      = @iV_SaveData;
-f.selectREDGeometry             = @iV_SelectREDGeometry;
-f.sendImageMessage              = @iV_SendImageMessage;
-f.setConnectionTimeout          = @iV_SetConnectionTimeout;
-f.setLogger                     = @iV_SetLogger;
-f.setTrackingParameter          = @iV_SetTrackingParameter;
-f.setupCalibration              = @iV_SetupCalibration;
-f.setupDebugMode                = @iV_SetupDebugMode;
-f.setUseCalibrationKeys         = @iV_SetUseCalibrationKeys;
-f.start                         = @iV_Start;
-f.startRecording                = @iV_StartRecording;
-f.stopRecording                 = @iV_StopRecording;
-f.validate                      = @iV_Validate;
-% for functions not specifically implemented in wrapper
-f.o                             = @nonWrappedForwarder;
+f.abortCalibration                      = @iV_AbortCalibration;
+f.abortCalibrationPoint                 = @iV_AbortCalibrationPoint;
+f.acceptCalibrationPoint                = @iV_AcceptCalibrationPoint;
+f.calibrate                             = @iV_Calibrate;
+f.changeCalibrationPoint                = @iV_ChangeCalibrationPoint;
+f.clearAOI                              = @iV_ClearAOI;
+f.clearRecordingBuffer                  = @iV_ClearRecordingBuffer;
+f.configureFilter                       = @iV_ConfigureFilter;
+f.connect                               = @iV_Connect;
+f.connectLocal                          = @iV_ConnectLocal;
+f.continueEyetracking                   = @iV_ContinueEyetracking;
+f.continueRecording                     = @iV_ContinueRecording;
+f.defineAOI                             = @iV_DefineAOI;
+f.defineAOIPort                         = @iV_DefineAOIPort;
+f.deleteREDGeometry                     = @iV_DeleteREDGeometry;
+f.disableAOI                            = @iV_DisableAOI;
+f.disableAOIGroup                       = @iV_DisableAOIGroup;
+f.disableGazeDataFilter                 = @iV_DisableGazeDataFilter;
+f.disableProcessorHighPerformanceMode   = @iV_DisableProcessorHighPerformanceMode;
+f.disconnect                            = @iV_Disconnect;
+f.enableAOI                             = @iV_EnableAOI;
+f.enableAOIGroup                        = @iV_EnableAOIGroup;
+f.enableGazeDataFilter                  = @iV_EnableGazeDataFilter;
+f.enableProcessorHighPerformanceMode    = @iV_EnableProcessorHighPerformanceMode;
+f.getAccuracy                           = @iV_GetAccuracy;
+f.getAccuracyImage                      = @iV_GetAccuracyImage;
+f.getAOIOutputValue                     = @iV_GetAOIOutputValue;
+f.getAvailableLptPorts                  = @iV_GetAvailableLptPorts;
+f.getCalibrationParameter               = @iV_GetCalibrationParameter;
+f.getCalibrationPoint                   = @iV_GetCalibrationPoint;
+f.getCalibrationQuality                 = @iV_GetCalibrationQuality;
+f.getCalibrationQualityImage            = @iV_GetCalibrationQualityImage;
+f.getCalibrationStatus                  = @iV_GetCalibrationStatus;
+f.getCurrentCalibrationPoint            = @iV_GetCurrentCalibrationPoint;
+f.getCurrentREDGeometry                 = @iV_GetCurrentREDGeometry;
+f.getCurrentTimestamp                   = @iV_GetCurrentTimestamp;
+f.getDeviceName                         = @iV_GetDeviceName;
+f.getEvent                              = @iV_GetEvent;
+f.getEvent32                            = @iV_GetEvent32;
+f.getEyeImage                           = @iV_GetEyeImage;
+f.getFeatureKey                         = @iV_GetFeatureKey;
+f.getGazeChannelQuality                 = @iV_GetGazeChannelQuality;
+f.getGeometryProfiles                   = @iV_GetGeometryProfiles;
+f.getLicenseDueDate                     = @iV_GetLicenseDueDate;
+f.getRecordingState                     = @iV_GetRecordingState;
+f.getREDGeometry                        = @iV_GetREDGeometry;
+f.getSample                             = @iV_GetSample;
+f.getSample32                           = @iV_GetSample32;
+f.getSceneVideo                         = @iV_GetSceneVideo;
+f.getSerialNumber                       = @iV_GetSerialNumber;
+f.getSpeedModes                         = @iV_GetSpeedModes;
+f.getSystemInfo                         = @iV_GetSystemInfo;
+f.getTrackingMonitor                    = @iV_GetTrackingMonitor;
+f.getTrackingMode                       = @iV_GetTrackingMode;
+f.getTrackingStatus                     = @iV_GetTrackingStatus;
+f.getUseCalibrationKeys                 = @iV_GetUseCalibrationKeys;
+f.hideAccuracyMonitor                   = @iV_HideAccuracyMonitor;
+f.hideEyeImageMonitor                   = @iV_HideEyeImageMonitor;
+f.hideSceneVideoMonitor                 = @iV_HideSceneVideoMonitor;
+f.hideTrackingMonitor                   = @iV_HideTrackingMonitor;
+f.isConnected                           = @iV_IsConnected;
+f.loadCalibration                       = @iV_LoadCalibration;
+f.log                                   = @iV_Log;
+f.pauseEyetracking                      = @iV_PauseEyetracking;
+f.pauseRecording                        = @iV_PauseRecording;
+f.quit                                  = @iV_Quit;
+f.recalibrateOnePoint                   = @iV_RecalibrateOnePoint;
+f.releaseAOIPort                        = @iV_ReleaseAOIPort;
+f.removeAOI                             = @iV_RemoveAOI;
+f.resetCalibrationPoints                = @iV_ResetCalibrationPoints;
+f.saveCalibration                       = @iV_SaveCalibration;
+f.saveData                              = @iV_SaveData;
+f.selectREDGeometry                     = @iV_SelectREDGeometry;
+f.sendCommand                           = @iV_SendCommand;
+f.sendImageMessage                      = @iV_SendImageMessage;
+f.setConnectionTimeout                  = @iV_SetConnectionTimeout;
+f.setEventDetectionParameter            = @iV_SetEventDetectionParameter;
+f.setLicense                            = @iV_SetLicense;
+f.setLogger                             = @iV_SetLogger;
+f.setREDGeometry                        = @iV_SetREDGeometry;
+f.setResolution                         = @iV_SetResolution;
+f.setSpeedMode                          = @iV_SetSpeedMode;
+f.setTrackingMode                       = @iV_SetTrackingMode;
+f.setTrackingParameter                  = @iV_SetTrackingParameter;
+f.setupCalibration                      = @iV_SetupCalibration;
+f.setupDebugMode                        = @iV_SetupDebugMode;
+f.setupLptRecording                     = @iV_SetupLptRecording;
+f.setUseCalibrationKeys                 = @iV_SetUseCalibrationKeys;
+f.showAccuracyMonitor                   = @iV_ShowAccuracyMonitor;
+f.showEyeImageMonitor                   = @iV_ShowEyeImageMonitor;
+f.showSceneVideoMonitor                 = @iV_ShowSceneVideoMonitor;
+f.showTrackingMonitor                   = @iV_ShowTrackingMonitor;
+f.start                                 = @iV_Start;
+f.startRecording                        = @iV_StartRecording;
+f.stopRecording                         = @iV_StopRecording;
+f.testTTL                               = @iV_TestTTL;
+f.validate                              = @iV_Validate;
+f.setupMonitorAttachedGeometry          = @iV_SetupMonitorAttachedGeometry;
+f.setupStandAloneMode                   = @iV_SetupStandAloneMode;
+f.setupREDMonitorAttachedGeometry       = @iV_SetupREDMonitorAttachedGeometry;
+f.setupREDStandAloneMode                = @iV_SetupREDStandAloneMode;
+f.getMonitorAttachedGeometry            = @iV_GetMonitorAttachedGeometry;
+f.setGeometryProfile                    = @iV_SetGeometryProfile;
+f.deleteMonitorAttachedGeometry         = @iV_DeleteMonitorAttachedGeometry;
+f.deleteStandAloneGeometry              = @iV_DeleteStandAloneGeometry;
 
 % load in dll that we're wrapping here
 if ~libisloaded('iViewXAPI')
@@ -76,11 +136,6 @@ if ~libisloaded('iViewXAPI')
 end
 end
 
-
-% for functions not specifically implemented below
-function ret = nonWrappedForwarder(fun,varargin)
-ret = calllib('iViewXAPI', fun, varargin{:});
-end
 
 
 function ret = iV_AbortCalibration()
