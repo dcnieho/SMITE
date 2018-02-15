@@ -158,10 +158,11 @@ fhndl.processError      = @processError;
         % 2. start with advanced head positioning interface
         startScreen = settings.setup.startScreen;
         while true
+            qGoToValidationViewer = false;
             kCal = kCal+1;
             if startScreen>0
                 %%% 2a: show head positioning screen
-                status = showHeadPositioning(wpnt,iView,scrInfo,settings,textSetup,startScreen,debugLevel);
+                status = showHeadPositioning(wpnt,out,iView,scrInfo,settings,textSetup,startScreen,debugLevel);
                 switch status
                     case 1
                         % all good, continue
@@ -169,6 +170,9 @@ fhndl.processError      = @processError;
                         % skip setup
                         break;
                     case -3
+                        % go to validation viewer screen
+                        qGoToValidationViewer = true;
+                    case -4
                         % full stop
                         error('run ended from SMI calibration routine')
                     otherwise
@@ -177,44 +181,46 @@ fhndl.processError      = @processError;
             end
             
             %%% 2b: calibrate and validate
-            [out.attempt{kCal}.calStatus,temp] = DoCalAndVal(wpnt,iView,settings.cal,@startRecording,qClearBuffer,@stopRecording,@sendMessage);
-            warning('off','catstruct:DuplicatesFound')  % field already exists but is empty, will be overwritten with the output from the function here
-            out.attempt{kCal} = catstruct(out.attempt{kCal},temp);
-            % qClearbuffer should now become false even if it was true, as
-            % buffer has been cleared in calibration lines above
-            qClearBuffer = false;
-            % check returned action state
-            switch out.attempt{kCal}.calStatus
-                case 1
-                    % all good, continue
-                case 2
-                    % skip setup
-                    break;
-                case -1
-                    % restart calibration
-                    startScreen = 0;
-                    continue;
-                case -2
-                    % go to setup
+            if ~qGoToValidationViewer
+                [out.attempt{kCal}.calStatus,temp] = DoCalAndVal(wpnt,iView,settings.cal,@startRecording,qClearBuffer,@stopRecording,@sendMessage);
+                warning('off','catstruct:DuplicatesFound')  % field already exists but is empty, will be overwritten with the output from the function here
+                out.attempt{kCal} = catstruct(out.attempt{kCal},temp);
+                % qClearbuffer should now become false even if it was true,
+                % as buffer has been cleared in calibration lines above
+                qClearBuffer = false;
+                % check returned action state
+                switch out.attempt{kCal}.calStatus
+                    case 1
+                        % all good, continue
+                    case 2
+                        % skip setup
+                        break;
+                    case -1
+                        % restart calibration
+                        startScreen = 0;
+                        continue;
+                    case -2
+                        % go to setup
+                        startScreen = max(1,startScreen);
+                        continue;
+                    case -4
+                        % full stop
+                        error('run ended from SMI calibration routine')
+                    otherwise
+                        error('status %d not implemented',out.attempt{kCal}.calStatus);
+                end
+                
+                % check calibration status to be sure we're calibrated
+                [~,out.attempt{kCal}.calStatusSMI] = iView.getCalibrationStatus();
+                if ~strcmp(out.attempt{kCal}.calStatusSMI,'calibrationValid')
+                    % retry calibration
                     startScreen = max(1,startScreen);
                     continue;
-                case -3
-                    % full stop
-                    error('run ended from SMI calibration routine')
-                otherwise
-                    error('status %d not implemented',out.attempt{kCal}.calStatus);
+                end
+                
+                % store calibration so user can select which one they want
+                iView.saveCalibration(num2str(kCal));
             end
-            
-            % check calibration status to be sure we're calibrated
-            [~,out.attempt{kCal}.calStatusSMI] = iView.getCalibrationStatus();
-            if ~strcmp(out.attempt{kCal}.calStatusSMI,'calibrationValid')
-                % retry calibration
-                startScreen = max(1,startScreen);
-                continue;
-            end
-            
-            % store calibration so user can select which one they want
-            iView.saveCalibration(num2str(kCal));
             
             %%% 2c: show calibration results
             % get info about accuracy of calibration
@@ -222,7 +228,7 @@ fhndl.processError      = @processError;
             % get validation image
             [~,out.attempt{kCal}.validateImage] = iView.getAccuracyImage();
             % show validation result and ask to continue
-            [out.attempt{kCal}.valResultAccept,out.attempt{kCal}.calSelection] = showValidationResult(wpnt,out.attempt,kCal,scrInfo,textSetup,iView);
+            [out.attempt{kCal}.valResultAccept,out.attempt{kCal}.calSelection] = showValidationResult(wpnt,out.attempt,kCal,scrInfo,settings,textSetup,iView);
             switch out.attempt{kCal}.valResultAccept
                 case 1
                     % all good, we're done
@@ -238,7 +244,7 @@ fhndl.processError      = @processError;
                     % go to setup
                     startScreen = max(1,startScreen);
                     continue;
-                case -3
+                case -4
                     % full stop
                     error('run ended from SMI calibration routine')
                 otherwise
@@ -342,11 +348,13 @@ else
 end
 end
 
-function status = showHeadPositioning(wpnt,iView,scrInfo,settings,textSetup,startScreen,debugLevel)
+function status = showHeadPositioning(wpnt,out,iView,scrInfo,settings,textSetup,startScreen,debugLevel)
 % status output:
 %  1: continue (setup seems good) (space)
 %  2: skip calibration and continue with task (shift+s)
-% -2: Exit completely (control+escape)
+% -3: go to validation screen (v) -- only if there are already completed
+%     calibrations
+% -4: Exit completely (control+escape)
 % (NB: no -1 for this function)
 
 % init
@@ -356,21 +364,26 @@ while true
     if status==5
         % simple setup screen. has two circles for positioning, a button to
         % start calibration and a button to go to advanced view
-        status = showHeadPositioningSimple(wpnt,iView,scrInfo,settings,textSetup,debugLevel);
+        status = showHeadPositioningSimple(wpnt,out,iView,scrInfo,settings,textSetup,debugLevel);
     elseif status==10
         % advanced interface, has head box and eye image
-        status = showHeadPositioningAdvanced(wpnt,iView,scrInfo,settings,textSetup,debugLevel);
+        status = showHeadPositioningAdvanced(wpnt,out,iView,scrInfo,settings,textSetup,debugLevel);
     else
         break;
     end
 end
 end
 
-function status = showHeadPositioningSimple(wpnt,iView,scrInfo,settings,textSetup,debugLevel)
+function status = showHeadPositioningSimple(wpnt,out,iView,scrInfo,settings,textSetup,debugLevel)
 % if user it at reference viewing distance and at center of head box
 % vertically and horizontally, two circles will overlap
-% TODO don't hardcode viewing distance
-refViewDist = 65;
+
+% see if we already have valid calibrations
+qHaveValidCalibrations = false;
+if isfield(out,'attempt')
+    iValid = getValidCalibrations(cal);
+    qHaveValidCalibrations = ~isempty(iValid);
+end
 
 % setup text
 Screen('TextFont',  wpnt, textSetup.font);
@@ -386,23 +399,28 @@ headClr = [255 255 0];
 distGain= 1.5;
 
 % setup buttons
-buttonSz    = [300 45];
+buttonSz    = {[250 45] [300 45] [400 45]};
 buttonOff   = 80;
 yposBase    = round(scrInfo.rect(2)*.95);
 % place buttons for back to simple interface, or calibrate
-baseRect                = OffsetRect([0 0 buttonSz],scrInfo.center(1),yposBase-buttonSz(2)); % left is now at screen center, bottom at right height
-advancedButRect         = OffsetRect(baseRect,-buttonOff/2-buttonSz(1),0);
-advancedButTextCache    = getButtonTextCache(wpnt,'advanced (<i>a<i>)'       ,advancedButRect,textSetup);
-continueButRect         = OffsetRect(baseRect, buttonOff/2            ,0);
-continueButTextCache    = getButtonTextCache(wpnt,'continue (<i>spacebar<i>)',continueButRect,textSetup);
+advancedButRect         = OffsetRect([0 0 buttonSz{1}],scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz(2));
+advancedButTextCache    = getButtonTextCache(wpnt,'advanced (<i>a<i>)'        ,advancedButRect,textSetup);
+calibButRect            = OffsetRect([0 0 buttonSz{2}],scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz(2));
+calibButTextCache       = getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',calibButRect,textSetup);
+if qHaveValidCalibrations
+    validateButRect         = OffsetRect([0 0 buttonSz{3}],scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz(2));
+    validateButTextCache    = getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect,textSetup);
+else
+    validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
+end
 Screen('FillRect', wpnt, scrInfo.bgclr); % clear what we've just drawn
 
 % setup fixation points in the corners of the screen
 fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(scrInfo.rect(1:2),4,1);
 
 % setup cursors
-cursors.rect    = {advancedButRect.' continueButRect.'};
-cursors.cursor  = [2 2 2 2 2];  % Hand
+cursors.rect    = {advancedButRect.' calibButRect.' validateButRect.'};
+cursors.cursor  = [2 2 2];  % Hand
 cursors.other   = 0;            % Arrow
 if debugLevel<2  % for cleanup
     cursors.reset = -1; % hide cursor (else will reset to cursor.other by default, so we're good with that default
@@ -430,7 +448,7 @@ while true
     if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
         pos  = [pTrackingStatus.total.relativePositionX -pTrackingStatus.total.relativePositionY];  %-Y as +1 is upper and -1 is lower edge. needs to be reflected for screen drawing
         % determine size of oval, based on distance from reference distance
-        fac  = avgDist/refViewDist;
+        fac  = avgDist/settings.setup.viewingDist;
         headSz = refSz - refSz*(fac-1)*distGain;
         % move 
         headPos = pos.*scrInfo.rect./2+scrInfo.center;
@@ -446,10 +464,14 @@ while true
         drawCircle(wpnt,headClr,headPos,headSz,5);
     end
     % draw buttons
-    Screen('FillRect',wpnt,[11 122 244],advancedButRect);
+    Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
     DrawMonospacedText(advancedButTextCache);
-    Screen('FillRect',wpnt,[ 0 120   0],continueButRect);
-    DrawMonospacedText(continueButTextCache);
+    Screen('FillRect',wpnt,[  0 120   0],calibButRect);
+    DrawMonospacedText(calibButTextCache);
+    if qHaveValidCalibrations
+        Screen('FillRect',wpnt,[150 150   0],validateButRect);
+        DrawMonospacedText(validateButTextCache);
+    end
     % draw fixation points
     drawfixpoint(wpnt,fixPos,[settings.cal.fixBackSize settings.cal.fixFrontSize],{settings.cal.fixBackColor settings.cal.fixFrontColor});
     
@@ -466,7 +488,7 @@ while true
     if any(buttons)
         % don't care which button for now. determine if clicked on either
         % of the buttons
-        qIn = inRect([mx my],[advancedButRect.' continueButRect.']);
+        qIn = inRect([mx my],[advancedButRect.' calibButRect.']);
         if any(qIn)
             if qIn(1)
                 status = 10;
@@ -484,8 +506,11 @@ while true
         elseif any(strcmpi(keys,'space'))
             status = 1;
             break;
-        elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+        elseif any(strcmpi(keys,'v')) && qHaveValidCalibrations
             status = -3;
+            break;
+        elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+            status = -4;
             break;
         elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
             % skip calibration
@@ -500,8 +525,14 @@ HideCursor;
 end
 
 
-function status = showHeadPositioningAdvanced(wpnt,iView,scrInfo,settings,textSetup,debugLevel)
-% TODO: hardcoded ref view dist etc in draw part of this code
+function status = showHeadPositioningAdvanced(wpnt,out,iView,scrInfo,settings,textSetup,debugLevel)
+% see if we already have valid calibrations
+qHaveValidCalibrations = false;
+if isfield(out,'attempt')
+    iValid = getValidCalibrations(cal);
+    qHaveValidCalibrations = ~isempty(iValid);
+end
+
 % setup text
 Screen('TextFont',  wpnt, textSetup.font);
 Screen('TextSize',  wpnt, textSetup.size);
@@ -511,16 +542,14 @@ REDmBox = [31 21]; % at 60 cm, doesn't matter as we need aspect ratio
 boxSize = round(500.*REDmBox./REDmBox(1));
 [boxCenter(1),boxCenter(2)] = RectCenter([0 0 boxSize]);
 % setup eye image
-margin      = 80;
+margin  = 80;
 ret = 0;
 while ret~=1
     [ret,eyeImage] = iView.getEyeImage();
 end
-if ret==1
-    eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
-end
+eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
 % setup buttons
-buttonSz    = [300 45];
+buttonSz    = {[250 45] [300 45] [400 45]};
 buttonOff   = 80;
 yposBase    = round(scrInfo.rect(2)*.95);
 eoButSz     = [174 buttonSz(2)];
@@ -534,11 +563,16 @@ offsetH         = (scrInfo.rect(1)-boxSize(1))/2;
 boxRect         = OffsetRect([0 0 boxSize],offsetH,offsetV);
 eyeImageRect    = OffsetRect(eyeImageRect,scrInfo.center(1)-eyeImageRect(3)/2,offsetV+margin+RectHeight(boxRect));
 % place buttons for back to simple interface, or calibrate
-baseRect            = OffsetRect([0 0 buttonSz],scrInfo.center(1),yposBase-buttonSz(2)); % left is now at screen center, bottom at right height
-basicButRect        = OffsetRect(baseRect,-buttonOff/2-buttonSz(1),0);
-basicButTextCache   = getButtonTextCache(wpnt,'basic (<i>b<i>)'          ,   basicButRect,textSetup);
-continueButRect     = OffsetRect(baseRect, buttonOff/2            ,0);
-continueButTextCache= getButtonTextCache(wpnt,'continue (<i>spacebar<i>)',continueButRect,textSetup);
+basicButRect        = OffsetRect([0 0 buttonSz{1}],scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz(2));
+basicButTextCache   = getButtonTextCache(wpnt,'basic (<i>b<i>)'          , basicButRect,textSetup);
+calibButRect        = OffsetRect([0 0 buttonSz{2}],scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz(2));
+calibButTextCache   = getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',calibButRect,textSetup);
+if qHaveValidCalibrations
+    validateButRect         = OffsetRect([0 0 buttonSz{3}],scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz(2));
+    validateButTextCache    = getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect,textSetup);
+else
+    validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
+end
 % place buttons for overlays in the eye image, draw text once to get cache
 contourButRect      = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2));
 contourButTextCache = getButtonTextCache(wpnt,'contour (<i>c<i>)',contourButRect,textSetup);
@@ -551,6 +585,9 @@ Screen('FillRect', wpnt, scrInfo.bgclr); % clear what we've just drawn
 % setup fixation points in the corners of the screen
 fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(scrInfo.rect(1:2),4,1);
 
+% settings for eyes in headbox
+gain = 1.5;     % 1.5 is a gain to make differences larger
+sz   = 15;      % base size at reference distance
 % setup arrows + their positions
 aSize = 26;
 arrow = [
@@ -587,8 +624,8 @@ yThresh = [0 .8];
 zThresh = [0 .8];
 
 % setup cursors
-cursors.rect    = {basicButRect.' continueButRect.' contourButRect.' pupilButRect.' glintButRect.'};
-cursors.cursor  = [2 2 2 2 2];  % Hand
+cursors.rect    = {basicButRect.' calibButRect.' validateButRect.' contourButRect.' pupilButRect.' glintButRect.'};
+cursors.cursor  = [2 2 2 2 2 2];  % Hand
 cursors.other   = 0;            % Arrow
 if debugLevel<2  % for cleanup
     cursors.reset = -1; % hide cursor (else will reset to cursor.other by default, so we're good with that default
@@ -674,11 +711,9 @@ while true
         posR = [pTrackingStatus.rightEye.relativePositionX -pTrackingStatus.rightEye.relativePositionY]/2+.5;
         % determine size of eye. based on distance to standard distance of
         % 60cm, calculate size change
-        fac  = 60/avgDist;
-        facL = 60/distL;
-        facR = 60/distR;
-        gain = 1.5;  % 1.5 is a gain to make differences larger
-        sz   = 15;
+        fac  = settings.setup.viewingDist/avgDist;
+        facL = settings.setup.viewingDist/distL;
+        facR = settings.setup.viewingDist/distR;
         % left eye
         style = Screen('TextStyle',  wpnt, 1);
         drawEye(wpnt,pTrackingStatus.leftEye .validity,posL,posR, relPos*fac,[255 120 120],[220 186 186],round(sz*facL*gain),'L',boxRect);
@@ -707,10 +742,14 @@ while true
         Screen('DrawTexture', wpnt, tex,[],eyeImageRect);
     end
     % draw buttons
-    Screen('FillRect',wpnt,[11 122 244],basicButRect);
+    Screen('FillRect',wpnt,[37  97 163],basicButRect);
     DrawMonospacedText(basicButTextCache);
-    Screen('FillRect',wpnt,[ 0 120   0],continueButRect);
-    DrawMonospacedText(continueButTextCache);
+    Screen('FillRect',wpnt,[ 0 120   0],calibButRect);
+    DrawMonospacedText(calibButTextCache);
+    if qHaveValidCalibrations
+        Screen('FillRect',wpnt,[150 150   0],validateButRect);
+        DrawMonospacedText(validateButTextCache);
+    end
     Screen('FillRect',wpnt,eyeButClrs{overlays(1)+1},contourButRect);
     DrawMonospacedText(contourButTextCache);
     Screen('FillRect',wpnt,eyeButClrs{overlays(2)+1},pupilButRect);
@@ -731,7 +770,7 @@ while true
     if any(buttons)
         % don't care which button for now. determine if clicked on either
         % of the buttons
-        qIn = inRect([mx my],[basicButRect.' continueButRect.' contourButRect.' pupilButRect.' glintButRect.']);
+        qIn = inRect([mx my],[basicButRect.' calibButRect.' contourButRect.' pupilButRect.' glintButRect.']);
         if any(qIn)
             if qIn(1)
                 status = 5;
@@ -739,14 +778,17 @@ while true
             elseif qIn(2)
                 status = 1;
                 break;
+            elseif qIn(3)
+                status = -3;
+                break;
             elseif ~eyeClickDown
-                if qIn(3)
+                if qIn(4)
                     overlays(1) = ~overlays(1);
                     iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
-                elseif qIn(4)
+                elseif qIn(5)
                     overlays(2) = ~overlays(2);
                     iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
-                elseif qIn(5)
+                elseif qIn(6)
                     overlays(3) = ~overlays(3);
                     iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
                 end
@@ -761,8 +803,11 @@ while true
         elseif any(strcmpi(keys,'space'))
             status = 1;
             break;
-        elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+        elseif any(strcmpi(keys,'v')) &&qHaveValidCalibrations
             status = -3;
+            break;
+        elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+            status = -4;
             break;
         elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
             % skip calibration
@@ -891,7 +936,7 @@ function [status,out] = DoCalPointDisplay(wpnt,iView,calSetup,ETSendMessageFun)
 %  2: skip calibration and continue with task (shift+s)
 % -1: restart calibration (escape key)
 % -2: abort calibration and go back to setup
-% -3: Exit completely (control+escape)
+% -4: Exit completely (control+escape)
 
 % clear screen, anchor timing, get ready for displaying calibration points
 out.flips = Screen('Flip',wpnt);
@@ -934,7 +979,7 @@ while true
         elseif any(strcmpi(keys,'escape'))
             iView.abortCalibration();
             if any(strcmpi(keys,'shift'))
-                status = -3;
+                status = -4;
             else
                 status = -1;
             end
@@ -949,13 +994,13 @@ while true
 end
 end
 
-function [status,selection] = showValidationResult(wpnt,cal,kCal,scrInfo,textSetup,iView)
+function [status,selection] = showValidationResult(wpnt,cal,kCal,scrInfo,settings,textSetup,iView)
 % status output:
 %  1: calibration/validation accepted, continue (a)
 %  2: just continue with task (shift+s)
 % -1: restart calibration (escape key)
 % -2: go back to setup (s)
-% -3: Exit completely (control+escape)
+% -4: Exit completely (control+escape)
 %
 % additional buttons
 % c: chose other calibration (if have more than one valid)
@@ -963,8 +1008,15 @@ function [status,selection] = showValidationResult(wpnt,cal,kCal,scrInfo,textSet
 
 % find how many valid calibrations we have:
 selection = kCal;
-iValid = find(cellfun(@(x) isfield(x,'calStatusSMI')&&strcmp(x.calStatusSMI,'calibrationValid'),cal));
+iValid = getValidCalibrations(cal);
+if ~ismember(selection,iValid)
+    % this happens if setup cancelled to go directly to this validation
+    % viewer
+    selection = iValid(end);
+end
 qHaveMultipleValidCals = ~isscalar(iValid);
+% detect if average eyes
+qAveragedEyes = cal{iValid(selection)}.validateAccuracy.deviationLX==cal{iValid(selection)}.validateAccuracy.deviationRX && cal{iValid(selection)}.validateAccuracy.deviationLY== cal{iValid(selection)}.validateAccuracy.deviationRY;
 
 % setup buttons
 % 1. below screen
@@ -1010,10 +1062,17 @@ if qHaveMultipleValidCals
     menuRects = menuRects+bsxfun(@times,[height*([0:nElem-1]+.5)+[0:nElem-1]*pad-totHeight/2].',[0 1 0 1]);
     % text in each rect
     for c=1:length(iValid)
-        str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°), <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
+        if qAveragedEyes
+            str = sprintf('(%d): <color=0000ff>Average<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY);
+        else
+            str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°), <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
+        end
         [~,~,~,menuTextCache(c)] = DrawMonospacedText(wpnt,str,'center','center',0,[],[],[],OffsetRect(menuRects(c,:),0,textSetup.lineCentOff));
     end
 end
+
+% setup fixation points in the corners of the screen
+fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(scrInfo.rect(1:2),4,1);
         
 qDoneCalibSelection = false;
 qSelectMenuOpen     = false;
@@ -1048,7 +1107,11 @@ while ~qDoneCalibSelection
         Screen('TextSize',  wpnt, textSetup.size);
         Screen('TextStyle', wpnt, textSetup.style);
         % draw text with validation accuracy info
-        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: % 2.2f°  % 2.2f°\n  <color=00ff00>Right<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+        if qAveragedEyes
+            valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n<color=0000ff>Average<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
+        else
+            valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: % 2.2f°  % 2.2f°\n  <color=00ff00>Right<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+        end
         DrawMonospacedText(wpnt,valText,'center',100,255,[],textSetup.vSpacing);
         % draw buttons
         Screen('FillRect',wpnt,[0 120 0],acceptButRect);
@@ -1079,9 +1142,15 @@ while ~qDoneCalibSelection
             [ret,pSample] = iView.getSample(pSampleS);
             if ret==1
                 % draw
-                Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
-                Screen('gluDisk', wpnt,[0 255 0], pSample.rightEye.gazeX, pSample.rightEye.gazeX, 10);
+                if qAveragedEyes
+                    Screen('gluDisk', wpnt,[0 0 255], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
+                else
+                    Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
+                    Screen('gluDisk', wpnt,[0 255 0], pSample.rightEye.gazeX, pSample.rightEye.gazeX, 10);
+                end
             end
+            % draw fixation points
+            drawfixpoint(wpnt,fixPos,[settings.cal.fixBackSize settings.cal.fixFrontSize],{settings.cal.fixBackColor settings.cal.fixFrontColor});
         end
         % drawing done, show
         Screen('Flip',wpnt);
@@ -1191,4 +1260,8 @@ iView.loadCalibration(num2str(which));
 % this way..... I have verified that loading works on the REDm.
 % [~,validateAccuracy] = iView.getAccuracy([], 0);
 % assert(isequal(validateAccuracy,out.attempt{selection}.validateAccuracy),'failed to load selected calibration');
+end
+
+function iValid = getValidCalibrations(cal)
+iValid = find(cellfun(@(x) isfield(x,'calStatusSMI')&&strcmp(x.calStatusSMI,'calibrationValid'),cal));
 end
