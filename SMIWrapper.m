@@ -108,7 +108,7 @@ classdef SMIWrapper < handle
             ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
             assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
             % switch off averaging filter so we get separate data for each eye
-            ret = obj.iView.configureFilter('Average', 'Set', 0);
+            ret = obj.iView.configureFilter('Average', 'Set', 1);
             assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
         end
         
@@ -396,15 +396,19 @@ classdef SMIWrapper < handle
             
             % setup buttons
             buttonSz    = {[220 45] [320 45] [400 45]};
+            buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
             buttonOff   = 80;
             yposBase    = round(obj.scrInfo.rect(2)*.95);
             % place buttons for back to simple interface, or calibrate
-            advancedButRect         = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz{1}(2));
+            buttonWidths= cellfun(@(x) x(1),buttonSz);
+            totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
+            buttonRectsX= cumsum([0 buttonWidths]+[0 ones(1,length(buttonWidths))]*buttonOff)-totWidth/2;
+            advancedButRect         = OffsetRect([buttonRectsX(1) 0 buttonRectsX(2)-buttonOff buttonSz{1}(2)],obj.scrInfo.center(1),yposBase-buttonSz{1}(2));
             advancedButTextCache    = obj.getButtonTextCache(wpnt,'advanced (<i>a<i>)'        ,advancedButRect);
-            calibButRect            = OffsetRect([0 0 buttonSz{2}],obj.scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz{2}(2));
+            calibButRect            = OffsetRect([buttonRectsX(2) 0 buttonRectsX(3)-buttonOff buttonSz{2}(2)],obj.scrInfo.center(1),yposBase-buttonSz{2}(2));
             calibButTextCache       = obj.getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',   calibButRect);
             if qHaveValidCalibrations
-                validateButRect         = OffsetRect([0 0 buttonSz{3}],obj.scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz{3}(2));
+                validateButRect         = OffsetRect([buttonRectsX(3) 0 buttonRectsX(4)-buttonOff buttonSz{3}(2)],obj.scrInfo.center(1),yposBase-buttonSz{3}(2));
                 validateButTextCache    = obj.getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect);
             else
                 validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
@@ -426,7 +430,7 @@ classdef SMIWrapper < handle
             % get tracking status and visualize
             pTrackingStatusS= SMIStructEnum.TrackingStatus;
             pSampleS        = SMIStructEnum.Sample;
-            
+            qFirst          = true;
             while true
                 % get tracking status info
                 [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
@@ -477,20 +481,35 @@ classdef SMIWrapper < handle
                 
                 
                 % check for keypresses or button clicks
-                [mx,my,buttons] = GetMouse;
-                [~,~,keyCode] = KbCheck;
+                [keyPressed,~,keyCode]  = KbCheck();
+                [mx,my,buttons]         = GetMouse();
                 % update cursor look if needed
                 cursor.update(mx,my);
+                if qFirst
+                    % make sure we don't immediately click a button
+                    % just because we come from another screen where
+                    % there is a button at the same location and mouse
+                    % is still down (or keyboard action with same
+                    % accelerator for that matter)
+                    while keyPressed || any(buttons)
+                        [keyPressed]    = KbCheck();
+                        [~,~,buttons]   = GetMouse();
+                    end
+                end
+                qFirst = false;
                 if any(buttons)
                     % don't care which button for now. determine if clicked on either
                     % of the buttons
-                    qIn = inRect([mx my],[advancedButRect.' calibButRect.']);
+                    qIn = inRect([mx my],[advancedButRect.' calibButRect.' validateButRect.']);
                     if any(qIn)
                         if qIn(1)
                             status = 10;
                             break;
                         elseif qIn(2)
                             status = 1;
+                            break;
+                        elseif qIn(3)
+                            status = -3;
                             break;
                         end
                     end
@@ -546,6 +565,7 @@ classdef SMIWrapper < handle
             eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
             % setup buttons
             buttonSz    = {[200 45] [320 45] [400 45]};
+            buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
             buttonOff   = 80;
             yposBase    = round(obj.scrInfo.rect(2)*.95);
             eoButSz     = [174 buttonSz{1}(2)];
@@ -559,16 +579,20 @@ classdef SMIWrapper < handle
             boxRect         = OffsetRect([0 0 boxSize],offsetH,offsetV);
             eyeImageRect    = OffsetRect(eyeImageRect,obj.scrInfo.center(1)-eyeImageRect(3)/2,offsetV+margin+RectHeight(boxRect));
             % place buttons for back to simple interface, or calibrate
-            basicButRect        = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz{1}(2));
+            buttonWidths= cellfun(@(x) x(1),buttonSz);
+            totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
+            buttonRectsX= cumsum([0 buttonWidths]+[0 ones(1,length(buttonWidths))]*buttonOff)-totWidth/2;
+            basicButRect        = OffsetRect([buttonRectsX(1) 0 buttonRectsX(2)-buttonOff buttonSz{1}(2)],obj.scrInfo.center(1),yposBase-buttonSz{1}(2));
             basicButTextCache   = obj.getButtonTextCache(wpnt,'basic (<i>b<i>)'          , basicButRect);
-            calibButRect        = OffsetRect([0 0 buttonSz{2}],obj.scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz{2}(2));
+            calibButRect        = OffsetRect([buttonRectsX(2) 0 buttonRectsX(3)-buttonOff buttonSz{2}(2)],obj.scrInfo.center(1),yposBase-buttonSz{2}(2));
             calibButTextCache   = obj.getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',calibButRect);
             if qHaveValidCalibrations
-                validateButRect         = OffsetRect([0 0 buttonSz{3}],obj.scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz{3}(2));
+                validateButRect         = OffsetRect([buttonRectsX(3) 0 buttonRectsX(4)-buttonOff buttonSz{3}(2)],obj.scrInfo.center(1),yposBase-buttonSz{3}(2));
                 validateButTextCache    = obj.getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect);
             else
                 validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
             end
+            
             % place buttons for overlays in the eye image, draw text once to get cache
             contourButRect      = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2));
             contourButTextCache = obj.getButtonTextCache(wpnt,'contour (<i>c<i>)',contourButRect);
@@ -644,6 +668,7 @@ classdef SMIWrapper < handle
             obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0);
             overlays        = false(3);
             toggleKeys      = KbName({'c','g','p'});
+            qFirst          = true;
             while true
                 % get tracking status info
                 [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
@@ -759,14 +784,26 @@ classdef SMIWrapper < handle
                 Screen('Flip',wpnt);
                 
                 % check for keypresses or button clicks
-                [mx,my,buttons] = GetMouse;
-                [~,~,keyCode] = KbCheck;
+                [keyPressed,~,keyCode]  = KbCheck();
+                [mx,my,buttons]         = GetMouse();
                 % update cursor look if needed
                 cursor.update(mx,my);
+                if qFirst
+                    % make sure we don't immediately click a button
+                    % just because we come from another screen where
+                    % there is a button at the same location and mouse
+                    % is still down (or keyboard action with same
+                    % accelerator for that matter)
+                    while keyPressed || any(buttons)
+                        [keyPressed]    = KbCheck();
+                        [~,~,buttons]   = GetMouse();
+                    end
+                end
+                qFirst = false;
                 if any(buttons)
                     % don't care which button for now. determine if clicked on either
                     % of the buttons
-                    qIn = inRect([mx my],[basicButRect.' calibButRect.' contourButRect.' pupilButRect.' glintButRect.']);
+                    qIn = inRect([mx my],[basicButRect.' calibButRect.' validateButRect.' contourButRect.' pupilButRect.' glintButRect.']);
                     if any(qIn)
                         if qIn(1)
                             status = 5;
@@ -1035,7 +1072,7 @@ classdef SMIWrapper < handle
             % 2. atop screen
             topMargin           = 50;
             buttonSz            = {[200 45] [250 45]};
-            buttonOff           = 400;
+            buttonOff           = 550;
             showGazeButClrs     = {[37  97 163],[11 122 244]};
             setupButRect        = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),topMargin+buttonSz{1}(2));
             setupButTextCache   = obj.getButtonTextCache(wpnt,'setup (<i>s<i>)'    ,   setupButRect);
@@ -1058,7 +1095,7 @@ classdef SMIWrapper < handle
                 % text in each rect
                 for c=1:length(iValid)
                     if qAveragedEyes
-                        str = sprintf('(%d): <color=0000ff>Average<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY);
+                        str = sprintf('(%d): <color=ff0000>Average<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY);
                     else
                         str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°), <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
                     end
@@ -1073,7 +1110,11 @@ classdef SMIWrapper < handle
             qSelectMenuOpen     = false;
             qShowGaze           = false;
             tex                 = 0;
+            gazeKeyDown         = false;
+            gazeClickDown       = false;
             pSampleS            = SMIStructEnum.Sample;
+            toggleKeys          = KbName({'g'});
+            qFirst              = true;
             while ~qDoneCalibSelection
                 % draw validation screen image
                 if tex~=0
@@ -1138,7 +1179,7 @@ classdef SMIWrapper < handle
                         if ret==1
                             % draw
                             if qAveragedEyes
-                                Screen('gluDisk', wpnt,[0 0 255], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
+                                Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
                             else
                                 Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
                                 Screen('gluDisk', wpnt,[0 255 0], pSample.rightEye.gazeX, pSample.rightEye.gazeX, 10);
@@ -1152,8 +1193,21 @@ classdef SMIWrapper < handle
                     
                     % get user response
                     [keyPressed,~,keyCode]  = KbCheck();
-                    [mx,my,buttons]         = GetMouse;
+                    [mx,my,buttons]         = GetMouse();
+                    % update cursor look if needed
                     cursor.update(mx,my);
+                    if qFirst
+                        % make sure we don't immediately click a button
+                        % just because we come from another screen where
+                        % there is a button at the same location and mouse
+                        % is still down (or keyboard action with same
+                        % accelerator for that matter)
+                        while keyPressed || any(buttons)
+                            [keyPressed]    = KbCheck();
+                            [~,~,buttons]   = GetMouse();
+                        end
+                    end
+                    qFirst = false;
                     if any(buttons)
                         % don't care which button for now. determine if clicked on either
                         % of the buttons
@@ -1170,7 +1224,7 @@ classdef SMIWrapper < handle
                             end
                         end
                         if ~qSelectMenuOpen     % if pressed outside the menu, check if pressed any of these menu buttons
-                            qIn = inRect([mx my],[acceptButRect.' recalButRect.' selectButRect.']);
+                            qIn = inRect([mx my],[acceptButRect.' recalButRect.' selectButRect.' setupButRect.' showGazeButRect.']);
                             if any(qIn)
                                 if qIn(1)
                                     status = 1;
@@ -1183,8 +1237,9 @@ classdef SMIWrapper < handle
                                 elseif qIn(4)
                                     status = -2;
                                     qDoneCalibSelection = true;
-                                elseif qIn(5)
+                                elseif qIn(5) && ~gazeClickDown
                                     qShowGaze           = ~qShowGaze;
+                                    gazeClickDown       = true;
                                 end
                                 break;
                             end
@@ -1218,8 +1273,9 @@ classdef SMIWrapper < handle
                             elseif any(strcmpi(keys,'c')) && qHaveMultipleValidCals
                                 qSelectMenuOpen     = true;
                                 break;
-                            elseif any(strcmpi(keys,'g'))
+                            elseif any(strcmpi(keys,'g')) && ~gazeKeyDown
                                 qShowGaze           = ~qShowGaze;
+                                gazeKeyDown         = true;
                                 break;
                             end
                         end
@@ -1237,6 +1293,8 @@ classdef SMIWrapper < handle
                             break;
                         end
                     end
+                    gazeKeyDown   = gazeKeyDown && any(keyCode(toggleKeys));  % maintain button state so only one press counted until after key up
+                    gazeClickDown = gazeClickDown && any(buttons);            % maintain button state so only one press counted until after mouse up
                 end
             end
             % done, clean up
