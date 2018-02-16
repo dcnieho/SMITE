@@ -34,81 +34,12 @@ classdef iViewXAPI < handle
     end
     
     methods(Static) % this whole class is static, it has no state as it just forwards calls to the dll    
-        function f = iViewXAPIdinkum()
-            % still to implement...
-            f.abortCalibrationPoint                 = @iV_AbortCalibrationPoint;
-            f.changeCalibrationPoint                = @iV_ChangeCalibrationPoint;
-            f.clearAOI                              = @iV_ClearAOI;
-            f.continueEyetracking                   = @iV_ContinueEyetracking;
-            f.defineAOI                             = @iV_DefineAOI;
-            f.defineAOIPort                         = @iV_DefineAOIPort;
-            f.deleteREDGeometry                     = @iV_DeleteREDGeometry;
-            f.disableAOI                            = @iV_DisableAOI;
-            f.disableAOIGroup                       = @iV_DisableAOIGroup;
-            f.disableGazeDataFilter                 = @iV_DisableGazeDataFilter;
-            f.disableProcessorHighPerformanceMode   = @iV_DisableProcessorHighPerformanceMode;
-            f.enableAOI                             = @iV_EnableAOI;
-            f.enableAOIGroup                        = @iV_EnableAOIGroup;
-            f.enableGazeDataFilter                  = @iV_EnableGazeDataFilter;
-            f.enableProcessorHighPerformanceMode    = @iV_EnableProcessorHighPerformanceMode;
-            f.getAOIOutputValue                     = @iV_GetAOIOutputValue;
-            f.getAvailableLptPorts                  = @iV_GetAvailableLptPorts;
-            f.getCalibrationParameter               = @iV_GetCalibrationParameter;
-            f.getCalibrationQuality                 = @iV_GetCalibrationQuality;
-            f.getCalibrationQualityImage            = @iV_GetCalibrationQualityImage;
-            f.getCurrentTimestamp                   = @iV_GetCurrentTimestamp;
-            f.getDeviceName                         = @iV_GetDeviceName;
-            f.getEvent                              = @iV_GetEvent;
-            f.getEvent32                            = @iV_GetEvent32;
-            f.getFeatureKey                         = @iV_GetFeatureKey;
-            f.getGazeChannelQuality                 = @iV_GetGazeChannelQuality;
-            f.getGeometryProfiles                   = @iV_GetGeometryProfiles;
-            f.getLicenseDueDate                     = @iV_GetLicenseDueDate;
-            f.getRecordingState                     = @iV_GetRecordingState;
-            f.getREDGeometry                        = @iV_GetREDGeometry;
-            f.getSample32                           = @iV_GetSample32;
-            f.getSceneVideo                         = @iV_GetSceneVideo;
-            f.getSerialNumber                       = @iV_GetSerialNumber;
-            f.getSpeedModes                         = @iV_GetSpeedModes;
-            f.getTrackingMode                       = @iV_GetTrackingMode;
-            f.getUseCalibrationKeys                 = @iV_GetUseCalibrationKeys;
-            f.hideAccuracyMonitor                   = @iV_HideAccuracyMonitor;
-            f.hideEyeImageMonitor                   = @iV_HideEyeImageMonitor;
-            f.hideSceneVideoMonitor                 = @iV_HideSceneVideoMonitor;
-            f.hideTrackingMonitor                   = @iV_HideTrackingMonitor;
-            f.log                                   = @iV_Log;
-            f.pauseEyetracking                      = @iV_PauseEyetracking;
-            f.quit                                  = @iV_Quit;
-            f.recalibrateOnePoint                   = @iV_RecalibrateOnePoint;
-            f.releaseAOIPort                        = @iV_ReleaseAOIPort;
-            f.removeAOI                             = @iV_RemoveAOI;
-            f.resetCalibrationPoints                = @iV_ResetCalibrationPoints;
-            f.sendCommand                           = @iV_SendCommand;
-            f.setEventDetectionParameter            = @iV_SetEventDetectionParameter;
-            f.setLicense                            = @iV_SetLicense;
-            f.setREDGeometry                        = @iV_SetREDGeometry;
-            f.setResolution                         = @iV_SetResolution;
-            f.setSpeedMode                          = @iV_SetSpeedMode;
-            f.setTrackingMode                       = @iV_SetTrackingMode;
-            f.setupLptRecording                     = @iV_SetupLptRecording;
-            f.showAccuracyMonitor                   = @iV_ShowAccuracyMonitor;
-            f.showEyeImageMonitor                   = @iV_ShowEyeImageMonitor;
-            f.showSceneVideoMonitor                 = @iV_ShowSceneVideoMonitor;
-            f.showTrackingMonitor                   = @iV_ShowTrackingMonitor;
-            f.testTTL                               = @iV_TestTTL;
-            f.setupMonitorAttachedGeometry          = @iV_SetupMonitorAttachedGeometry;
-            f.setupStandAloneMode                   = @iV_SetupStandAloneMode;
-            f.setupREDMonitorAttachedGeometry       = @iV_SetupREDMonitorAttachedGeometry;
-            f.setupREDStandAloneMode                = @iV_SetupREDStandAloneMode;
-            f.getMonitorAttachedGeometry            = @iV_GetMonitorAttachedGeometry;
-            f.setGeometryProfile                    = @iV_SetGeometryProfile;
-            f.deleteMonitorAttachedGeometry         = @iV_DeleteMonitorAttachedGeometry;
-            f.deleteStandAloneGeometry              = @iV_DeleteStandAloneGeometry;
-            
-        end
-        
         function ret = abortCalibration()
             ret = calllib('iViewXAPI', 'iV_AbortCalibration');
+        end
+        
+        function ret = abortCalibrationPoint()
+            ret = calllib('iViewXAPI', 'iV_AbortCalibrationPoint');
         end
         
         function ret = acceptCalibrationPoint()
@@ -119,11 +50,21 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_Calibrate');
         end
         
+        function ret = changeCalibrationPoint(number, positionX , positionY)
+            ret = calllib('iViewXAPI', 'iV_ChangeCalibrationPoint', number, positionX , positionY);
+        end
+        
+        function ret = clearAOI()
+            ret = calllib('iViewXAPI', 'iV_ClearAOI');
+        end
+        
         function ret = clearRecordingBuffer()
             ret = calllib('iViewXAPI', 'iV_ClearRecordingBuffer');
         end
         
         function ret = configureFilter(filter, action, data)
+            % filter: enum FilterType
+            % action: enum FilterAction
             ret = calllib('iViewXAPI', 'iV_ConfigureFilter', filter, action, data);
         end
         
@@ -135,12 +76,61 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_ConnectLocal');
         end
         
+        function ret = continueEyetracking()
+            ret = calllib('iViewXAPI', 'iV_ContinueEyetracking', etMessage);
+        end
+        
         function ret = continueRecording(etMessage)
             ret = calllib('iViewXAPI', 'iV_ContinueRecording', etMessage);
         end
         
+        function ret = defineAOI(aoiData)
+            % aoiData type: AOIStruct
+            ret = calllib('iViewXAPI', 'iV_DefineAOI', aoiData);
+        end
+        
+        function ret = defineAOIPort(port)
+            ret = calllib('iViewXAPI', 'iV_DefineAOIPort', port);
+        end
+        
+        function ret = deleteREDGeometry(setupName)
+            ret = calllib('iViewXAPI', 'iV_DeleteREDGeometry', setupName);
+        end
+        
+        function ret = disableAOI(aoiName)
+            ret = calllib('iViewXAPI', 'iV_DisableAOI', aoiName);
+        end
+        
+        function ret = disableAOIGroup(aoiGroup)
+            ret = calllib('iViewXAPI', 'iV_DisableAOIGroup', aoiGroup);
+        end
+        
+        function ret = disableGazeDataFilter()
+            ret = calllib('iViewXAPI', 'iV_DisableGazeDataFilter');
+        end
+        
+        function ret = disableProcessorHighPerformanceMode()
+            ret = calllib('iViewXAPI', 'iV_DisableProcessorHighPerformanceMode');
+        end
+        
         function ret = disconnect()
             ret = calllib('iViewXAPI', 'iV_Disconnect');
+        end
+        
+        function ret = enableAOI(aoiName)
+            ret = calllib('iViewXAPI', 'iV_EnableAOI', aoiName);
+        end
+        
+        function ret = enableAOIGroup(aoiGroup)
+            ret = calllib('iViewXAPI', 'iV_EnableAOIGroup', aoiGroup);
+        end
+        
+        function ret = enableGazeDataFilter()
+            ret = calllib('iViewXAPI', 'iV_EnableGazeDataFilter');
+        end
+        
+        function ret = enableProcessorHighPerformanceMode()
+            ret = calllib('iViewXAPI', 'iV_EnableProcessorHighPerformanceMode');
         end
         
         function [ret,accuracy] = getAccuracy(pAccuracyData, visualization)
@@ -159,6 +149,54 @@ classdef iViewXAPI < handle
             image = getImage(ret,pImageData,'BGR');
         end
         
+        function ret = getAOIOutputValue(aoiOutputValue)
+            ret = calllib('iViewXAPI', 'iV_GetAOIOutputValue', aoiOutputValue);
+        end
+        
+        function ret = getAvailableLptPorts()
+            ret = calllib('iViewXAPI', 'iV_GetAvailableLptPorts');
+        end
+        
+        function [ret,calibrationData] = getCalibrationParameter(pCalibrationData)
+            if nargin==0
+                pCalibrationData = SMIStructEnum.Calibration;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetCalibrationParameter', pCalibrationData);
+            calibrationData = struct(pCalibrationData);
+        end
+        
+        function ret = getCalibrationPoint(calibrationPointNumber, calibrationPoint)
+            ret = calllib('iViewXAPI', 'iV_GetCalibrationPoint', calibrationPointNumber, calibrationPoint);
+        end
+        
+        function [ret,calibrationPointQualityLeft,calibrationPointQualityRight] = getCalibrationQuality(calibrationPointNumber, pCalibrationPointQualityLeft, pCalibrationPointQualityRight)
+            if nargin<1
+                pCalibrationPointQualityLeft  = SMIStructEnum.CalibrationPointQuality;
+            end
+            if nargin<2
+                pCalibrationPointQualityRight = SMIStructEnum.CalibrationPointQuality;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetCalibrationQuality', calibrationPointNumber, pCalibrationPointQualityLeft, pCalibrationPointQualityRight);
+            calibrationPointQualityLeft  = struct(pCalibrationPointQualityLeft);
+            calibrationPointQualityRight = struct(pCalibrationPointQualityRight);
+        end
+        
+        function [ret,image] = getCalibrationQualityImage(pImageData)
+            if nargin==0
+                pImageData = SMIStructEnum.Image;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetCalibrationQualityImage', pImageData);
+            image = getImage(ret,pImageData,'BGR');
+        end
+        
+        function [ret,calStatus] = getCalibrationStatus(calibrationStatus)
+            if nargin==0
+                calibrationStatus = SMIStructEnum.CalibrationStatus;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetCalibrationStatus', calibrationStatus);
+            calStatus = calibrationStatus.Value;
+        end
+        
         function ret = getCurrentCalibrationPoint(calibrationPoint)
             ret = calllib('iViewXAPI', 'iV_GetCurrentCalibrationPoint', calibrationPoint);
         end
@@ -171,16 +209,28 @@ classdef iViewXAPI < handle
             geom = struct(redGeometry);
         end
         
-        function ret = getCalibrationPoint(calibrationPointNumber, calibrationPoint)
-            ret = calllib('iViewXAPI', 'iV_GetCalibrationPoint', calibrationPointNumber, calibrationPoint);
+        function ret = getCurrentTimestamp()
+            ret = calllib('iViewXAPI', 'iV_GetCurrentTimestamp');
         end
         
-        function [ret,calStatus] = getCalibrationStatus(calibrationStatus)
+        function ret = getDeviceName()
+            ret = calllib('iViewXAPI', 'iV_GetDeviceName');
+        end
+        
+        function [ret,eventDataSample] = getEvent(pEventDataSample)
             if nargin==0
-                calibrationStatus = SMIStructEnum.CalibrationStatus;
+                pEventDataSample = SMIStructEnum.Event;
             end
-            ret = calllib('iViewXAPI', 'iV_GetCalibrationStatus', calibrationStatus);
-            calStatus = calibrationStatus.Value;
+            ret = calllib('iViewXAPI', 'iV_GetEvent', pEventDataSample);
+            eventDataSample = struct(pEventDataSample);
+        end
+        
+        function [ret,eventDataSample] = getEvent32(pEventDataSample)
+            if nargin==0
+                pEventDataSample = SMIStructEnum.Event32;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetEvent32', pEventDataSample);
+            eventDataSample = struct(pEventDataSample);
         end
         
         function [ret,image] = getEyeImage(pImageData)
@@ -191,6 +241,46 @@ classdef iViewXAPI < handle
             image = getImage(ret,pImageData,'mono');
         end
         
+        function ret = getFeatureKey()
+            ret = calllib('iViewXAPI', 'iV_GetFeatureKey');
+        end
+        
+        function [ret,qualityData] = getGazeChannelQuality(pQualityData)
+            if nargin==0
+                pQualityData = SMIStructEnum.GazeChannelQuality;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetGazeChannelQuality', pQualityData);
+            qualityData = struct(pQualityData);
+        end
+        
+        function ret = getGeometryProfiles()
+            ret = calllib('iViewXAPI', 'iV_GetGeometryProfiles');
+        end
+        
+        function [ret,licenseDueDate] = getLicenseDueDate(pLicenseDueDate)
+            if nargin==0
+                pLicenseDueDate = SMIStructEnum.GazeChannelQuality;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetLicenseDueDate', pLicenseDueDate);
+            licenseDueDate = struct(pLicenseDueDate);
+        end
+        
+        function [ret,recordingState] = getRecordingState(pRecordingState)
+            if nargin==0
+                pRecordingState = SMIStructEnum.RecordingState;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetRecordingState', pRecordingState);
+            recordingState = struct(pRecordingState);
+        end
+        
+        function [ret,redGeometry] = getREDGeometry(profileName,pRedGeometry)
+            if nargin<2
+                pRedGeometry = SMIStructEnum.REDGeometryStruct;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetREDGeometry', profileName, pRedGeometry);
+            redGeometry = struct(pRedGeometry);
+        end
+        
         function [ret,sample] = getSample(pSampleData)
             if nargin==0
                 pSampleData = SMIStructEnum.Sample;
@@ -199,12 +289,48 @@ classdef iViewXAPI < handle
             sample = struct(pSampleData);
         end
         
+        function [ret,sample] = getSample32(pSampleData)
+            if nargin==0
+                pSampleData = SMIStructEnum.Sample32;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetSample32', pSampleData);
+            sample = struct(pSampleData);
+        end
+        
+        function [ret,image] = getSceneVideo(pImageData)
+            if nargin==0
+                pImageData = SMIStructEnum.Image;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetSceneVideo', pImageData);
+            image = getImage(ret,pImageData,'RGB');
+        end
+        
+        function ret = getSerialNumber()
+            ret = calllib('iViewXAPI', 'iV_GetSerialNumber');
+        end
+        
+        function [ret,speedModes] = getSpeedModes(pSpeedModes)
+            if nargin==0
+                pSpeedModes = SMIStructEnum.SpeedMode;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetSpeedModes', pSpeedModes);
+            speedModes = struct(pSpeedModes);
+        end
+        
         function [ret,sysInfo] = getSystemInfo(pSystemInfoData)
             if nargin==0
                 pSystemInfoData = SMIStructEnum.SystemInfo;
             end
             ret = calllib('iViewXAPI', 'iV_GetSystemInfo', pSystemInfoData);
             sysInfo = struct(pSystemInfoData);
+        end
+        
+        function [ret,mode] = getTrackingMode(trackingMode)
+            if nargin==0
+                trackingMode = SMIStructEnum.TrackingMode;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetTrackingMode', trackingMode);
+            mode = trackingMode.Value;
         end
         
         function [ret,image] = getTrackingMonitor(pImageData)
@@ -220,6 +346,26 @@ classdef iViewXAPI < handle
             tStatus = struct(pTrackingStatus);
         end
         
+        function ret = getUseCalibrationKeys()
+            ret = calllib('iViewXAPI', 'iV_GetUseCalibrationKeys');
+        end
+        
+        function ret = hideAccuracyMonitor()
+            ret = calllib('iViewXAPI', 'iV_HideAccuracyMonitor');
+        end
+        
+        function ret = hideEyeImageMonitor()
+            ret = calllib('iViewXAPI', 'iV_HideEyeImageMonitor');
+        end
+        
+        function ret = hideSceneVideoMonitor()
+            ret = calllib('iViewXAPI', 'iV_HideSceneVideoMonitor');
+        end
+        
+        function ret = hideTrackingMonitor()
+            ret = calllib('iViewXAPI', 'iV_HideTrackingMonitor');
+        end
+        
         function ret = isConnected()
             ret = calllib('iViewXAPI', 'iV_IsConnected');
         end
@@ -228,8 +374,36 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_LoadCalibration', name);
         end
         
+        function ret = log(logMessage)
+            ret = calllib('iViewXAPI', 'iV_Log', logMessage);
+        end
+        
+        function ret = pauseEyetracking()
+            ret = calllib('iViewXAPI', 'iV_PauseEyetracking');
+        end
+        
         function ret = pauseRecording()
             ret = calllib('iViewXAPI', 'iV_PauseRecording');
+        end
+        
+        function ret = quit()
+            ret = calllib('iViewXAPI', 'iV_Quit');
+        end
+        
+        function ret = recalibrateOnePoint(number)
+            ret = calllib('iViewXAPI', 'iV_RecalibrateOnePoint', number);
+        end
+        
+        function ret = releaseAOIPort()
+            ret = calllib('iViewXAPI', 'iV_ReleaseAOIPort');
+        end
+        
+        function ret = removeAOI(aoiName)
+            ret = calllib('iViewXAPI', 'iV_RemoveAOI', aoiName);
+        end
+        
+        function ret = resetCalibrationPoints()
+            ret = calllib('iViewXAPI', 'iV_ResetCalibrationPoints');
         end
         
         function ret = saveCalibration(name)
@@ -244,6 +418,10 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_SelectREDGeometry', profileName);
         end
         
+        function ret = sendCommand(etMessage)
+            ret = calllib('iViewXAPI', 'iV_SendCommand', etMessage);
+        end
+        
         function ret = sendImageMessage(etMessage)
             ret = calllib('iViewXAPI', 'iV_SendImageMessage', etMessage);
         end
@@ -252,8 +430,34 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_SetConnectionTimeout', time);
         end
         
+        function ret = setEventDetectionParameter(minDuration, maxDispersion)
+            ret = calllib('iViewXAPI', 'iV_SetEventDetectionParameter', minDuration, maxDispersion);
+        end
+        
+        function ret = setLicense(licenseKey)
+            ret = calllib('iViewXAPI', 'iV_SetLicense', licenseKey);
+        end
+        
         function ret = setLogger(logLevel,filename)
             ret = calllib('iViewXAPI', 'iV_SetLogger', logLevel, filename);
+        end
+        
+        function ret = setREDGeometry(redGeometry)
+            % redGeometry type: REDGeometryStruct
+            ret = calllib('iViewXAPI', 'iV_SetREDGeometry', redGeometry);
+        end
+        
+        function ret = setResolution(stimulusWidth, stimulusHeight)
+            ret = calllib('iViewXAPI', 'iV_SetResolution', stimulusWidth, stimulusHeight);
+        end
+        
+        function ret = setSpeedMode(speedMode)
+            ret = calllib('iViewXAPI', 'iV_SetSpeedMode', speedMode);
+        end
+        
+        function ret = setTrackingMode(mode)
+            % type mode: enum TrackingMode
+            ret = calllib('iViewXAPI', 'iV_SetTrackingMode', mode);
         end
         
         function ret = setTrackingParameter(ET_PARAM_EYE, ET_PARAM, value)
@@ -303,11 +507,32 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_SetupDebugMode', enableDebugMode);
         end
         
+        function ret = setupLptRecording(portName, enableRecording)
+            ret = calllib('iViewXAPI', 'iV_SetupLptRecording', portName, enableRecording);
+        end
+        
         function ret = setUseCalibrationKeys(enableKeys)
             ret = calllib('iViewXAPI', 'iV_SetUseCalibrationKeys', enableKeys);
         end
         
+        function ret = showAccuracyMonitor()
+            ret = calllib('iViewXAPI', 'iV_ShowAccuracyMonitor');
+        end
+        
+        function ret = showEyeImageMonitor()
+            ret = calllib('iViewXAPI', 'iV_ShowEyeImageMonitor');
+        end
+        
+        function ret = showSceneVideoMonitor()
+            ret = calllib('iViewXAPI', 'iV_ShowSceneVideoMonitor');
+        end
+        
+        function ret = showTrackingMonitor()
+            ret = calllib('iViewXAPI', 'iV_ShowTrackingMonitor');
+        end
+        
         function ret = start(etApplication)
+            % etApplication type: enum ETApplication
             ret = calllib('iViewXAPI', 'iV_Start', etApplication);
         end
         
@@ -319,8 +544,52 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_StopRecording');
         end
         
+        function ret = testTTL(value)
+            ret = calllib('iViewXAPI', 'iV_TestTTL', value);
+        end
+        
         function ret = validate()
             ret = calllib('iViewXAPI', 'iV_Validate');
+        end
+        
+        function ret = setupMonitorAttachedGeometry(monitorAttachedGeometry)
+            % monitorAttachedGeometry type: MonitorAttachedGeometryStruct
+            ret = calllib('iViewXAPI', 'iV_SetupMonitorAttachedGeometry', monitorAttachedGeometry);
+        end
+        
+        function ret = setupStandAloneMode(standAloneModeGeometry)
+            % standAloneModeGeometry type: StandAloneModeGeometryStruct
+            ret = calllib('iViewXAPI', 'iV_SetupStandAloneMode', standAloneModeGeometry);
+        end
+        
+        function ret = setupREDMonitorAttachedGeometry(attachedModeGeometry)
+            % attachedModeGeometry type: REDMonitorAttachedGeometryStruct
+            ret = calllib('iViewXAPI', 'iV_SetupREDMonitorAttachedGeometry', attachedModeGeometry);
+        end
+        
+        function ret = setupREDStandAloneMode(standAloneModeGeometry)
+            % standAloneModeGeometry type: REDStandAloneModeStruct
+            ret = calllib('iViewXAPI', 'iV_SetupREDStandAloneMode', standAloneModeGeometry);
+        end
+        
+        function [ret,monitorAttachedGeometry] = getMonitorAttachedGeometry(profileName, pMonitorAttachedGeometry)
+            if nargin==0
+                pMonitorAttachedGeometry = SMIStructEnum.TrackingStatus;
+            end
+            ret = calllib('iViewXAPI', 'iV_GetMonitorAttachedGeometry', profileName, pMonitorAttachedGeometry);
+            monitorAttachedGeometry = struct(pMonitorAttachedGeometry);
+        end
+        
+        function ret = setGeometryProfile(profileName)
+            ret = calllib('iViewXAPI', 'iV_SetGeometryProfile', profileName);
+        end
+        
+        function ret = deleteMonitorAttachedGeometry(setupName)
+            ret = calllib('iViewXAPI', 'iV_DeleteMonitorAttachedGeometry', setupName);
+        end
+        
+        function ret = deleteStandAloneGeometry(setupName)
+            ret = calllib('iViewXAPI', 'iV_DeleteStandAloneGeometry', setupName);
         end
     end
 end
@@ -362,6 +631,10 @@ switch type
     case 'RGB'
         % iV_GetSceneVideo
         %
-        % untested/implemented. HED not supported by us
+        % untested/implemented. HED not supported by us. But this should
+        % probably do the trick
+        image = permute(...
+            reshape(image,3,pImageData.imageWidth,pImageData.imageHeight),...
+            [3 2 1]);
 end
 end
