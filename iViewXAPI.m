@@ -156,7 +156,7 @@ classdef iViewXAPI < handle
                 pImageData = SMIStructEnum.Image;
             end
             ret = calllib('iViewXAPI', 'iV_GetAccuracyImage', pImageData);
-            image = obj.getImage(ret,pImageData,'BGR');
+            image = getImage(ret,pImageData,'BGR');
         end
         
         function ret = getCurrentCalibrationPoint(calibrationPoint)
@@ -188,7 +188,7 @@ classdef iViewXAPI < handle
                 pImageData = SMIStructEnum.Image;
             end
             ret = calllib('iViewXAPI', 'iV_GetEyeImage', pImageData);
-            image = obj.getImage(ret,pImageData,'mono');
+            image = getImage(ret,pImageData,'mono');
         end
         
         function [ret,sample] = getSample(pSampleData)
@@ -209,7 +209,7 @@ classdef iViewXAPI < handle
         
         function [ret,image] = getTrackingMonitor(pImageData)
             ret = calllib('iViewXAPI', 'iV_GetTrackingMonitor', pImageData);
-            image = obj.getImage(ret,pImageData,'BGR');
+            image = getImage(ret,pImageData,'BGR');
         end
         
         function [ret,tStatus] = getTrackingStatus(pTrackingStatus)
@@ -323,45 +323,45 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_Validate');
         end
     end
-    
-    methods (Access = private)
-        function image = getImage(ret,pImageData,type)
-            if ret~=1
-                image = [];
-                return;
-            end
-            % tell matlab how many elements there are to read
-            if isa(pImageData.imageBuffer,'lib.pointer')
-                pImageData.imageBuffer.setdatatype(pImageData.imageBuffer.DataType,1,pImageData.imageSize);
-            else
-                assert(numel(pImageData.imageBuffer)==pImageData.imageSize,'You can only reuse ImageStructs for images of same size')
-            end
-            
-            % get image data to manipulate. NB: do not write to pImageData.imageBuffer,
-            % or you'l leak the original buffer!
-            image = pImageData.imageBuffer;
-            
-            switch type
-                case 'mono'
-                    % iV_GetEyeImage
-                    %
-                    % grayscale, one row of pixels at a time. Transpose to conform with
-                    % matlab conventions.
-                    image = reshape(image,pImageData.imageWidth,pImageData.imageHeight).';
-                case 'BGR'
-                    % iV_GetTrackingMonitor, iV_GetAccuracyImage,
-                    % iV_GetCalibrationQualityImage
-                    %
-                    % BGR format, [B G R B G R ...] one row of pixels at a time. Turn
-                    % into three planes and then flip(...,3) to change BGR into RGB
-                    image = flip(permute(...
-                        reshape(image,3,pImageData.imageWidth,pImageData.imageHeight),...
-                        [3 2 1]),3);
-                case 'RGB'
-                    % iV_GetSceneVideo
-                    %
-                    % untested/implemented. HED not supported by us
-            end
-        end
-    end
+end
+
+
+% helpers
+function image = getImage(ret,pImageData,type)
+if ret~=1
+    image = [];
+    return;
+end
+% tell matlab how many elements there are to read
+if isa(pImageData.imageBuffer,'lib.pointer')
+    pImageData.imageBuffer.setdatatype(pImageData.imageBuffer.DataType,1,pImageData.imageSize);
+else
+    assert(numel(pImageData.imageBuffer)==pImageData.imageSize,'You can only reuse ImageStructs for images of same size')
+end
+
+% get image data to manipulate. NB: do not write to pImageData.imageBuffer,
+% or you'l leak the original buffer!
+image = pImageData.imageBuffer;
+
+switch type
+    case 'mono'
+        % iV_GetEyeImage
+        %
+        % grayscale, one row of pixels at a time. Transpose to conform with
+        % matlab conventions.
+        image = reshape(image,pImageData.imageWidth,pImageData.imageHeight).';
+    case 'BGR'
+        % iV_GetTrackingMonitor, iV_GetAccuracyImage,
+        % iV_GetCalibrationQualityImage
+        %
+        % BGR format, [B G R B G R ...] one row of pixels at a time. Turn
+        % into three planes and then flip(...,3) to change BGR into RGB
+        image = flip(permute(...
+            reshape(image,3,pImageData.imageWidth,pImageData.imageHeight),...
+            [3 2 1]),3);
+    case 'RGB'
+        % iV_GetSceneVideo
+        %
+        % untested/implemented. HED not supported by us
+end
 end

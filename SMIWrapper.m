@@ -27,8 +27,8 @@ classdef SMIWrapper < handle
             
             if isnumeric(scrInfo) % bgColor only
                 thecolor = scrInfo;
-                obj.scrInfo.rect    = Screen('Rect',0); scrInfo.rect(1:2) = [];
-                obj.scrInfo.center  = scrInfo.rect/2;
+                obj.scrInfo.rect    = Screen('Rect',0); obj.scrInfo.rect(1:2) = [];
+                obj.scrInfo.center  = obj.scrInfo.rect/2;
                 obj.scrInfo.bgclr   = thecolor;
             else
                 obj.scrInfo         = scrInfo;
@@ -64,14 +64,14 @@ classdef SMIWrapper < handle
             qStarting = ret==1;
             
             % connect
-            ret = connect();
+            ret = obj.connect();
             if qStarting && ret~=1
                 % in case eye tracker server is starting, give it some time
                 % before trying to connect, don't hammer it unnecessarily
                 obj.iView.setConnectionTimeout(1);   % "timeout for how long iV_Connect tries to connect to obj.iView eye tracking server." server startup is slow, give it a lot of time to try to connect.
                 count = 1;
                 while count < 30 && ret~=1
-                    ret = connect();
+                    ret = obj.connect();
                     count = count+1;
                 end
             end
@@ -169,7 +169,7 @@ classdef SMIWrapper < handle
                 kCal = kCal+1;
                 if startScreen>0
                     %%% 2a: show head positioning screen
-                    status = showHeadPositioning(wpnt,out,startScreen);
+                    status = obj.showHeadPositioning(wpnt,out,startScreen);
                     switch status
                         case 1
                             % all good, continue
@@ -295,7 +295,7 @@ classdef SMIWrapper < handle
             out = obj.iView.isConnected();
         end
         
-        function sendMessage(~,str)
+        function sendMessage(obj,str)
             % using
             % calllib('obj.iViewXAPI','iV_SendImageMessage','msg_string')
             % here to save overhead
@@ -344,12 +344,12 @@ classdef SMIWrapper < handle
             end
         end
         
-        function status = showHeadPositioning(wpnt,out,startScreen)
+        function status = showHeadPositioning(obj,wpnt,out,startScreen)
             % status output:
             %  1: continue (setup seems good) (space)
             %  2: skip calibration and continue with task (shift+s)
-            % -3: go to validation screen (v) -- only if there are already completed
-            %     calibrations
+            % -3: go to validation screen (p) -- only if there are already
+            %     completed calibrations
             % -4: Exit completely (control+escape)
             % (NB: no -1 for this function)
             
@@ -377,7 +377,7 @@ classdef SMIWrapper < handle
             % see if we already have valid calibrations
             qHaveValidCalibrations = false;
             if isfield(out,'attempt')
-                iValid = obj.getValidCalibrations(cal);
+                iValid = obj.getValidCalibrations(out.attempt);
                 qHaveValidCalibrations = ~isempty(iValid);
             end
             
@@ -395,16 +395,16 @@ classdef SMIWrapper < handle
             distGain= 1.5;
             
             % setup buttons
-            buttonSz    = {[250 45] [300 45] [400 45]};
+            buttonSz    = {[220 45] [320 45] [400 45]};
             buttonOff   = 80;
             yposBase    = round(obj.scrInfo.rect(2)*.95);
             % place buttons for back to simple interface, or calibrate
-            advancedButRect         = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz(2));
+            advancedButRect         = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz{1}(2));
             advancedButTextCache    = obj.getButtonTextCache(wpnt,'advanced (<i>a<i>)'        ,advancedButRect);
-            calibButRect            = OffsetRect([0 0 buttonSz{2}],obj.scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz(2));
+            calibButRect            = OffsetRect([0 0 buttonSz{2}],obj.scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz{2}(2));
             calibButTextCache       = obj.getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',   calibButRect);
             if qHaveValidCalibrations
-                validateButRect         = OffsetRect([0 0 buttonSz{3}],obj.scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz(2));
+                validateButRect         = OffsetRect([0 0 buttonSz{3}],obj.scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz{3}(2));
                 validateButTextCache    = obj.getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect);
             else
                 validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
@@ -502,7 +502,7 @@ classdef SMIWrapper < handle
                     elseif any(strcmpi(keys,'space'))
                         status = 1;
                         break;
-                    elseif any(strcmpi(keys,'v')) && qHaveValidCalibrations
+                    elseif any(strcmpi(keys,'p')) && qHaveValidCalibrations
                         status = -3;
                         break;
                     elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
@@ -525,7 +525,7 @@ classdef SMIWrapper < handle
             % see if we already have valid calibrations
             qHaveValidCalibrations = false;
             if isfield(out,'attempt')
-                iValid = obj.getValidCalibrations(cal);
+                iValid = obj.getValidCalibrations(out.attempt);
                 qHaveValidCalibrations = ~isempty(iValid);
             end
             
@@ -545,10 +545,10 @@ classdef SMIWrapper < handle
             end
             eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
             % setup buttons
-            buttonSz    = {[250 45] [300 45] [400 45]};
+            buttonSz    = {[200 45] [320 45] [400 45]};
             buttonOff   = 80;
             yposBase    = round(obj.scrInfo.rect(2)*.95);
-            eoButSz     = [174 buttonSz(2)];
+            eoButSz     = [174 buttonSz{1}(2)];
             eoButMargin = [15 20];
             eyeButClrs  = {[37  97 163],[11 122 244]};
             
@@ -559,12 +559,12 @@ classdef SMIWrapper < handle
             boxRect         = OffsetRect([0 0 boxSize],offsetH,offsetV);
             eyeImageRect    = OffsetRect(eyeImageRect,obj.scrInfo.center(1)-eyeImageRect(3)/2,offsetV+margin+RectHeight(boxRect));
             % place buttons for back to simple interface, or calibrate
-            basicButRect        = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz(2));
+            basicButRect        = OffsetRect([0 0 buttonSz{1}],obj.scrInfo.center(1)-buttonOff/2-buttonSz{1}(1),yposBase-buttonSz{1}(2));
             basicButTextCache   = obj.getButtonTextCache(wpnt,'basic (<i>b<i>)'          , basicButRect);
-            calibButRect        = OffsetRect([0 0 buttonSz{2}],obj.scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz(2));
+            calibButRect        = OffsetRect([0 0 buttonSz{2}],obj.scrInfo.center(1)+buttonOff/2               ,yposBase-buttonSz{2}(2));
             calibButTextCache   = obj.getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',calibButRect);
             if qHaveValidCalibrations
-                validateButRect         = OffsetRect([0 0 buttonSz{3}],obj.scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz(2));
+                validateButRect         = OffsetRect([0 0 buttonSz{3}],obj.scrInfo.center(1)+buttonOff*1.5+buttonSz{2}(1),yposBase-buttonSz{3}(2));
                 validateButTextCache    = obj.getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect);
             else
                 validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
@@ -712,9 +712,9 @@ classdef SMIWrapper < handle
                     facR = obj.settings.setup.viewingDist/distR;
                     % left eye
                     style = Screen('TextStyle',  wpnt, 1);
-                    drawEye(wpnt,pTrackingStatus.leftEye .validity,posL,posR, relPos*fac,[255 120 120],[220 186 186],round(sz*facL*gain),'L',boxRect);
+                    obj.drawEye(wpnt,pTrackingStatus.leftEye .validity,posL,posR, relPos*fac,[255 120 120],[220 186 186],round(sz*facL*gain),'L',boxRect);
                     % right eye
-                    drawEye(wpnt,pTrackingStatus.rightEye.validity,posR,posL,-relPos*fac,[120 255 120],[186 220 186],round(sz*facR*gain),'R',boxRect);
+                    obj.drawEye(wpnt,pTrackingStatus.rightEye.validity,posR,posL,-relPos*fac,[120 255 120],[186 220 186],round(sz*facR*gain),'R',boxRect);
                     Screen('TextStyle',  wpnt, style);
                     % update relative eye positions - used for drawing estimated
                     % position of missing eye. X and Y are relative position in
@@ -799,7 +799,7 @@ classdef SMIWrapper < handle
                     elseif any(strcmpi(keys,'space'))
                         status = 1;
                         break;
-                    elseif any(strcmpi(keys,'v')) &&qHaveValidCalibrations
+                    elseif any(strcmpi(keys,'p')) &&qHaveValidCalibrations
                         status = -3;
                         break;
                     elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
@@ -878,7 +878,7 @@ classdef SMIWrapper < handle
             end
         end
         
-        function drawfixpoint(~,wpnt,pos)
+        function drawfixpoint(obj,wpnt,pos)
             % draws Thaler et al. 2012's ABC fixation point
             sz = [obj.settings.cal.fixBackSize obj.settings.cal.fixFrontSize];
             
@@ -926,8 +926,8 @@ classdef SMIWrapper < handle
             %  1: finished succesfully (you should query SMI software whether they think
             %     calibration was succesful though)
             %  2: skip calibration and continue with task (shift+s)
-            % -1: restart calibration (escape key)
-            % -2: abort calibration and go back to setup
+            % -1: restart calibration (r)
+            % -2: abort calibration and go back to setup (escape key)
             % -4: Exit completely (control+escape)
             
             % clear screen, anchor timing, get ready for displaying calibration points
@@ -954,7 +954,7 @@ classdef SMIWrapper < handle
                     break;
                 end
                 pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
-                drawfixpoint(wpnt,pos,[obj.settings.cal.fixBackSize obj.settings.cal.fixFrontSize],{obj.settings.cal.fixBackColor obj.settings.cal.fixFrontColor})
+                obj.drawfixpoint(wpnt,pos);
                 
                 out.point(end+1) = pCalibrationPoint.number;
                 out.flips(end+1) = Screen('Flip',wpnt,nextFlipT);
@@ -968,12 +968,15 @@ classdef SMIWrapper < handle
                     keys = KbName(keyCode);
                     if any(strcmpi(keys,'space')) && pCalibrationPoint.number==1
                         obj.iView.acceptCalibrationPoint();
+                    elseif any(strcmpi(keys,'r'))
+                        status = -1;
+                        break;
                     elseif any(strcmpi(keys,'escape'))
                         obj.iView.abortCalibration();
                         if any(strcmpi(keys,'shift'))
                             status = -4;
                         else
-                            status = -1;
+                            status = -2;
                         end
                         break;
                     elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
@@ -1008,7 +1011,7 @@ classdef SMIWrapper < handle
             end
             qHaveMultipleValidCals = ~isscalar(iValid);
             % detect if average eyes
-            qAveragedEyes = cal{iValid(selection)}.validateAccuracy.deviationLX==cal{iValid(selection)}.validateAccuracy.deviationRX && cal{iValid(selection)}.validateAccuracy.deviationLY== cal{iValid(selection)}.validateAccuracy.deviationRY;
+            qAveragedEyes = cal{selection}.validateAccuracy.deviationLX==cal{selection}.validateAccuracy.deviationRX && cal{selection}.validateAccuracy.deviationLY==cal{selection}.validateAccuracy.deviationRY;
             
             % setup buttons
             % 1. below screen
@@ -1158,7 +1161,7 @@ classdef SMIWrapper < handle
                             iIn = find(inRect([mx my],[menuRects.' menuBackRect.']),1);   % press on button is also in rect of whole menu, so we get multiple returns here in this case. ignore all but first, which is the actual menu button pressed
                             if ~isempty(iIn) && iIn<=length(iValid)
                                 selection = iValid(iIn);
-                                loadOtherCal(obj.iView,selection);
+                                obj.loadOtherCal(selection);
                                 qSelectMenuOpen = false;
                                 break;
                             else
@@ -1195,7 +1198,7 @@ classdef SMIWrapper < handle
                             elseif ismember(keys(1),{'1','2','3','4','5','6','7','8','9'})  % key 1 is '1!', for instance
                                 idx = str2double(keys(1));
                                 selection = iValid(idx);
-                                obj.loadOtherCal(obj.iView,selection);
+                                obj.loadOtherCal(selection);
                                 qSelectMenuOpen = false;
                                 break;
                             end
@@ -1254,7 +1257,7 @@ classdef SMIWrapper < handle
             % assert(isequal(validateAccuracy,out.attempt{selection}.validateAccuracy),'failed to load selected calibration');
         end
         
-        function iValid = getValidCalibrations(~,4cal)
+        function iValid = getValidCalibrations(~,cal)
             iValid = find(cellfun(@(x) isfield(x,'calStatusSMI')&&strcmp(x.calStatusSMI,'calibrationValid'),cal));
         end
     end
