@@ -10,7 +10,7 @@ classdef SMIWrapper < handle
         
         % eye-tracker info
         systemInfo;
-        % etc
+        geom;
     end
     
     % computed properties (so not actual properties)
@@ -43,6 +43,10 @@ classdef SMIWrapper < handle
             % setup colors
             obj.settings.cal.fixBackColor = color2RGBA(obj.settings.cal.fixBackColor);
             obj.settings.cal.fixFrontColor= color2RGBA(obj.settings.cal.fixFrontColor);
+        end
+        
+        function out = get.raw(obj)
+            out = obj.iView;
         end
         
         function out = init(obj)
@@ -98,12 +102,14 @@ classdef SMIWrapper < handle
             ret = obj.iView.selectREDGeometry(obj.settings.geomProfile);
             assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
             % get info about the setup
-            [~,out.geom] = obj.iView.getCurrentREDGeometry();
+            [~,obj.geom] = obj.iView.getCurrentREDGeometry();
+            out.geom = obj.geom;
             % get info about the system
-            [~,out.systemInfo] = obj.iView.getSystemInfo();
+            [~,obj.systemInfo] = obj.iView.getSystemInfo();
+            out.systemInfo = obj.systemInfo;
             % check operating at requested tracking frequency (the command
             % to set frequency is only supported on the NG systems...)
-            assert(out.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,out.systemInfo.samplerate);
+            assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
             % setup track mode
             ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
             assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
