@@ -55,4 +55,6 @@ errMap = {
 'ERR_INITIALIZATION',400
 'ERR_FUNC_NOT_LOADED',401};
 
-err = getValByKey(errMap(:,[2 1]),code);
+qFound = [errMap{:,2}]==code;
+assert(sum(qFound)==1,'SMIErrCode2String: The error code "%d" is unknown',code)
+err = errMap{qFound,1};
