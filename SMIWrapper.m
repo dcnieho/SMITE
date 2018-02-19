@@ -3,6 +3,7 @@ classdef SMIWrapper < handle
         % state
         iView;
         debugLevel;
+        isInitialized   = false;
         
         % obj.settings and external info
         settings;
@@ -15,42 +16,73 @@ classdef SMIWrapper < handle
     
     % computed properties (so not actual properties)
     properties (Dependent, SetAccess = private)
-        raw;    % get naked obj.iViewXAPI instance
-        % things like sampling freq
+        raw;            % get naked obj.iViewXAPI instance
+        % things like sampling which machine, freq, settings? NB: i dont
+        % think i want to support changing settings once inited. how does
+        % eyelink toolbox do this again?
+    end
+    properties (Dependent)
+        options;    % subset of settings that can actually be changed. contents differ based on state of class (once inited, much less can be set)
     end
     
-    
     methods
-        function obj = SMIWrapper(settings,scrInfo,debugLevel)
+        function obj = SMIWrapper(settingsOrETName,scrInfo)
             % deal with inputs
-            obj.settings = settings;
-            
-            if isnumeric(scrInfo) % bgColor only
-                thecolor = scrInfo;
-                obj.scrInfo.rect    = Screen('Rect',0); obj.scrInfo.rect(1:2) = [];
-                obj.scrInfo.center  = obj.scrInfo.rect/2;
-                obj.scrInfo.bgclr   = thecolor;
+            if ischar(settingsOrETName)
+                % eye-tracker name provided, load defaults for this tracker
+                obj.options = obj.getDefaults(settingsOrETName);
             else
-                obj.scrInfo         = scrInfo;
+                obj.options = settingsOrETName;
             end
             
-            obj.debugLevel = debugLevel;
+            if nargin<2 || isempty(scrInfo)
+                obj.scrInfo.resolution  = Screen('Rect',0); obj.scrInfo.resolution(1:2) = [];
+                obj.scrInfo.center      = obj.scrInfo.resolution/2;
+            else
+                assert(isfield(scrInfo,'resolution') && isfield(scrInfo,'center'),'scrInfo should have a ''resolution'' and a ''center'' field')
+                obj.scrInfo             = scrInfo;
+            end
             
-            % some init
-            % Load in plugin, create structure with function wrappers
+            % Load in plugin (SMI dll)
             obj.iView = iViewXAPI();
-            
-            % setup colors
-            obj.settings.cal.fixBackColor = color2RGBA(obj.settings.cal.fixBackColor);
-            obj.settings.cal.fixFrontColor= color2RGBA(obj.settings.cal.fixFrontColor);
         end
         
         function out = get.raw(obj)
             out = obj.iView;
         end
         
+        function out = get.options(obj)
+            if ~obj.isInitialized
+                out = obj.settings;
+            else
+                % only the subset that can be changed "live"
+                out = obj.getAllowedOptions();
+            end
+        end
+        
+        function set.options(obj,settings)
+            if obj.isInitialized
+                % only a subset of settings is allowed. Hardcode here, and
+                % copy over if exist
+                allowed = obj.getAllowedOptions();
+                for p=1:size(allowed,1)
+                    if isfield(settings,allowed{1}) && isfield(settings.(allowed{1}),allowed{2})
+                        obj.settings.(allowed{1}).(allowed{2}) = settings.(allowed{1}).(allowed{2});
+                    end
+                end
+            else
+                % just copy it over. If user didn't remove fields from
+                % settings struct, we're good. If they did, they're an
+                % idiot.
+                obj.settings = settings;
+            end
+            % setup colors
+            obj.settings.cal.bgColor        = color2RGBA(obj.settings.cal.bgColor);
+            obj.settings.cal.fixBackColor   = color2RGBA(obj.settings.cal.fixBackColor);
+            obj.settings.cal.fixFrontColor  = color2RGBA(obj.settings.cal.fixFrontColor);
+        end
+        
         function out = init(obj)
-            
             % Create logger file
             if obj.debugLevel&&0    % forced switch off as 2 always crashes on the second invocation of setlog...
                 logLvl = 1+2+8+16;  % 4 shows many internal function calls as well. as long as the server is on, it is trying to track. so every x ms you have a record of the output of the function that calculates gaze position...
@@ -72,7 +104,7 @@ classdef SMIWrapper < handle
             if qStarting && ret~=1
                 % in case eye tracker server is starting, give it some time
                 % before trying to connect, don't hammer it unnecessarily
-                obj.iView.setConnectionTimeout(1);   % "timeout for how long iV_Connect tries to connect to obj.iView eye tracking server." server startup is slow, give it a lot of time to try to connect.
+                obj.iView.setConnectionTimeout(1);   % "timeout for how long iV_Connect tries to connect to obj.iView eye tracking server." Try short, try often, so we don't wait unnecessarily long
                 count = 1;
                 while count < 30 && ret~=1
                     ret = obj.connect();
@@ -105,8 +137,9 @@ classdef SMIWrapper < handle
             [~,obj.geom] = obj.iView.getCurrentREDGeometry();
             out.geom = obj.geom;
             % get info about the system
-            [~,obj.systemInfo] = obj.iView.getSystemInfo();
-            out.systemInfo = obj.systemInfo;
+            [~,obj.systemInfo]          = obj.iView.getSystemInfo();
+            [~,out.systemInfo.Serial]   = obj.iView.getSerialNumber();
+            out.systemInfo              = obj.systemInfo;
             % check operating at requested tracking frequency (the command
             % to set frequency is only supported on the NG systems...)
             assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
@@ -114,8 +147,17 @@ classdef SMIWrapper < handle
             ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
             assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
             % switch off averaging filter so we get separate data for each eye
-            ret = obj.iView.configureFilter('Average', 'Set', 1);
-            assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
+            if isfield(obj.settings,'doAverageEyes')
+                ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
+                assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
+            end
+            
+            % prevents CPU from entering power saving mode according to
+            % docs
+            obj.iView.enableProcessorHighPerformanceMode();
+            
+            % mark as inited
+            obj.isInitialized = true;
         end
         
         function out = calibrate(obj,wpnt,qClearBuffer)
@@ -129,10 +171,13 @@ classdef SMIWrapper < handle
             end
             
             %%% 1: set up calibration
+            % set background color
+            Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: fullscreen fillrect sets new clear color in PTB
+            % SMI calibration setup
             CalibrationData = SMIStructEnum.Calibration;
             CalibrationData.method               = obj.settings.cal.nPoint;
-            % Setup calibration look. Necessary in all cases so that validate
-            % image looks similar to calibration stimuli
+            % Setup calibration look. Necessary in all cases so that
+            % validate image looks similar to calibration stimuli
             CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
             CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
             CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
@@ -140,6 +185,9 @@ classdef SMIWrapper < handle
             ret = obj.iView.setupCalibration(CalibrationData);
             obj.processError(ret,'SMI: Error setting up calibration');
             
+            % reset calibration points in case someone else changed them
+            % previously
+            obj.iView.resetCalibrationPoints();
             % change calibration points if wanted
             if ~isempty(obj.settings.cal.pointPos)
                 error('Not implemented')
@@ -311,12 +359,36 @@ classdef SMIWrapper < handle
             obj.processError(ret,'SMI: Error sending message to data file');
         end
         
-        function saveData(obj,filename, description, user, overwrite)
+        function sample = getLatestSample(obj)
+            % returns empty when sample not gotten successfully
+            [ret,sample] = obj.iView.getSample();
+            if ret~=1
+                sample = [];
+            end
+        end
+        
+        function time = getTimeStamp(obj)
+            % returns empty when sample not gotten successfully
+            [ret,time] = obj.iView.getCurrentTimestamp();
+            if ret~=1
+                time = [];
+            end
+        end
+        
+        function saveData(obj,filename, user, description, overwrite)
+            % TODO:
+            % save_data wrapper: argument order (filename, user (optional,
+            % default to filename), optional description (just empty
+            % default)) no overwrite at all. document you have to check
+            % file existence and delete manually if you want that (bit hard
+            % to do when data file is on the other computer!!!). if exist,
+            % add underscore, increase number (steal from code). append
+            % .idf to filename IF not already there.
             ret = obj.iView.saveData([filename '.idf'], description, user, overwrite);
             obj.processError(ret,'SMI: Error saving data');
         end
         
-        function out = cleanUp(obj)
+        function out = deInit(obj,qQuit)
             obj.iView.disconnect();
             % also, read log, return contents as output and delete
             fid = fopen(obj.settings.logFileName, 'r');
@@ -327,6 +399,12 @@ classdef SMIWrapper < handle
             % handle from smi, would be my guess (note that calling iV_Quit did
             % not fix it).
             % delete(smiSetup.logFileName);
+            if nargin>1 && qQuit
+                obj.iView.quit();
+            end
+            
+            % mark as deinited
+            obj.isInitialized = false;
         end
         
         function processError(~,returnCode,errorString)
@@ -341,7 +419,126 @@ classdef SMIWrapper < handle
     
     
     % helpers
-    methods (Access = private)
+    methods (Static)
+        function settings = getDefaults(tracker)
+            settings.tracker    = tracker;
+            
+            % which app to iV_Start()
+            switch tracker
+                case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
+                    settings.etApp              = 'iViewX';
+                case 'REDm'
+                    settings.etApp              = 'iViewXOEM';
+                case {'RED250mobile','REDn'}
+                    settings.etApp              = 'iViewNG';
+                otherwise
+                    error('tracker "%s" not known/supported by this wrapper',tracker);
+            end
+            % connection info
+            switch tracker
+                case {'REDm','RED250mobile','REDn'}
+                    % likely one-computer setup, connectLocal() should
+                    % work, so default is:
+                    settings.connectInfo        = {};
+                case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
+                    % template IPs, default ports
+                    settings.connectInfo        = {'ipThis',4444,'ipET',5555};
+            end
+            % default tracking settings per eye-tracker
+            % settings:
+            % - trackEye:               'EYE_LEFT', 'EYE_RIGHT', or
+            %                           'EYE_BOTH'
+            % - trackMode:              'MONOCULAR', 'BINOCULAR',
+            %                           'SMARTBINOCULAR', or
+            %                           'SMARTTRACKING'
+            % - doAverageEyes           true/false. TODO: check if only for
+            %                           REDm and newer?
+            % - freq:                   eye-tracker dependant. Only for NG
+            %                           trackers can it actually be set 
+            % - cal.nPoint:             0, 1, 2, 5, 9 or 13 calibration
+            %                           points are possible
+            % - cal.useSmartCalibration With Smart Calibration enabled when
+            %                           accepting a calibration point, the
+            %                           calibration process waits for
+            %                           required fixations for two seconds.
+            %                           If any fixation is found unreliable
+            %                           (e.g. when the user was not really
+            %                           fixating that point), the fixation
+            %                           data will be dropped and the
+            %                           calibration point will not be used
+            %                           to calculate gaze correction
+            %                           parameters. Only supported on NG
+            %                           eye-trackers.
+            switch tracker
+                case 'HiSpeed1250'
+                case 'HiSpeed240'
+                case 'RED250'
+                case 'RED500'
+                case 'REDm'
+                    settings.trackEye               = 'EYE_BOTH';
+                    settings.trackMode              = 'SMARTBINOCULAR';
+                    settings.freq                   = 120;
+                    settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = true;
+                case 'RED250mobile'
+                    settings.cal.useSmartCalibration= false;
+                case 'REDn'
+                    settings.cal.useSmartCalibration= false;
+            end
+            
+            % some settings only for remotes
+            if ismember(tracker,{'REDm','RED250mobile','REDn'})
+                settings.setup.viewingDist      = 65;
+                settings.geomProfile            = 'Desktop 22in Monitor';    % TODO: check it is indeed only for remotes
+            end
+            
+            % the rest here are good defaults for the REDm (mostly), some
+            % are general. Many are hard to set,
+            settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
+            settings.cal.pointPos       = [];                               % if empty, default positions are used
+            settings.cal.bgColor        = 127;
+            settings.cal.fixBackSize    = 20;
+            settings.cal.fixFrontSize   = 5;
+            settings.cal.fixBackColor   = 0;
+            settings.cal.fixFrontColor  = 255;
+            settings.logFileName        = 'iView_log.txt';
+            settings.text.font          = 'Consolas';
+            settings.text.size          = 20;
+            settings.text.style         = 0;                                % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
+            settings.text.wrapAt        = 62;
+            settings.text.vSpacing      = 1;
+            settings.text.lineCentOff   = 3;                                % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
+            settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
+            settings.debugMode          = false;                            % for use with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
+            settings.logLevel           = 1;                                % TODO: implement
+        end
+    end
+    
+    methods (Access = private, Hidden)
+        function allowed = getAllowedOptions(obj)
+            allowed = {...
+                'cal','nPoint'
+                'cal','useSmartCalibration'
+                'cal','bgColor'
+                'cal','fixBackSize'
+                'cal','fixFrontSize'
+                'cal','fixBackColor'
+                'cal','fixFrontColor'
+                'text','font'
+                'text','size'
+                'text','style'
+                'text','wrapAt'
+                'text','vSpacing'
+                'text','lineCentOff'
+                'string','simplePositionInstruction'
+                };
+            for p=size(allowed,1):-1:1
+                if ~isfield(obj.settings,allowed{1}) || ~isfield(obj.settings.(allowed{1}),allowed{2})
+                    allowed(p,:) = [];
+                end
+            end
+                        
+        end
         function ret_con = connect(obj)
             if isempty(obj.settings.connectInfo)
                 ret_con = obj.iView.connectLocal();
@@ -394,7 +591,7 @@ classdef SMIWrapper < handle
             
             % setup ovals
             ovalVSz = .15;
-            refSz   = ovalVSz*obj.scrInfo.rect(2);
+            refSz   = ovalVSz*obj.scrInfo.resolution(2);
             refClr  = [0 0 255];
             headClr = [255 255 0];
             % setup head position visualization
@@ -404,7 +601,7 @@ classdef SMIWrapper < handle
             buttonSz    = {[220 45] [320 45] [400 45]};
             buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
             buttonOff   = 80;
-            yposBase    = round(obj.scrInfo.rect(2)*.95);
+            yposBase    = round(obj.scrInfo.resolution(2)*.95);
             % place buttons for back to simple interface, or calibrate
             buttonWidths= cellfun(@(x) x(1),buttonSz);
             totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
@@ -419,10 +616,10 @@ classdef SMIWrapper < handle
             else
                 validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
             end
-            Screen('FillRect', wpnt, obj.scrInfo.bgclr); % clear what we've just drawn
+            Screen('FillRect', wpnt, obj.settings.cal.bgColor); % clear what we've just drawn
             
             % setup fixation points in the corners of the screen
-            fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.rect(1:2),4,1);
+            fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.resolution(1:2),4,1);
             
             % setup cursors
             cursors.rect    = {advancedButRect.' calibButRect.' validateButRect.'};
@@ -457,13 +654,13 @@ classdef SMIWrapper < handle
                     fac     = avgDist/obj.settings.setup.viewingDist;
                     headSz  = refSz - refSz*(fac-1)*distGain;
                     % move
-                    headPos = pos.*obj.scrInfo.rect./2+obj.scrInfo.center;
+                    headPos = pos.*obj.scrInfo.resolution./2+obj.scrInfo.center;
                 else
                     headPos = [];
                 end
                 
                 % draw distance info
-                DrawFormattedText(wpnt,sprintf('Position yourself such that the two circles overlap.\nDistance: %.0f cm',avgDist),'center',fixPos(1,2)-.03*obj.scrInfo.rect(2),255,[],[],[],1.5);
+                DrawFormattedText(wpnt,sprintf(obj.settings.string.simplePositionInstruction,avgDist),'center',fixPos(1,2)-.03*obj.scrInfo.resolution(2),255,[],[],[],1.5);
                 % draw ovals
                 obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
                 if ~isempty(headPos)
@@ -573,15 +770,15 @@ classdef SMIWrapper < handle
             buttonSz    = {[200 45] [320 45] [400 45]};
             buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
             buttonOff   = 80;
-            yposBase    = round(obj.scrInfo.rect(2)*.95);
+            yposBase    = round(obj.scrInfo.resolution(2)*.95);
             eoButSz     = [174 buttonSz{1}(2)];
             eoButMargin = [15 20];
             eyeButClrs  = {[37  97 163],[11 122 244]};
             
             % position eye image, head box and buttons
             % center headbox and eye image on screen
-            offsetV         = (obj.scrInfo.rect(2)-boxSize(2)-margin-RectHeight(eyeImageRect))/2;
-            offsetH         = (obj.scrInfo.rect(1)-boxSize(1))/2;
+            offsetV         = (obj.scrInfo.resolution(2)-boxSize(2)-margin-RectHeight(eyeImageRect))/2;
+            offsetH         = (obj.scrInfo.resolution(1)-boxSize(1))/2;
             boxRect         = OffsetRect([0 0 boxSize],offsetH,offsetV);
             eyeImageRect    = OffsetRect(eyeImageRect,obj.scrInfo.center(1)-eyeImageRect(3)/2,offsetV+margin+RectHeight(boxRect));
             % place buttons for back to simple interface, or calibrate
@@ -606,10 +803,10 @@ classdef SMIWrapper < handle
             pupilButTextCache   = obj.getButtonTextCache(wpnt,'pupil (<i>p<i>)'  ,  pupilButRect);
             glintButRect        = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*3-eoButMargin(2)*2);
             glintButTextCache   = obj.getButtonTextCache(wpnt,'glint (<i>g<i>)'  ,  glintButRect);
-            Screen('FillRect', wpnt, obj.scrInfo.bgclr); % clear what we've just drawn
+            Screen('FillRect', wpnt, obj.settings.cal.bgColor); % clear what we've just drawn
             
             % setup fixation points in the corners of the screen
-            fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.rect(1:2),4,1);
+            fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.resolution(1:2),4,1);
             
             % obj.settings for eyes in headbox
             gain = 1.5;     % 1.5 is a gain to make differences larger
@@ -1058,7 +1255,7 @@ classdef SMIWrapper < handle
             
             % setup buttons
             % 1. below screen
-            yposBase    = round(obj.scrInfo.rect(2)*.95);
+            yposBase    = round(obj.scrInfo.resolution(2)*.95);
             buttonSz    = {[200 45] [300 45] [350 45]};
             buttonSz    = buttonSz(1:2+qHaveMultipleValidCals);  % third button only when more than one calibration available
             buttonOff   = 80;
@@ -1110,7 +1307,7 @@ classdef SMIWrapper < handle
             end
             
             % setup fixation points in the corners of the screen
-            fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.rect(1:2),4,1);
+            fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.resolution(1:2),4,1);
             
             qDoneCalibSelection = false;
             qSelectMenuOpen     = false;
