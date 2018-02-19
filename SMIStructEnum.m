@@ -129,13 +129,13 @@ if ismember(type,{'SystemInfoStruct','SpeedModeStruct','CalibrationPointStruct',
             % so that user has to only change values he does not want to be
             % default
             init.method = 5;                    % select calibration method (default: 5) A bit mask is used to specify a new calibration workflow. If the highest bit is 1, The "Smart Calibration" workflow should be activated on iView eye tracking server.
-            init.visualization = 1;             % draw calibration/validation by API (default: 1)
+            init.visualization = 1;             % draw calibration/validation by API (default: 1), or yourself (0)
             init.displayDevice = 0;
             init.speed = 0;                     % set calibration/validation speed [0: slow (default), 1: fast]
             init.autoAccept = 1;                % set calibration/validation point acceptance [2: full-automatic, 1: semi-automatic (default), 0: manual]
             init.foregroundBrightness = 20;
             init.backgroundBrightness = 239;
-            init.targetShape = 1;
+            init.targetShape = 1;               % set calibration/validation target shape [IMAGE = 0, CIRCLE1 = 1, CIRCLE2 = 2 (default), CROSS = 3]
             init.targetSize = 15;               % diameter
             % init.targetFilename = zeros(1,256,'uint8');   % default init is fine
         otherwise
