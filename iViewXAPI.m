@@ -209,8 +209,10 @@ classdef iViewXAPI < handle
             geom = struct(redGeometry);
         end
         
-        function ret = getCurrentTimestamp()
-            ret = calllib('iViewXAPI', 'iV_GetCurrentTimestamp');
+        function [ret,time] = getCurrentTimestamp()
+            pTime   = libpointer('int64Ptr',int64(0));
+            ret     = calllib('iViewXAPI', 'iV_GetCurrentTimestamp', pTime);
+            time    = pTime.Value;
         end
         
         function ret = getDeviceName()
