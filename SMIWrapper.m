@@ -1282,16 +1282,16 @@ classdef SMIWrapper < handle
             % setup buttons
             % 1. below screen
             yposBase    = round(obj.scrInfo.resolution(2)*.95);
-            buttonSz    = {[200 45] [300 45] [350 45]};
+            buttonSz    = {[300 45] [300 45] [350 45]};
             buttonSz    = buttonSz(1:2+qHaveMultipleValidCals);  % third button only when more than one calibration available
             buttonOff   = 80;
             buttonWidths= cellfun(@(x) x(1),buttonSz);
             totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
             buttonRectsX= cumsum([0 buttonWidths]+[0 ones(1,length(buttonWidths))]*buttonOff)-totWidth/2;
-            acceptButRect       = OffsetRect([buttonRectsX(1) 0 buttonRectsX(2)-buttonOff buttonSz{1}(2)],obj.scrInfo.center(1),yposBase-buttonSz{1}(2));
-            acceptButTextCache  = obj.getButtonTextCache(wpnt,'accept (<i>a<i>)'       ,acceptButRect);
-            recalButRect        = OffsetRect([buttonRectsX(2) 0 buttonRectsX(3)-buttonOff buttonSz{2}(2)],obj.scrInfo.center(1),yposBase-buttonSz{2}(2));
-            recalButTextCache   = obj.getButtonTextCache(wpnt,'recalibrate (<i>esc<i>)', recalButRect);
+            recalButRect        = OffsetRect([buttonRectsX(1) 0 buttonRectsX(2)-buttonOff buttonSz{1}(2)],obj.scrInfo.center(1),yposBase-buttonSz{2}(2));
+            recalButTextCache   = obj.getButtonTextCache(wpnt,'recalibrate (<i>esc<i>)'  ,    recalButRect);
+            continueButRect     = OffsetRect([buttonRectsX(2) 0 buttonRectsX(3)-buttonOff buttonSz{2}(2)],obj.scrInfo.center(1),yposBase-buttonSz{1}(2));
+            continueButTextCache= obj.getButtonTextCache(wpnt,'continue (<i>spacebar<i>)', continueButRect);
             if qHaveMultipleValidCals
                 selectButRect       = OffsetRect([buttonRectsX(3) 0 buttonRectsX(4)-buttonOff buttonSz{3}(2)],obj.scrInfo.center(1),yposBase-buttonSz{3}(2));
                 selectButTextCache  = obj.getButtonTextCache(wpnt,'select other cal (<i>c<i>)', selectButRect);
@@ -1353,10 +1353,10 @@ classdef SMIWrapper < handle
                 
                 % setup cursors
                 if qSelectMenuOpen
-                    cursors.rect    = {menuRects.',acceptButRect.',recalButRect.'};
+                    cursors.rect    = {menuRects.',continueButRect.',recalButRect.'};
                     cursors.cursor  = 2*ones(1,size(menuRects,1)+2);    % 2: Hand
                 else
-                    cursors.rect    = {acceptButRect.',recalButRect.',selectButRect.',setupButRect.',showGazeButRect.'};
+                    cursors.rect    = {continueButRect.',recalButRect.',selectButRect.',setupButRect.',showGazeButRect.'};
                     cursors.cursor  = [2 2 2 2 2];  % 2: Hand
                 end
                 cursors.other   = 0;    % 0: Arrow
@@ -1379,10 +1379,10 @@ classdef SMIWrapper < handle
                     end
                     DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
                     % draw buttons
-                    Screen('FillRect',wpnt,[0 120 0],acceptButRect);
-                    DrawMonospacedText(acceptButTextCache);
                     Screen('FillRect',wpnt,[150 0 0],recalButRect);
                     DrawMonospacedText(recalButTextCache);
+                    Screen('FillRect',wpnt,[0 120 0],continueButRect);
+                    DrawMonospacedText(continueButTextCache);
                     if qHaveMultipleValidCals
                         Screen('FillRect',wpnt,[150 150 0],selectButRect);
                         DrawMonospacedText(selectButTextCache);
@@ -1453,7 +1453,7 @@ classdef SMIWrapper < handle
                             end
                         end
                         if ~qSelectMenuOpen     % if pressed outside the menu, check if pressed any of these menu buttons
-                            qIn = inRect([mx my],[acceptButRect.' recalButRect.' selectButRect.' setupButRect.' showGazeButRect.']);
+                            qIn = inRect([mx my],[continueButRect.' recalButRect.' selectButRect.' setupButRect.' showGazeButRect.']);
                             if any(qIn)
                                 if qIn(1)
                                     status = 1;
@@ -1487,7 +1487,7 @@ classdef SMIWrapper < handle
                                 break;
                             end
                         else
-                            if any(strcmpi(keys,'a'))
+                            if any(strcmpi(keys,'space'))
                                 status = 1;
                                 qDoneCalibSelection = true;
                                 break;
@@ -1539,7 +1539,7 @@ classdef SMIWrapper < handle
             obj.iView.loadCalibration(num2str(which));
             % check correct one is loaded -- well, apparently below function returns
             % last calibration's accuracy, not loaded calibration. So we can't check
-            % this way..... I have verified that loading works on the REDm.
+            % this way..... I have verified that loading works on the RED-m.
             % [~,validateAccuracy] = obj.iView.getAccuracy([], 0);
             % assert(isequal(validateAccuracy,out.attempt{selection}.validateAccuracy),'failed to load selected calibration');
         end
