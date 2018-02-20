@@ -323,7 +323,7 @@ classdef SMIWrapper < handle
             % by default do not clear recording buffer. For SMI, by the time
             % user calls startRecording, we already have data recorded during
             % calibration and validation in the buffer
-            if nargin<1
+            if nargin<2
                 qClearBuffer = false;
             end
             obj.iView.stopRecording();      % make sure we're not already recording when we startRecording(), or we get an error. Ignore error return code here
@@ -341,6 +341,9 @@ classdef SMIWrapper < handle
         end
         
         function continueRecording(obj,message)
+            if nargin<2
+                message = 'SMIWrapper: continueRecording called';
+            end
             ret = obj.iView.continueRecording(message);
             obj.processError(ret,'SMI: Error continuing recording');
         end
@@ -457,7 +460,7 @@ classdef SMIWrapper < handle
             switch tracker
                 case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
                     settings.etApp              = 'iViewX';
-                case 'REDm'
+                case 'RED-m'
                     settings.etApp              = 'iViewXOEM';
                 case {'RED250mobile','REDn'}
                     settings.etApp              = 'iViewNG';
@@ -466,7 +469,7 @@ classdef SMIWrapper < handle
             end
             % connection info
             switch tracker
-                case {'REDm','RED250mobile','REDn'}
+                case {'RED-m','RED250mobile','REDn'}
                     % likely one-computer setup, connectLocal() should
                     % work, so default is:
                     settings.connectInfo        = {};
@@ -482,29 +485,17 @@ classdef SMIWrapper < handle
             %                           'SMARTBINOCULAR', or
             %                           'SMARTTRACKING'
             % - doAverageEyes           true/false. TODO: check if only for
-            %                           REDm and newer?
+            %                           RED-m and newer?
             % - freq:                   eye-tracker dependant. Only for NG
             %                           trackers can it actually be set 
             % - cal.nPoint:             0, 1, 2, 5, 9 or 13 calibration
             %                           points are possible
-            % - cal.useSmartCalibration With Smart Calibration enabled when
-            %                           accepting a calibration point, the
-            %                           calibration process waits for
-            %                           required fixations for two seconds.
-            %                           If any fixation is found unreliable
-            %                           (e.g. when the user was not really
-            %                           fixating that point), the fixation
-            %                           data will be dropped and the
-            %                           calibration point will not be used
-            %                           to calculate gaze correction
-            %                           parameters. Only supported on NG
-            %                           eye-trackers.
             switch tracker
                 case 'HiSpeed1250'
                 case 'HiSpeed240'
                 case 'RED250'
                 case 'RED500'
-                case 'REDm'
+                case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
                     settings.freq                   = 120;
@@ -516,13 +507,13 @@ classdef SMIWrapper < handle
             end
             
             % some settings only for remotes
-            if ismember(tracker,{'REDm','RED250mobile','REDn'})
+            if ismember(tracker,{'RED-m','RED250mobile','REDn'})
                 settings.setup.viewingDist      = 65;
                 settings.geomProfile            = 'Desktop 22in Monitor';    % TODO: check it is indeed only for remotes
             end
             
-            % the rest here are good defaults for the REDm (mostly), some
-            % are general. Many are hard to set,
+            % the rest here are good defaults for the RED-m (mostly), some
+            % are general. Many are hard to set...
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.pointPos       = [];                               % if empty, default positions are used
             settings.cal.bgColor        = 127;
