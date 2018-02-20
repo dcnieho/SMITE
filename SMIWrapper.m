@@ -438,13 +438,6 @@ classdef SMIWrapper < handle
             % mark as deinited
             obj.isInitialized = false;
         end
-        
-        function processError(~,returnCode,errorString)
-            % for SMI, anything that is not 1 is an error
-            if returnCode~=1
-                error('%s (error %d: %s)',errorString,returnCode,SMIErrCode2String(returnCode));
-            end
-        end
     end
     
     
@@ -543,6 +536,13 @@ classdef SMIWrapper < handle
             settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
             settings.debugMode          = false;                            % for use with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
             settings.logLevel           = 1;                                % TODO: implement
+        end
+        
+        function processError(returnCode,errorString)
+            % for SMI, anything that is not 1 is an error
+            if returnCode~=1
+                error('%s (error %d: %s)',errorString,returnCode,SMIErrCode2String(returnCode));
+            end
         end
     end
     
