@@ -375,16 +375,48 @@ classdef SMIWrapper < handle
             end
         end
         
-        function saveData(obj,filename, user, description, overwrite)
-            % TODO:
-            % save_data wrapper: argument order (filename, user (optional,
-            % default to filename), optional description (just empty
-            % default)) no overwrite at all. document you have to check
-            % file existence and delete manually if you want that (bit hard
-            % to do when data file is on the other computer!!!). if exist,
-            % add underscore, increase number (steal from code). append
-            % .idf to filename IF not already there.
-            ret = obj.iView.saveData([filename '.idf'], description, user, overwrite);
+        function saveData(obj,filename, user, description, doAppendVersion)
+            % 1. remove .idf from filename if already there. iV_SaveData
+            % adds that
+            [path,file,ext] = fileparts(filename);
+            assert(~isempty(path),'saveData: filename should contain a path')
+            if ~strcmpi(ext,'idf') && ~isempty(ext)
+                file = [file '.' ext];
+            end
+            % add versioning info to file name, if wanted and if already
+            % exists
+            if nargin>=5 && doAppendVersion
+                % see what files we have in data folder with the same name
+                f = FileFromFolder(path,'ssilent','idf');
+                f = regexp({f.fname},['^' regexptranslate('escape',file) '(_\d+)?'],'tokens');
+                % see if any. if so, see what number to append
+                f = [f{:}];
+                if ~isempty(f)
+                    % files with this subject name exist
+                    f=sort(cellfun(@(x) sscanf(x,'_%d'),[f{:}])); f(isnan(f)) = [];
+                    if isempty(f)
+                        file = [file '_1'];
+                    else
+                        file = [file '_' num2str(max(f)+1)];
+                    end
+                end
+            end
+            % set defaults
+            if nargin<3 || isempty(user)
+                user = file;
+            end
+            if nargin<4 || isempty(description)
+                description = '';
+            end
+            
+            % construct full filename
+            filename = fullfile(path,file);
+            
+            % TODO: deal with two computer setup. Would probably want to
+            % save without path info and allowing overwrite on remote
+            % machine, then transfer, then store on this machine with path
+            % info.
+            ret = obj.iView.saveData([filename '.idf'], description, user, 0);
             obj.processError(ret,'SMI: Error saving data');
         end
         
