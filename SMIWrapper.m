@@ -10,6 +10,7 @@ classdef SMIWrapper < handle
         scrInfo;
         
         % eye-tracker info
+        caps;           % will be populated with info about capabilities of the connected eye-tracker
         systemInfo;
         geom;
     end
@@ -45,6 +46,9 @@ classdef SMIWrapper < handle
             
             % Load in plugin (SMI dll)
             obj.iView = iViewXAPI();
+            
+            % get capabilities for the connected eye-tracker
+            obj.setCapabilities();
         end
         
         function out = get.raw(obj)
@@ -566,9 +570,24 @@ classdef SMIWrapper < handle
             end
                         
         end
+        
+        function setCapabilities(obj)
+            switch obj.settings.tracker
+                case {'RED-m','RED250mobile','REDn'}
+                    obj.caps.hasConnectLocal = true;
+                case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
+                    obj.caps.hasConnectLocal = false;
+            end
+            
+        end
+        
         function ret_con = connect(obj)
             if isempty(obj.settings.connectInfo)
-                ret_con = obj.iView.connectLocal();
+                if obj.caps.hasConnectLocal
+                    ret_con = obj.iView.connectLocal();
+                else
+                    error('%s tracker does not support iV_ConnectLocal, provide settings.connectInfo')
+                end
             else
                 ret_con = obj.iView.connect(obj.settings.connectInfo{:});
             end
