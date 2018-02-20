@@ -507,9 +507,7 @@ classdef SMIWrapper < handle
                     settings.doAverageEyes          = true;
                     settings.setup.headBox          = [31 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
                 case 'RED250mobile'
-                    settings.cal.useSmartCalibration= false;
                 case 'REDn'
-                    settings.cal.useSmartCalibration= false;
             end
             
             % some settings only for remotes
