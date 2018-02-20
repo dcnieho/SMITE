@@ -24,7 +24,7 @@ classdef iViewXAPI < handle
                     elseif exist('C:\Program Files (x86)\SMI\iView X SDK\bin','dir')
                         cd('C:\Program Files (x86)\SMI\iView X SDK\bin');
                     else
-                        error('failed to load iViewXAPI.dll, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
+                        error('failed to load %s, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable',libfile)
                     end
                     loadlibrary(libfile, input{:});
                     cd(wd);
@@ -153,8 +153,9 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_GetAOIOutputValue', aoiOutputValue);
         end
         
-        function ret = getAvailableLptPorts()
-            ret = calllib('iViewXAPI', 'iV_GetAvailableLptPorts');
+        function [ret,LPTNames] = getAvailableLptPorts()
+            bufSize         = 2048;
+            [ret,LPTNames]  = calllib('iViewXAPI', 'iV_GetAvailableLptPorts', blanks(bufSize), bufSize);
         end
         
         function [ret,calibrationData] = getCalibrationParameter(pCalibrationData)
@@ -212,11 +213,21 @@ classdef iViewXAPI < handle
         function [ret,time] = getCurrentTimestamp()
             pTime   = libpointer('int64Ptr',int64(0));
             ret     = calllib('iViewXAPI', 'iV_GetCurrentTimestamp', pTime);
-            time    = pTime.Value;
+            
+            time = [];
+            if ret==1
+                time    = pTime.Value;
+            end
         end
         
-        function ret = getDeviceName()
-            ret = calllib('iViewXAPI', 'iV_GetDeviceName');
+        function [ret,name] = getDeviceName()
+            pName   = libpointer('voidPtr',zeros(1,64,'uint8'));
+            ret     = calllib('iViewXAPI', 'iV_GetDeviceName', pName);
+            name    = '';
+            if ret==1
+                name  = char(pName.Value);
+                name(name==0) = [];
+            end
         end
         
         function [ret,eventDataSample] = getEvent(pEventDataSample)
@@ -243,8 +254,14 @@ classdef iViewXAPI < handle
             image = getImage(ret,pImageData,'mono');
         end
         
-        function ret = getFeatureKey()
-            ret = calllib('iViewXAPI', 'iV_GetFeatureKey');
+        function [ret,key] = getFeatureKey()
+            pKey    = libpointer('int64Ptr',int64(0));
+            ret     = calllib('iViewXAPI', 'iV_GetFeatureKey', pKey);
+            
+            key = [];
+            if ret==1
+                key    = pKey.Value;
+            end
         end
         
         function [ret,qualityData] = getGazeChannelQuality(pQualityData)
@@ -255,8 +272,9 @@ classdef iViewXAPI < handle
             qualityData = struct(pQualityData);
         end
         
-        function ret = getGeometryProfiles()
-            ret = calllib('iViewXAPI', 'iV_GetGeometryProfiles');
+        function [ret,profNames] = getGeometryProfiles()
+            bufSize             = 2048;
+            [ret,profNames]     = calllib('iViewXAPI', 'iV_GetGeometryProfiles', bufSize, blanks(bufSize));
         end
         
         function [ret,licenseDueDate] = getLicenseDueDate(pLicenseDueDate)
@@ -307,8 +325,14 @@ classdef iViewXAPI < handle
             image = getImage(ret,pImageData,'RGB');
         end
         
-        function ret = getSerialNumber()
-            ret = calllib('iViewXAPI', 'iV_GetSerialNumber');
+        function [ret,serial] = getSerialNumber()
+            pSerial = libpointer('voidPtr',zeros(1,50,'uint8'));
+            ret     = calllib('iViewXAPI', 'iV_GetSerialNumber', pSerial);
+            serial  = '';
+            if ret==1
+                serial  = char(pSerial.Value);
+                serial(serial==0) = [];
+            end
         end
         
         function [ret,speedModes] = getSpeedModes(pSpeedModes)
@@ -348,8 +372,14 @@ classdef iViewXAPI < handle
             tStatus = struct(pTrackingStatus);
         end
         
-        function ret = getUseCalibrationKeys()
-            ret = calllib('iViewXAPI', 'iV_GetUseCalibrationKeys');
+        function [ret,enableKeys] = getUseCalibrationKeys()
+            pKey    = libpointer('int32Ptr',int32(0));
+            ret     = calllib('iViewXAPI', 'iV_GetUseCalibrationKeys', pKey);
+            
+            enableKeys = [];
+            if ret==1
+                enableKeys    = pKey.Value;
+            end
         end
         
         function ret = hideAccuracyMonitor()
