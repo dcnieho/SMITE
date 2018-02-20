@@ -202,12 +202,12 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_GetCurrentCalibrationPoint', calibrationPoint);
         end
         
-        function [ret,geom] = getCurrentREDGeometry(redGeometry)
+        function [ret,redGeometry] = getCurrentREDGeometry(pRedGeometry)
             if nargin==0
-                redGeometry = SMIStructEnum.REDGeometryStruct;
+                pRedGeometry = SMIStructEnum.REDGeometryStruct;
             end
-            ret  = calllib('iViewXAPI', 'iV_GetCurrentREDGeometry', redGeometry);
-            geom = struct(redGeometry);
+            ret         = calllib('iViewXAPI', 'iV_GetCurrentREDGeometry', pRedGeometry);
+            redGeometry = struct(pRedGeometry);
         end
         
         function [ret,time] = getCurrentTimestamp()
@@ -492,7 +492,7 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_SetTrackingMode', mode);
         end
         
-        function ret = setTrackingParameter(ET_PARAM_EYE, ET_PARAM, value)
+        function ret = setTrackingParameter(ET_PARAM_EYE, ET_PARAM, value, qUseSendCommand)
             % for ET_PARAM_EYE and ET_PARAM, can input the string values in the map
             % below, or the corresponding numerical values directly
             map = {
@@ -528,7 +528,12 @@ classdef iViewXAPI < handle
                 assert(sum(qFound)==1,'SMI iV_SetTrackingParameter: The EyeTrackingParameter "%s" is not understood',ET_PARAM)
                 ET_PARAM = map{qFound,2};
             end
-            ret = calllib('iViewXAPI', 'iV_SetTrackingParameter', ET_PARAM_EYE, ET_PARAM, value);
+            if nargin<4 || ~qUseSendCommand
+                ret = calllib('iViewXAPI', 'iV_SetTrackingParameter', ET_PARAM_EYE, ET_PARAM, value);
+            else
+                % TODO
+                sendCommand()
+            end
         end
         
         function ret = setupCalibration(pCalibrationData)
