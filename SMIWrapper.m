@@ -2,7 +2,7 @@ classdef SMIWrapper < handle
     properties (Access = private, Hidden = true)
         % state
         iView;
-        debugLevel;
+        debugLevel      = 0;
         isInitialized   = false;
         
         % obj.settings and external info
@@ -127,15 +127,20 @@ classdef SMIWrapper < handle
                     error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
             end
             
+            % check this is the device the user specified
+            % TODO: only for RED-m and newer
+            [~,trackerName] = obj.iView.getDeviceName;
+            assert(strcmp(trackerName,obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+            
             % Set debug mode with obj.iView.setupDebugMode(1) not supported on
-            % REDm it seems
+            % RED-m it seems
             
             % setup device geometry
             ret = obj.iView.selectREDGeometry(obj.settings.geomProfile);
             assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
             % get info about the setup
-            [~,obj.geom] = obj.iView.getCurrentREDGeometry();
-            out.geom = obj.geom;
+            [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
+            out.geom        = obj.geom;
             % get info about the system
             [~,obj.systemInfo]          = obj.iView.getSystemInfo();
             [~,out.systemInfo.Serial]   = obj.iView.getSerialNumber();
