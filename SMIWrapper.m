@@ -505,6 +505,7 @@ classdef SMIWrapper < handle
                     settings.freq                   = 120;
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
+                    settings.setup.headBox          = [31 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
                 case 'RED250mobile'
                     settings.cal.useSmartCalibration= false;
                 case 'REDn'
@@ -788,8 +789,7 @@ classdef SMIWrapper < handle
             Screen('TextSize',  wpnt, obj.settings.text.size);
             Screen('TextStyle', wpnt, obj.settings.text.style);
             % setup box
-            REDmBox = [31 21]; % at 60 cm, doesn't matter as we need aspect ratio
-            boxSize = round(500.*REDmBox./REDmBox(1));
+            boxSize = round(500.*obj.settings.setup.headBox./obj.settings.setup.headBox(1));
             [boxCenter(1),boxCenter(2)] = RectCenter([0 0 boxSize]);
             % setup eye image
             margin  = 80;
