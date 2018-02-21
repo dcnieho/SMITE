@@ -414,7 +414,8 @@ classdef SMIWrapper < handle
                 f = [f{:}];
                 if ~isempty(f)
                     % files with this subject name exist
-                    f=sort(cellfun(@(x) sscanf(x,'_%d'),[f{:}])); f(isnan(f)) = [];
+                    f=cellfun(@(x) sscanf(x,'_%d'),[f{:}],'uni',false);
+                    f=sort([f{:}]);
                     if isempty(f)
                         file = [file '_1'];
                     else
