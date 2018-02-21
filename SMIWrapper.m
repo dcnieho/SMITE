@@ -196,6 +196,7 @@ classdef SMIWrapper < handle
             % SMI calibration setup
             CalibrationData = SMIStructEnum.Calibration;
             CalibrationData.method               = obj.settings.cal.nPoint;
+            CalibrationData.autoAccept           = int(obj.settings.cal.autoPace);
             % Setup calibration look. Necessary in all cases so that
             % validate image looks similar to calibration stimuli
             CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
@@ -608,6 +609,7 @@ classdef SMIWrapper < handle
             % the rest here are good defaults for the RED-m (mostly), some
             % are general. Many are hard to set...
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
+            settings.cal.autoPace       = true;                             % false: manually confirm each calibration point. true: only manually confirm the first point, the rest will be autoaccepted
             settings.cal.pointPos       = [];                               % if empty, default positions are used
             settings.cal.bgColor        = 127;
             settings.cal.fixBackSize    = 20;
@@ -671,7 +673,6 @@ classdef SMIWrapper < handle
             obj.caps.deviceName         = false;
             obj.caps.serialNumber       = false;
             obj.caps.setSpeedMode       = false;
-            obj.caps.useCalibrationKeys = false;
             obj.caps.REDGeometry        = false;
             obj.caps.setTrackingParam   = false;
             obj.caps.hasHeadbox         = true;
@@ -689,7 +690,6 @@ classdef SMIWrapper < handle
             switch obj.settings.tracker
                 case {'RED250mobile','REDn'}
                     obj.caps.setSpeedMode       = true;
-                    obj.caps.useCalibrationKeys = true;
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
@@ -1381,10 +1381,6 @@ classdef SMIWrapper < handle
         end
         
         function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer)
-            % disable SMI key listeners, we'll deal with key presses
-            if obj.caps.useCalibrationKeys
-                obj.iView.setUseCalibrationKeys(0);
-            end
             % calibrate
             obj.startRecording(qClearBuffer);
             % enter calibration mode
@@ -1455,9 +1451,11 @@ classdef SMIWrapper < handle
                 [keyPressed,~,keyCode] = KbCheck();
                 if keyPressed
                     keys = KbName(keyCode);
-                    if any(strcmpi(keys,'space')) && pCalibrationPoint.number==1
-                        obj.iView.acceptCalibrationPoint();
-                    elseif any(strcmpi(keys,'r'))
+                    % NB: SMI SDK (apparently) takes care of detecting
+                    % calibration key presses (space for acception point).
+                    % More reliably than switching that off and doing it
+                    % ourselves it appears, so we'll work with that.
+                    if any(strcmpi(keys,'r'))
                         status = -1;
                         break;
                     elseif any(strcmpi(keys,'escape'))
