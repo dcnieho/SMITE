@@ -160,8 +160,10 @@ classdef SMIWrapper < handle
                 assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
             end
             % setup track mode
-            ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1, ~obj.caps.setTrackingParam);
-            assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
+            if obj.caps.setTrackingParam
+                ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
+                assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
+            end
             % switch off averaging filter so we get separate data for each eye
             if obj.caps.configureFilter && isfield(obj.settings,'doAverageEyes')
                 ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
@@ -559,7 +561,7 @@ classdef SMIWrapper < handle
                     settings.connectInfo        = {'ipThis',4444,'ipET',5555};
             end
             % default tracking settings per eye-tracker
-            % settings:
+            % settings (only provided if supported):
             % - trackEye:               'EYE_LEFT', 'EYE_RIGHT', or
             %                           'EYE_BOTH'
             % - trackMode:              'MONOCULAR', 'BINOCULAR',
@@ -575,18 +577,16 @@ classdef SMIWrapper < handle
                 case 'HiSpeed1250'
                 case 'HiSpeed240'
                 case 'RED250'
-                    settings.trackEye               = 'EYE_BOTH';
-                    settings.trackMode              = 'BINOCULAR';
+                    % NB: averaging eyes and any tracking mode setup is not
+                    % possible remotely. has to be done by hand in iViewX
                     settings.freq                   = 250;
                     settings.cal.nPoint             = 5;
-                    settings.doAverageEyes          = true;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
                 case 'RED500'
-                    settings.trackEye               = 'EYE_BOTH';
-                    settings.trackMode              = 'BINOCULAR';
+                    % NB: averaging eyes and any tracking mode setup is not
+                    % possible remotely. has to be done by hand in iViewX
                     settings.freq                   = 500;
                     settings.cal.nPoint             = 5;
-                    settings.doAverageEyes          = true;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
@@ -1092,13 +1092,13 @@ classdef SMIWrapper < handle
             eyeClickDown    = false;
             % for overlays in eye image. disable them all initially
             if obj.caps.setShowContour
-                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0, ~obj.caps.setTrackingParam);
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0);
             end
             if obj.caps.setShowPupil
-                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',0, ~obj.caps.setTrackingParam);
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',0);
             end
             if obj.caps.setShowCR
-                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0, ~obj.caps.setTrackingParam);
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0);
             end
             overlays        = false(3);
             toggleKeys      = KbName({'c','g','p'});
@@ -1261,13 +1261,13 @@ classdef SMIWrapper < handle
                         elseif ~eyeClickDown
                             if qIn(4)
                                 overlays(1) = ~overlays(1);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1), ~obj.caps.setTrackingParam);
+                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
                             elseif qIn(5)
                                 overlays(2) = ~overlays(2);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2), ~obj.caps.setTrackingParam);
+                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
                             elseif qIn(6)
                                 overlays(3) = ~overlays(3);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3), ~obj.caps.setTrackingParam);
+                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
                             end
                             eyeClickDown = any(qIn);
                         end
@@ -1295,13 +1295,13 @@ classdef SMIWrapper < handle
                     if ~eyeKeyDown
                         if any(strcmpi(keys,'c')) && obj.caps.setShowContour
                             overlays(1) = ~overlays(1);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1), ~obj.caps.setTrackingParam);
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
                         elseif any(strcmpi(keys,'p')) && obj.caps.setShowPupil
                             overlays(2) = ~overlays(2);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2), ~obj.caps.setTrackingParam);
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
                         elseif any(strcmpi(keys,'g')) && obj.caps.setShowCR
                             overlays(3) = ~overlays(3);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3), ~obj.caps.setTrackingParam);
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
                         end
                     end
                 end
@@ -1314,13 +1314,13 @@ classdef SMIWrapper < handle
             end
             % just to be safe, disable these overlays
             if obj.caps.setShowContour
-                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0, ~obj.caps.setTrackingParam);
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0);
             end
             if obj.caps.setShowPupil
-                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL'  ,0, ~obj.caps.setTrackingParam);
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL'  ,0);
             end
             if obj.caps.setShowCR
-                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX' ,0, ~obj.caps.setTrackingParam);
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX' ,0);
             end
             HideCursor;
         end

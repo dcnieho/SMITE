@@ -492,7 +492,7 @@ classdef iViewXAPI < handle
             ret = calllib('iViewXAPI', 'iV_SetTrackingMode', mode);
         end
         
-        function ret = setTrackingParameter(ET_PARAM_EYE, ET_PARAM, value, qUseSendCommand)
+        function ret = setTrackingParameter(ET_PARAM_EYE, ET_PARAM, value)
             % for ET_PARAM_EYE and ET_PARAM, can input the string values in the map
             % below, or the corresponding numerical values directly
             map = {
@@ -528,11 +528,7 @@ classdef iViewXAPI < handle
                 assert(sum(qFound)==1,'SMI iV_SetTrackingParameter: The EyeTrackingParameter "%s" is not understood',ET_PARAM)
                 ET_PARAM = map{qFound,2};
             end
-            if nargin<4 || ~qUseSendCommand
-                ret = calllib('iViewXAPI', 'iV_SetTrackingParameter', ET_PARAM_EYE, ET_PARAM, value);
-            else
-                ret = iViewXAPI.sendCommand(sprintf('ET_SFT %d %d %d\n',ET_PARAM_EYE, ET_PARAM, value));
-            end
+            ret = calllib('iViewXAPI', 'iV_SetTrackingParameter', ET_PARAM_EYE, ET_PARAM, value);
         end
         
         function ret = setupCalibration(pCalibrationData)
