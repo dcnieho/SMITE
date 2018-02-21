@@ -675,6 +675,7 @@ classdef SMIWrapper < handle
             obj.caps.useCalibrationKeys = false;
             obj.caps.REDGeometry        = false;
             obj.caps.setTrackingParam   = false;
+            obj.caps.hasHeadbox         = true;
             
             % RED-m and newer functionality
             switch obj.settings.tracker
@@ -701,13 +702,18 @@ classdef SMIWrapper < handle
                 case {'HiSpeed240','HiSpeed1250','RED-m','RED250mobile','REDn'}
                     obj.caps.setTrackingParam   = true;
             end
+            % setting only for hispeed
+            switch obj.settings.tracker
+                case {'HiSpeed240','HiSpeed1250'}
+                    obj.caps.hasHeadbox = false;
+            end
             % supported number of calibration points
             % TODO (check if differs, or all support all)
-            % 2, 5 or 9 points for old REDs
+            % old REDs: 2, 5 or 9 points
             
             % some other per tracker settings.
             % TODO: I don't know which trackers support which!!. Have now
-            % checked: RED-m. RED500 does not seem to support any...
+            % checked: RED-m, RED250, RED500
             obj.caps.setShowContour    = ismember(obj.settings.tracker,{});
             obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m'});
             obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
@@ -767,29 +773,46 @@ classdef SMIWrapper < handle
             Screen('TextSize',  wpnt, obj.settings.text.size);
             Screen('TextStyle', wpnt, obj.settings.text.style);
             
-            % setup ovals
-            ovalVSz = .15;
-            refSz   = ovalVSz*obj.scrInfo.resolution(2);
-            refClr  = [0 0 255];
-            headClr = [255 255 0];
-            % setup head position visualization
-            distGain= 1.5;
-            
+            if obj.caps.hasHeadbox
+                % setup ovals
+                ovalVSz = .15;
+                refSz   = ovalVSz*obj.scrInfo.resolution(2);
+                refClr  = [0 0 255];
+                headClr = [255 255 0];
+                % setup head position visualization
+                distGain= 1.5;
+            end
+
             % setup buttons
             buttonSz    = {[220 45] [320 45] [400 45]};
             buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
+            if obj.caps.hasHeadbox
+                % don't show advanced button as you have all the info on
+                % the iViewX display already. but during development, it
+                % may be nice to see the eye image. So 'a' key remains
+                % active
+                buttonSz(1) = [];
+            end
             buttonOff   = 80;
             yposBase    = round(obj.scrInfo.resolution(2)*.95);
             % place buttons for back to simple interface, or calibrate
             buttonWidths= cellfun(@(x) x(1),buttonSz);
             totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
             buttonRectsX= cumsum([0 buttonWidths]+[0 ones(1,length(buttonWidths))]*buttonOff)-totWidth/2;
-            advancedButRect         = OffsetRect([buttonRectsX(1) 0 buttonRectsX(2)-buttonOff buttonSz{1}(2)],obj.scrInfo.center(1),yposBase-buttonSz{1}(2));
-            advancedButTextCache    = obj.getButtonTextCache(wpnt,'advanced (<i>a<i>)'        ,advancedButRect);
-            calibButRect            = OffsetRect([buttonRectsX(2) 0 buttonRectsX(3)-buttonOff buttonSz{2}(2)],obj.scrInfo.center(1),yposBase-buttonSz{2}(2));
+            b = 1;
+            if ~obj.caps.hasHeadbox
+                advancedButRect         = OffsetRect([buttonRectsX(b) 0 buttonRectsX(b+1)-buttonOff buttonSz{b}(2)],obj.scrInfo.center(1),yposBase-buttonSz{b}(2));
+                advancedButTextCache    = obj.getButtonTextCache(wpnt,'advanced (<i>a<i>)'        ,advancedButRect);
+                b=b+1;
+            else
+                advancedButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
+            end
+            
+            calibButRect            = OffsetRect([buttonRectsX(b) 0 buttonRectsX(b+1)-buttonOff buttonSz{b}(2)],obj.scrInfo.center(1),yposBase-buttonSz{b}(2));
             calibButTextCache       = obj.getButtonTextCache(wpnt,'calibrate (<i>spacebar<i>)',   calibButRect);
+            b=b+1;
             if qHaveValidCalibrations
-                validateButRect         = OffsetRect([buttonRectsX(3) 0 buttonRectsX(4)-buttonOff buttonSz{3}(2)],obj.scrInfo.center(1),yposBase-buttonSz{3}(2));
+                validateButRect         = OffsetRect([buttonRectsX(b) 0 buttonRectsX(b+1)-buttonOff buttonSz{b}(2)],obj.scrInfo.center(1),yposBase-buttonSz{b}(2));
                 validateButTextCache    = obj.getButtonTextCache(wpnt,'previous calibrations (<i>p<i>)',validateButRect);
             else
                 validateButRect         = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
@@ -801,52 +824,56 @@ classdef SMIWrapper < handle
             
             % setup cursors
             cursors.rect    = {advancedButRect.' calibButRect.' validateButRect.'};
-            cursors.cursor  = [2 2 2];  % Hand
+            cursors.cursor  = [2 2 2];      % Hand
             cursors.other   = 0;            % Arrow
-            if obj.debugLevel<2  % for cleanup
-                cursors.reset = -1; % hide cursor (else will reset to cursor.other by default, so we're good with that default
+            if obj.debugLevel<2             % for cleanup
+                cursors.reset = -1;         % hide cursor (else will reset to cursor.other by default, so we're good with that default
             end
             cursor          = cursorUpdater(cursors);
             
             % get tracking status and visualize
-            pTrackingStatusS= SMIStructEnum.TrackingStatus;
-            pSampleS        = SMIStructEnum.Sample;
+            if obj.caps.hasHeadbox
+                pTrackingStatusS= SMIStructEnum.TrackingStatus;
+                pSampleS        = SMIStructEnum.Sample;
+            end
             qFirst          = true;
             while true
-                % get tracking status info
-                [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
-                [~,pSample]        =obj.iView.getSample(pSampleS);                  % for distance
-                
-                % get average eye distance. use distance from one eye if only one eye
-                % available
-                distL   = pSample.leftEye .eyePositionZ/10;
-                distR   = pSample.rightEye.eyePositionZ/10;
-                dists   = [distL distR];
-                avgDist = mean(dists(~isnan(dists)));
-                
-                % scale up size of oval. define size/rect at standard distance, have a
-                % gain for how much to scale as distance changes
-                if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
-                    pos     = [pTrackingStatus.total.relativePositionX -pTrackingStatus.total.relativePositionY];  %-Y as +1 is upper and -1 is lower edge. needs to be reflected for screen drawing
-                    % determine size of oval, based on distance from reference distance
-                    fac     = avgDist/obj.settings.setup.viewingDist;
-                    headSz  = refSz - refSz*(fac-1)*distGain;
-                    % move
-                    headPos = pos.*obj.scrInfo.resolution./2+obj.scrInfo.center;
-                else
-                    headPos = [];
+                if obj.caps.hasHeadbox
+                    % get tracking status info
+                    [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
+                    [~,pSample]        =obj.iView.getSample(pSampleS);                  % for distance
+
+                    % get average eye distance. use distance from one eye if only one eye
+                    % available
+                    distL   = pSample.leftEye .eyePositionZ/10;
+                    distR   = pSample.rightEye.eyePositionZ/10;
+                    dists   = [distL distR];
+                    avgDist = mean(dists(~isnan(dists)));
+
+                    % scale up size of oval. define size/rect at standard distance, have a
+                    % gain for how much to scale as distance changes
+                    if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
+                        pos     = [pTrackingStatus.total.relativePositionX -pTrackingStatus.total.relativePositionY];  %-Y as +1 is upper and -1 is lower edge. needs to be reflected for screen drawing
+                        % determine size of oval, based on distance from reference distance
+                        fac     = avgDist/obj.settings.setup.viewingDist;
+                        headSz  = refSz - refSz*(fac-1)*distGain;
+                        % move
+                        headPos = pos.*obj.scrInfo.resolution./2+obj.scrInfo.center;
+                    else
+                        headPos = [];
+                    end
+
+                    % draw distance info
+                    DrawFormattedText(wpnt,sprintf(obj.settings.string.simplePositionInstruction,avgDist),'center',fixPos(1,2)-.03*obj.scrInfo.resolution(2),255,[],[],[],1.5);
+                    % draw ovals
+                    obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
+                    if ~isempty(headPos)
+                        obj.drawCircle(wpnt,headClr,headPos,headSz,5);
+                    end
+                    % draw buttons
+                    Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
+                    DrawMonospacedText(advancedButTextCache);
                 end
-                
-                % draw distance info
-                DrawFormattedText(wpnt,sprintf(obj.settings.string.simplePositionInstruction,avgDist),'center',fixPos(1,2)-.03*obj.scrInfo.resolution(2),255,[],[],[],1.5);
-                % draw ovals
-                obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
-                if ~isempty(headPos)
-                    obj.drawCircle(wpnt,headClr,headPos,headSz,5);
-                end
-                % draw buttons
-                Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
-                DrawMonospacedText(advancedButTextCache);
                 Screen('FillRect',wpnt,[  0 120   0],calibButRect);
                 DrawMonospacedText(calibButTextCache);
                 if qHaveValidCalibrations
@@ -858,7 +885,6 @@ classdef SMIWrapper < handle
                 
                 % drawing done, show
                 Screen('Flip',wpnt);
-                
                 
                 
                 % check for keypresses or button clicks
@@ -933,9 +959,11 @@ classdef SMIWrapper < handle
             Screen('TextFont',  wpnt, obj.settings.text.font);
             Screen('TextSize',  wpnt, obj.settings.text.size);
             Screen('TextStyle', wpnt, obj.settings.text.style);
-            % setup box
-            boxSize = round(500.*obj.settings.setup.headBox./obj.settings.setup.headBox(1));
-            [boxCenter(1),boxCenter(2)] = RectCenter([0 0 boxSize]);
+            if obj.caps.hasHeadbox
+                % setup box
+                boxSize = round(500.*obj.settings.setup.headBox./obj.settings.setup.headBox(1));
+                [boxCenter(1),boxCenter(2)] = RectCenter([0 0 boxSize]);
+            end
             % setup eye image
             margin  = 80;
             ret = 0;
@@ -943,21 +971,26 @@ classdef SMIWrapper < handle
                 [ret,eyeImage] = obj.iView.getEyeImage();
             end
             eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
-            % setup buttons
-            buttonSz    = {[200 45] [320 45] [400 45]};
-            buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
-            buttonOff   = 80;
-            yposBase    = round(obj.scrInfo.resolution(2)*.95);
-            eoButSz     = [174 buttonSz{1}(2)];
-            eoButMargin = [15 20];
-            eyeButClrs  = {[37  97 163],[11 122 244]};
             
-            % position eye image, head box and buttons
-            % center headbox and eye image on screen
-            offsetV         = (obj.scrInfo.resolution(2)-boxSize(2)-margin-RectHeight(eyeImageRect))/2;
-            offsetH         = (obj.scrInfo.resolution(1)-boxSize(1))/2;
-            boxRect         = OffsetRect([0 0 boxSize],offsetH,offsetV);
-            eyeImageRect    = OffsetRect(eyeImageRect,obj.scrInfo.center(1)-eyeImageRect(3)/2,offsetV+margin+RectHeight(boxRect));
+            % setup buttons
+            if obj.caps.hasHeadbox
+                buttonSz    = {[200 45] [320 45] [400 45]};
+                buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
+                buttonOff   = 80;
+                yposBase    = round(obj.scrInfo.resolution(2)*.95);
+                eoButSz     = [174 buttonSz{1}(2)];
+                eoButMargin = [15 20];
+                eyeButClrs  = {[37  97 163],[11 122 244]};
+                
+                % position eye image, head box and buttons
+                % center headbox and eye image on screen
+                offsetV         = (obj.scrInfo.resolution(2)-boxSize(2)-margin-RectHeight(eyeImageRect))/2;
+                offsetH         = (obj.scrInfo.resolution(1)-boxSize(1))/2;
+                boxRect         = OffsetRect([0 0 boxSize],offsetH,offsetV);
+                eyeImageRect    = OffsetRect(eyeImageRect,obj.scrInfo.center(1)-eyeImageRect(3)/2,offsetV+margin+RectHeight(boxRect));
+            else
+                eyeImageRect    = CenterRectOnPointd(eyeImageRect,obj.scrInfo.center(1),obj.scrInfo.center(2));
+            end
             % place buttons for back to simple interface, or calibrate
             buttonWidths= cellfun(@(x) x(1),buttonSz);
             totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
@@ -997,63 +1030,67 @@ classdef SMIWrapper < handle
             % setup fixation points in the corners of the screen
             fixPos = [.1 .1; .1 .9; .9 .9; .9 .1] .* repmat(obj.scrInfo.resolution(1:2),4,1);
             
-            % obj.settings for eyes in headbox
-            gain = 1.5;     % 1.5 is a gain to make differences larger
-            sz   = 15;      % base size at reference distance
-            % setup arrows + their positions
-            aSize = 26;
-            arrow = [
-                -0.52  -0.64
-                0.52  -0.64
-                0.52  -0.16
-                1.00  -0.16
-                0.00   0.64
-                -1.00  -0.16
-                -0.52  -0.16];
-            arrowsLRUDNF = {[-arrow(:,2) arrow(:,1)],[arrow(:,2) -arrow(:,1)],arrow,-arrow,arrow,-arrow};
-            arrowsLRUDNF{5}(1:2,1) = arrowsLRUDNF{5}(1:2,1)*.75;
-            arrowsLRUDNF{5}( : ,2) = arrowsLRUDNF{5}( : ,2)*.6;
-            arrowsLRUDNF{6}(1:2,1) = arrowsLRUDNF{6}(1:2,1)/.75;
-            arrowsLRUDNF{6}( : ,2) = arrowsLRUDNF{6}( : ,2)*.6;
-            arrowsLRUDNF = cellfun(@(x) round(x.*aSize),arrowsLRUDNF,'uni',false);
-            % positions relative to boxRect. add position to arrowsLRDUNF to get
-            % position of vertices in boxRect;
-            margin = 4;
-            arrowPos = cell(1,6);
-            arrowPos{1} = [boxSize(1)-margin-max(arrowsLRUDNF{1}(:,1)) boxCenter(2)];
-            arrowPos{2} = [           margin-min(arrowsLRUDNF{2}(:,1)) boxCenter(2)];
-            % down is special as need space underneath for near and far arrows
-            arrowPos{3} = [boxCenter(1)            margin-min(arrowsLRUDNF{3}(:,2))];
-            arrowPos{4} = [boxCenter(1) boxSize(2)-margin-max(arrowsLRUDNF{4}(:,2))-max(arrowsLRUDNF{5}(:,2))+min(arrowsLRUDNF{5}(:,2))];
-            arrowPos{5} = [boxCenter(1) boxSize(2)-margin-max(arrowsLRUDNF{5}(:,2))];
-            arrowPos{6} = [boxCenter(1) boxSize(2)-margin-max(arrowsLRUDNF{6}(:,2))];
-            % setup arrow colors and thresholds
-            col1 = [255 255 0]; % color for arrow when just visible, exceeding first threshold
-            col2 = [255 155 0]; % color for arrow when just visible, jhust before exceeding second threshold
-            col3 = [255 0   0]; % color for arrow when extreme, exceeding second threshold
-            xThresh = [0 .68];
-            yThresh = [0 .8];
-            zThresh = [0 .8];
+            if obj.caps.hasHeadbox
+                % obj.settings for eyes in headbox
+                gain = 1.5;     % 1.5 is a gain to make differences larger
+                sz   = 15;      % base size at reference distance
+                % setup arrows + their positions
+                aSize = 26;
+                arrow = [
+                    -0.52  -0.64
+                     0.52  -0.64
+                     0.52  -0.16
+                     1.00  -0.16
+                     0.00   0.64
+                    -1.00  -0.16
+                    -0.52  -0.16];
+                arrowsLRUDNF = {[-arrow(:,2) arrow(:,1)],[arrow(:,2) -arrow(:,1)],arrow,-arrow,arrow,-arrow};
+                arrowsLRUDNF{5}(1:2,1) = arrowsLRUDNF{5}(1:2,1)*.75;
+                arrowsLRUDNF{5}( : ,2) = arrowsLRUDNF{5}( : ,2)*.6;
+                arrowsLRUDNF{6}(1:2,1) = arrowsLRUDNF{6}(1:2,1)/.75;
+                arrowsLRUDNF{6}( : ,2) = arrowsLRUDNF{6}( : ,2)*.6;
+                arrowsLRUDNF = cellfun(@(x) round(x.*aSize),arrowsLRUDNF,'uni',false);
+                % positions relative to boxRect. add position to arrowsLRDUNF to get
+                % position of vertices in boxRect;
+                margin = 4;
+                arrowPos = cell(1,6);
+                arrowPos{1} = [boxSize(1)-margin-max(arrowsLRUDNF{1}(:,1)) boxCenter(2)];
+                arrowPos{2} = [           margin-min(arrowsLRUDNF{2}(:,1)) boxCenter(2)];
+                % down is special as need space underneath for near and far arrows
+                arrowPos{3} = [boxCenter(1)            margin-min(arrowsLRUDNF{3}(:,2))];
+                arrowPos{4} = [boxCenter(1) boxSize(2)-margin-max(arrowsLRUDNF{4}(:,2))-max(arrowsLRUDNF{5}(:,2))+min(arrowsLRUDNF{5}(:,2))];
+                arrowPos{5} = [boxCenter(1) boxSize(2)-margin-max(arrowsLRUDNF{5}(:,2))];
+                arrowPos{6} = [boxCenter(1) boxSize(2)-margin-max(arrowsLRUDNF{6}(:,2))];
+                % setup arrow colors and thresholds
+                col1 = [255 255 0]; % color for arrow when just visible, exceeding first threshold
+                col2 = [255 155 0]; % color for arrow when just visible, jhust before exceeding second threshold
+                col3 = [255 0   0]; % color for arrow when extreme, exceeding second threshold
+                xThresh = [0 .68];
+                yThresh = [0 .8];
+                zThresh = [0 .8];
+            end
             
             % setup cursors
             cursors.rect    = {basicButRect.' calibButRect.' validateButRect.' contourButRect.' pupilButRect.' glintButRect.'};
-            cursors.cursor  = [2 2 2 2 2 2];  % Hand
-            cursors.other   = 0;            % Arrow
-            if obj.debugLevel<2  % for cleanup
-                cursors.reset = -1; % hide cursor (else will reset to cursor.other by default, so we're good with that default
+            cursors.cursor  = [2 2 2 2 2 2];    % Hand
+            cursors.other   = 0;                % Arrow
+            if obj.debugLevel<2                 % for cleanup
+                cursors.reset = -1;             % hide cursor (else will reset to cursor.other by default, so we're good with that default
             end
             cursor          = cursorUpdater(cursors);
             
             
             % get tracking status and visualize along with eye image
-            tex = 0;
-            arrowColor = zeros(3,6);
-            pTrackingStatusS= SMIStructEnum.TrackingStatus;
-            pSampleS        = SMIStructEnum.Sample;
+            if obj.caps.hasHeadbox
+                arrowColor      = zeros(3,6);
+                pTrackingStatusS= SMIStructEnum.TrackingStatus;
+                pSampleS        = SMIStructEnum.Sample;
+                relPos          = zeros(3);
+            end
             pImageDataS     = SMIStructEnum.Image;
+            tex             = 0;
             eyeKeyDown      = false;
             eyeClickDown    = false;
-            relPos          = zeros(3);
             % for overlays in eye image. disable them all initially
             if obj.caps.setShowContour
                 obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0, ~obj.caps.setTrackingParam);
@@ -1068,40 +1105,42 @@ classdef SMIWrapper < handle
             toggleKeys      = KbName({'c','g','p'});
             qFirst          = true;
             while true
-                % get tracking status info
-                [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
-                [~,pSample]        =obj.iView.getSample(pSampleS);                  % for distance
-                
-                % get average eye distance. use distance from one eye if only one eye
-                % available
-                distL   = pSample.leftEye .eyePositionZ/10;
-                distR   = pSample.rightEye.eyePositionZ/10;
-                dists   = [distL distR];
-                avgDist = mean(dists(~isnan(dists)));
-                % if missing, estimate where eye would be in depth if user kept head
-                % yaw constant
-                if isnan(distL)
-                    distL = distR-relPos(3);
-                elseif isnan(distR)
-                    distR = distL+relPos(3);
-                end
-                
-                % see which arrows to draw
-                qDrawArrow = false(1,6);
-                if abs(pTrackingStatus.total.positionRatingX)>xThresh(1)
-                    idx = 1 + (pTrackingStatus.total.positionRatingX<0);  % if too far on the left, arrow should point to the right, etc below
-                    qDrawArrow(idx) = true;
-                    arrowColor(:,idx) = obj.getArrowColor(pTrackingStatus.total.positionRatingX,xThresh,col1,col2,col3);
-                end
-                if abs(pTrackingStatus.total.positionRatingY)>yThresh(1)
-                    idx = 3 + (pTrackingStatus.total.positionRatingY<0);
-                    qDrawArrow(idx) = true;
-                    arrowColor(:,idx) = obj.getArrowColor(pTrackingStatus.total.positionRatingY,yThresh,col1,col2,col3);
-                end
-                if abs(pTrackingStatus.total.positionRatingZ)>zThresh(1)
-                    idx = 5 + (pTrackingStatus.total.positionRatingZ>0);
-                    qDrawArrow(idx) = true;
-                    arrowColor(:,idx) = obj.getArrowColor(pTrackingStatus.total.positionRatingZ,zThresh,col1,col2,col3);
+                if obj.caps.hasHeadbox
+                    % get tracking status info
+                    [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
+                    [~,pSample]        =obj.iView.getSample(pSampleS);                  % for distance
+
+                    % get average eye distance. use distance from one eye if only one eye
+                    % available
+                    distL   = pSample.leftEye .eyePositionZ/10;
+                    distR   = pSample.rightEye.eyePositionZ/10;
+                    dists   = [distL distR];
+                    avgDist = mean(dists(~isnan(dists)));
+                    % if missing, estimate where eye would be in depth if user kept head
+                    % yaw constant
+                    if isnan(distL)
+                        distL = distR-relPos(3);
+                    elseif isnan(distR)
+                        distR = distL+relPos(3);
+                    end
+
+                    % see which arrows to draw
+                    qDrawArrow = false(1,6);
+                    if abs(pTrackingStatus.total.positionRatingX)>xThresh(1)
+                        idx = 1 + (pTrackingStatus.total.positionRatingX<0);  % if too far on the left, arrow should point to the right, etc below
+                        qDrawArrow(idx) = true;
+                        arrowColor(:,idx) = obj.getArrowColor(pTrackingStatus.total.positionRatingX,xThresh,col1,col2,col3);
+                    end
+                    if abs(pTrackingStatus.total.positionRatingY)>yThresh(1)
+                        idx = 3 + (pTrackingStatus.total.positionRatingY<0);
+                        qDrawArrow(idx) = true;
+                        arrowColor(:,idx) = obj.getArrowColor(pTrackingStatus.total.positionRatingY,yThresh,col1,col2,col3);
+                    end
+                    if abs(pTrackingStatus.total.positionRatingZ)>zThresh(1)
+                        idx = 5 + (pTrackingStatus.total.positionRatingZ>0);
+                        qDrawArrow(idx) = true;
+                        arrowColor(:,idx) = obj.getArrowColor(pTrackingStatus.total.positionRatingZ,zThresh,col1,col2,col3);
+                    end
                 end
                 % get eye image
                 [ret,eyeImage] = obj.iView.getEyeImage(pImageDataS);
@@ -1114,47 +1153,49 @@ classdef SMIWrapper < handle
                 end
                 
                 % do drawing
-                % draw box
-                Screen('FillRect',wpnt,80,boxRect);
-                % draw distance
-                if ~isnan(avgDist)
-                    Screen('TextSize',  wpnt, 10);
-                    Screen('DrawText',wpnt,sprintf('%.0f cm',avgDist) ,boxRect(3)-40,boxRect(4)-16,255);
-                end
-                % draw eyes in box
-                Screen('TextSize',  wpnt, obj.settings.text.size);
-                % scale up size of oval. define size/rect at standard distance (60cm),
-                % have a gain for how much to scale as distance changes
-                if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
-                    posL = [pTrackingStatus.leftEye .relativePositionX -pTrackingStatus.leftEye .relativePositionY]/2+.5;  %-Y as +1 is upper and -1 is lower edge. needs to be reflected for screen drawing
-                    posR = [pTrackingStatus.rightEye.relativePositionX -pTrackingStatus.rightEye.relativePositionY]/2+.5;
-                    % determine size of eye. based on distance to standard distance of
-                    % 60cm, calculate size change
-                    fac  = obj.settings.setup.viewingDist/avgDist;
-                    facL = obj.settings.setup.viewingDist/distL;
-                    facR = obj.settings.setup.viewingDist/distR;
-                    % left eye
-                    style = Screen('TextStyle',  wpnt, 1);
-                    obj.drawEye(wpnt,pTrackingStatus.leftEye .validity,posL,posR, relPos*fac,[255 120 120],[220 186 186],round(sz*facL*gain),'L',boxRect);
-                    % right eye
-                    obj.drawEye(wpnt,pTrackingStatus.rightEye.validity,posR,posL,-relPos*fac,[120 255 120],[186 220 186],round(sz*facR*gain),'R',boxRect);
-                    Screen('TextStyle',  wpnt, style);
-                    % update relative eye positions - used for drawing estimated
-                    % position of missing eye. X and Y are relative position in
-                    % headbox, Z is difference in measured eye depths
-                    if pTrackingStatus.leftEye.validity && pTrackingStatus.rightEye.validity
-                        relPos = [(posR-posL)/fac min(max(distR-distL,-8),8)];   % keep a distance normalized to eye-tracker distance of 60 cm, so we can scale eye distance with subject's distance from tracker correctly
+                if obj.caps.hasHeadbox
+                    % draw box
+                    Screen('FillRect',wpnt,80,boxRect);
+                    % draw distance
+                    if ~isnan(avgDist)
+                        Screen('TextSize',  wpnt, 10);
+                        Screen('DrawText',wpnt,sprintf('%.0f cm',avgDist) ,boxRect(3)-40,boxRect(4)-16,255);
                     end
-                    % draw center
-                    if 0 && pTrackingStatus.total.validity
-                        pos = [pTrackingStatus.total.relativePositionX -pTrackingStatus.total.relativePositionY]/2+.5;
-                        pos = pos.*[diff(boxRect([1 3])) diff(boxRect([2 4]))]+boxRect(1:2);
-                        Screen('gluDisk',wpnt,[0 0 255],pos(1),pos(2),10)
+                    % draw eyes in box
+                    Screen('TextSize',  wpnt, obj.settings.text.size);
+                    % scale up size of oval. define size/rect at standard distance (60cm),
+                    % have a gain for how much to scale as distance changes
+                    if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
+                        posL = [pTrackingStatus.leftEye .relativePositionX -pTrackingStatus.leftEye .relativePositionY]/2+.5;  %-Y as +1 is upper and -1 is lower edge. needs to be reflected for screen drawing
+                        posR = [pTrackingStatus.rightEye.relativePositionX -pTrackingStatus.rightEye.relativePositionY]/2+.5;
+                        % determine size of eye. based on distance to standard distance of
+                        % 60cm, calculate size change
+                        fac  = obj.settings.setup.viewingDist/avgDist;
+                        facL = obj.settings.setup.viewingDist/distL;
+                        facR = obj.settings.setup.viewingDist/distR;
+                        % left eye
+                        style = Screen('TextStyle',  wpnt, 1);
+                        obj.drawEye(wpnt,pTrackingStatus.leftEye .validity,posL,posR, relPos*fac,[255 120 120],[220 186 186],round(sz*facL*gain),'L',boxRect);
+                        % right eye
+                        obj.drawEye(wpnt,pTrackingStatus.rightEye.validity,posR,posL,-relPos*fac,[120 255 120],[186 220 186],round(sz*facR*gain),'R',boxRect);
+                        Screen('TextStyle',  wpnt, style);
+                        % update relative eye positions - used for drawing estimated
+                        % position of missing eye. X and Y are relative position in
+                        % headbox, Z is difference in measured eye depths
+                        if pTrackingStatus.leftEye.validity && pTrackingStatus.rightEye.validity
+                            relPos = [(posR-posL)/fac min(max(distR-distL,-8),8)];   % keep a distance normalized to eye-tracker distance of 60 cm, so we can scale eye distance with subject's distance from tracker correctly
+                        end
+                        % draw center
+                        if 0 && pTrackingStatus.total.validity
+                            pos = [pTrackingStatus.total.relativePositionX -pTrackingStatus.total.relativePositionY]/2+.5;
+                            pos = pos.*[diff(boxRect([1 3])) diff(boxRect([2 4]))]+boxRect(1:2);
+                            Screen('gluDisk',wpnt,[0 0 255],pos(1),pos(2),10)
+                        end
                     end
-                end
-                % draw arrows
-                for p=find(qDrawArrow)
-                    Screen('FillPoly', wpnt, arrowColor(:,p), bsxfun(@plus,arrowsLRUDNF{p},arrowPos{p}+boxRect(1:2)) ,0);
+                    % draw arrows
+                    for p=find(qDrawArrow)
+                        Screen('FillPoly', wpnt, arrowColor(:,p), bsxfun(@plus,arrowsLRUDNF{p},arrowPos{p}+boxRect(1:2)) ,0);
+                    end
                 end
                 % draw eye image, if any
                 if tex
@@ -1728,7 +1769,7 @@ classdef SMIWrapper < handle
         end
         
         function iValid = getValidCalibrations(~,cal)
-            iValid = find(cellfun(@(x) isfield(x,'calStatusSMI')&&strcmp(x.calStatusSMI,'calibrationValid'),cal));
+            iValid = find(cellfun(@(x) isfield(x,'calStatusSMI') && strcmp(x.calStatusSMI,'calibrationValid'),cal));
         end
     end
 end
