@@ -508,7 +508,19 @@ classdef SMIWrapper < handle
                 case 'HiSpeed1250'
                 case 'HiSpeed240'
                 case 'RED250'
+                    settings.trackEye               = 'EYE_BOTH';
+                    settings.trackMode              = 'BINOCULAR';
+                    settings.freq                   = 250;
+                    settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = true;
+                    settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
                 case 'RED500'
+                    settings.trackEye               = 'EYE_BOTH';
+                    settings.trackMode              = 'BINOCULAR';
+                    settings.freq                   = 500;
+                    settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = true;
+                    settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
