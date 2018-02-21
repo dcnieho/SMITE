@@ -163,7 +163,7 @@ classdef SMIWrapper < handle
             ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1, ~obj.caps.setTrackingParam);
             assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
             % switch off averaging filter so we get separate data for each eye
-            if isfield(obj.settings,'doAverageEyes')
+            if obj.caps.configureFilter && isfield(obj.settings,'doAverageEyes')
                 ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
                 assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
             end
@@ -585,46 +585,49 @@ classdef SMIWrapper < handle
         end
         
         function setCapabilities(obj)
+            % preset all to false
+            obj.caps.connectLocal       = false;
+            obj.caps.configureFilter    = false;
+            obj.caps.enableHighPerfMode = false;
+            obj.caps.deviceName         = false;
+            obj.caps.serialNumber       = false;
+            obj.caps.setSpeedMode       = false;
+            obj.caps.useCalibrationKeys = false;
+            obj.caps.REDGeometry        = false;
+            obj.caps.setTrackingParam   = false;
+            
             % RED-m and newer functionality
             switch obj.settings.tracker
                 case {'RED-m','RED250mobile','REDn'}
                     obj.caps.connectLocal       = true;
+                    obj.caps.configureFilter    = true;         % TODO: probably, have not tried on Hispeed and NG
                     obj.caps.enableHighPerfMode = true;
                     obj.caps.deviceName         = true;
                     obj.caps.serialNumber       = true;
-                case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
-                    obj.caps.hasConnectLocal    = false;
-                    obj.caps.enableHighPerfMode = false;
-                    obj.caps.deviceName         = false;
-                    obj.caps.serialNumber       = false;
             end
             % RED NG only functionality
             switch obj.settings.tracker
                 case {'RED250mobile','REDn'}
                     obj.caps.setSpeedMode       = true;
                     obj.caps.useCalibrationKeys = true;
-                case {'HiSpeed240','HiSpeed1250','RED250','RED500','RED-m'}
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
                 case {'RED250','RED500','RED-m','RED250mobile','REDn'}
                     obj.caps.REDGeometry        = true;
-                case {'HiSpeed240','HiSpeed1250'}
-                    obj.caps.REDGeometry        = false;
             end
             % functionality not for old REDs
             switch obj.settings.tracker
                 case {'HiSpeed240','HiSpeed1250','RED-m','RED250mobile','REDn'}
                     obj.caps.setTrackingParam   = true;
-                case {'RED250','RED500'}
-                    obj.caps.setTrackingParam   = false;
             end
             % supported number of calibration points
             % TODO (check if differs, or all support all)
+            % 2, 5 or 9 points for old REDs
             
             % some other per tracker settings.
             % TODO: I don't know which trackers support which!!. Have now
-            % checked: RED-m
+            % checked: RED-m. RED500 does not seem to support any...
             obj.caps.setShowContour    = ismember(obj.settings.tracker,{});
             obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m'});
             obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
