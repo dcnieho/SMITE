@@ -531,8 +531,7 @@ classdef iViewXAPI < handle
             if nargin<4 || ~qUseSendCommand
                 ret = calllib('iViewXAPI', 'iV_SetTrackingParameter', ET_PARAM_EYE, ET_PARAM, value);
             else
-                % TODO
-                sendCommand()
+                ret = iViewXAPI.sendCommand(sprintf('ET_SFT %d %d %d\n',ET_PARAM_EYE, ET_PARAM, value));
             end
         end
         
