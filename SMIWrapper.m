@@ -199,7 +199,6 @@ classdef SMIWrapper < handle
             CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
             CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
             CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
-            CalibrationData.visualization        = 0;   % we draw fixation points ourselves
             ret = obj.iView.setupCalibration(CalibrationData);
             obj.processError(ret,'SMI: Error setting up calibration');
             
