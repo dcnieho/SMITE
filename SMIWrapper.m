@@ -108,7 +108,7 @@ classdef SMIWrapper < handle
             if qStarting && ret~=1
                 % in case eye tracker server is starting, give it some time
                 % before trying to connect, don't hammer it unnecessarily
-                obj.iView.setConnectionTimeout(1);   % "timeout for how long iV_Connect tries to connect to obj.iView eye tracking server." Try short, try often, so we don't wait unnecessarily long
+                obj.iView.setConnectionTimeout(1);   % "timeout for how long iV_Connect tries to connect to iView eye tracking server." Try short, try often, so we don't wait unnecessarily long
                 count = 1;
                 while count < 30 && ret~=1
                     ret = obj.connect();
@@ -132,28 +132,35 @@ classdef SMIWrapper < handle
             end
             
             % check this is the device the user specified
-            % TODO: only for RED-m and newer
-            [~,trackerName] = obj.iView.getDeviceName;
-            assert(strcmp(trackerName,obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+            if obj.caps.deviceName
+                [~,trackerName] = obj.iView.getDeviceName;
+                assert(strcmp(trackerName,obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+            end
             
-            % Set debug mode with obj.iView.setupDebugMode(1) not supported on
-            % RED-m it seems
-            
-            % setup device geometry
-            ret = obj.iView.selectREDGeometry(obj.settings.geomProfile);
-            assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
-            % get info about the setup
-            [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
-            out.geom        = obj.geom;
+            % deal with device geometry
+            if obj.caps.REDGeometry
+                % setup device geometry
+                ret = obj.iView.selectREDGeometry(obj.settings.geomProfile);
+                assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
+                % get info about the setup
+                [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
+                out.geom        = obj.geom;
+            end
             % get info about the system
             [~,obj.systemInfo]          = obj.iView.getSystemInfo();
-            [~,out.systemInfo.Serial]   = obj.iView.getSerialNumber();
+            if obj.caps.serialNumber
+                [~,out.systemInfo.Serial]   = obj.iView.getSerialNumber();
+            end
             out.systemInfo              = obj.systemInfo;
-            % check operating at requested tracking frequency (the command
-            % to set frequency is only supported on the NG systems...)
-            assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
+            
+            % check tracker is operating at requested tracking frequency
+            if obj.caps.setSpeedMode
+                % TODO
+            else
+                assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
+            end
             % setup track mode
-            ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
+            ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1, ~obj.caps.setTrackingParam);
             assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
             % switch off averaging filter so we get separate data for each eye
             if isfield(obj.settings,'doAverageEyes')
@@ -163,7 +170,9 @@ classdef SMIWrapper < handle
             
             % prevents CPU from entering power saving mode according to
             % docs
-            obj.iView.enableProcessorHighPerformanceMode();
+            if obj.caps.enableHighPerfMode
+                obj.iView.enableProcessorHighPerformanceMode();
+            end
             
             % mark as inited
             obj.isInitialized = true;
@@ -511,9 +520,9 @@ classdef SMIWrapper < handle
             end
             
             % some settings only for remotes
-            if ismember(tracker,{'RED-m','RED250mobile','REDn'})
+            if ismember(tracker,{'RED250','RED500','RED-m','RED250mobile','REDn'})
                 settings.setup.viewingDist      = 65;
-                settings.geomProfile            = 'Desktop 22in Monitor';    % TODO: check it is indeed only for remotes
+                settings.geomProfile            = 'Desktop 22in Monitor';    % TODO: check it works for old REDs, does iViewX have these profiles?
             end
             
             % the rest here are good defaults for the RED-m (mostly), some
@@ -531,7 +540,10 @@ classdef SMIWrapper < handle
             settings.text.style         = 0;                                % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
             settings.text.wrapAt        = 62;
             settings.text.vSpacing      = 1;
-            settings.text.lineCentOff   = 3;                                % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
+            % TODO
+            %if ~Is64Bit
+                settings.text.lineCentOff   = 3;                                % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
+            %end
             settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
             settings.debugMode          = false;                            % for use with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
             settings.logLevel           = 1;                                % TODO: implement
@@ -572,18 +584,54 @@ classdef SMIWrapper < handle
         end
         
         function setCapabilities(obj)
+            % RED-m and newer functionality
             switch obj.settings.tracker
                 case {'RED-m','RED250mobile','REDn'}
-                    obj.caps.hasConnectLocal = true;
+                    obj.caps.connectLocal       = true;
+                    obj.caps.enableHighPerfMode = true;
+                    obj.caps.deviceName         = true;
+                    obj.caps.serialNumber       = true;
                 case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
-                    obj.caps.hasConnectLocal = false;
+                    obj.caps.hasConnectLocal    = false;
+                    obj.caps.enableHighPerfMode = false;
+                    obj.caps.deviceName         = false;
+                    obj.caps.serialNumber       = false;
             end
+            % RED NG only functionality
+            switch obj.settings.tracker
+                case {'RED250mobile','REDn'}
+                    obj.caps.setSpeedMode       = true;
+                    obj.caps.useCalibrationKeys = true;
+                case {'HiSpeed240','HiSpeed1250','RED250','RED500','RED-m'}
+            end
+            % functionality not for hiSpeeds
+            switch obj.settings.tracker
+                case {'RED250','RED500','RED-m','RED250mobile','REDn'}
+                    obj.caps.REDGeometry        = true;
+                case {'HiSpeed240','HiSpeed1250'}
+                    obj.caps.REDGeometry        = false;
+            end
+            % functionality not for old REDs
+            switch obj.settings.tracker
+                case {'HiSpeed240','HiSpeed1250','RED-m','RED250mobile','REDn'}
+                    obj.caps.setTrackingParam   = true;
+                case {'RED250','RED500'}
+                    obj.caps.setTrackingParam   = false;
+            end
+            % supported number of calibration points
+            % TODO (check if differs, or all support all)
             
+            % some other per tracker settings.
+            % TODO: I don't know which trackers support which!!. Have now
+            % checked: RED-m
+            obj.caps.setShowContour    = ismember(obj.settings.tracker,{});
+            obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m'});
+            obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
         end
         
         function ret_con = connect(obj)
             if isempty(obj.settings.connectInfo)
-                if obj.caps.hasConnectLocal
+                if obj.caps.connectLocal
                     ret_con = obj.iView.connectLocal();
                 else
                     error('%s tracker does not support iV_ConnectLocal, provide settings.connectInfo')
@@ -842,12 +890,24 @@ classdef SMIWrapper < handle
             end
             
             % place buttons for overlays in the eye image, draw text once to get cache
-            contourButRect      = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2));
-            contourButTextCache = obj.getButtonTextCache(wpnt,'contour (<i>c<i>)',contourButRect);
-            pupilButRect        = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*2-eoButMargin(2));
-            pupilButTextCache   = obj.getButtonTextCache(wpnt,'pupil (<i>p<i>)'  ,  pupilButRect);
-            glintButRect        = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*3-eoButMargin(2)*2);
-            glintButTextCache   = obj.getButtonTextCache(wpnt,'glint (<i>g<i>)'  ,  glintButRect);
+            if obj.caps.setShowContour
+                contourButRect      = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2));
+                contourButTextCache = obj.getButtonTextCache(wpnt,'contour (<i>c<i>)',contourButRect);
+            else
+                contourButRect      = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
+            end
+            if obj.caps.setShowPupil
+                pupilButRect        = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*2-eoButMargin(2));
+                pupilButTextCache   = obj.getButtonTextCache(wpnt,'pupil (<i>p<i>)'  ,  pupilButRect);
+            else
+                pupilButRect        = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
+            end
+            if obj.caps.setShowCR
+                glintButRect        = OffsetRect([0 0 eoButSz],eyeImageRect(3)+eoButMargin(1),eyeImageRect(4)-eoButSz(2)*3-eoButMargin(2)*2);
+                glintButTextCache   = obj.getButtonTextCache(wpnt,'glint (<i>g<i>)'  ,  glintButRect);
+            else
+                glintButRect        = [-100 -90 -100 -90]; % offscreen so mouse handler doesn't fuck up because of it
+            end
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % clear what we've just drawn
             
             % setup fixation points in the corners of the screen
@@ -911,9 +971,15 @@ classdef SMIWrapper < handle
             eyeClickDown    = false;
             relPos          = zeros(3);
             % for overlays in eye image. disable them all initially
-            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0);
-            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',0);
-            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0);
+            if obj.caps.setShowContour
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0, ~obj.caps.setTrackingParam);
+            end
+            if obj.caps.setShowPupil
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',0, ~obj.caps.setTrackingParam);
+            end
+            if obj.caps.setShowCR
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0, ~obj.caps.setTrackingParam);
+            end
             overlays        = false(3);
             toggleKeys      = KbName({'c','g','p'});
             qFirst          = true;
@@ -1019,12 +1085,18 @@ classdef SMIWrapper < handle
                     Screen('FillRect',wpnt,[150 150   0],validateButRect);
                     DrawMonospacedText(validateButTextCache);
                 end
-                Screen('FillRect',wpnt,eyeButClrs{overlays(1)+1},contourButRect);
-                DrawMonospacedText(contourButTextCache);
-                Screen('FillRect',wpnt,eyeButClrs{overlays(2)+1},pupilButRect);
-                DrawMonospacedText(pupilButTextCache);
-                Screen('FillRect',wpnt,eyeButClrs{overlays(3)+1},glintButRect);
-                DrawMonospacedText(glintButTextCache);
+                if obj.caps.setShowContour
+                    Screen('FillRect',wpnt,eyeButClrs{overlays(1)+1},contourButRect);
+                    DrawMonospacedText(contourButTextCache);
+                end
+                if obj.caps.setShowPupil
+                    Screen('FillRect',wpnt,eyeButClrs{overlays(2)+1},pupilButRect);
+                    DrawMonospacedText(pupilButTextCache);
+                end
+                if obj.caps.setShowCR
+                    Screen('FillRect',wpnt,eyeButClrs{overlays(3)+1},glintButRect);
+                    DrawMonospacedText(glintButTextCache);
+                end
                 % draw fixation points
                 obj.drawfixpoint(wpnt,fixPos);
                 
@@ -1065,13 +1137,13 @@ classdef SMIWrapper < handle
                         elseif ~eyeClickDown
                             if qIn(4)
                                 overlays(1) = ~overlays(1);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
+                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1), ~obj.caps.setTrackingParam);
                             elseif qIn(5)
                                 overlays(2) = ~overlays(2);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
+                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2), ~obj.caps.setTrackingParam);
                             elseif qIn(6)
                                 overlays(3) = ~overlays(3);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
+                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3), ~obj.caps.setTrackingParam);
                             end
                             eyeClickDown = any(qIn);
                         end
@@ -1097,15 +1169,15 @@ classdef SMIWrapper < handle
                         break;
                     end
                     if ~eyeKeyDown
-                        if any(strcmpi(keys,'c'))
+                        if any(strcmpi(keys,'c')) && obj.caps.setShowContour
                             overlays(1) = ~overlays(1);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
-                        elseif any(strcmpi(keys,'p'))
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1), ~obj.caps.setTrackingParam);
+                        elseif any(strcmpi(keys,'p')) && obj.caps.setShowPupil
                             overlays(2) = ~overlays(2);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
-                        elseif any(strcmpi(keys,'g'))
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2), ~obj.caps.setTrackingParam);
+                        elseif any(strcmpi(keys,'g')) && obj.caps.setShowCR
                             overlays(3) = ~overlays(3);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3), ~obj.caps.setTrackingParam);
                         end
                     end
                 end
@@ -1117,9 +1189,15 @@ classdef SMIWrapper < handle
                 Screen('Close',tex);
             end
             % just to be safe, disable these overlays
-            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0);
-            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',0);
-            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0);
+            if obj.caps.setShowContour
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0, ~obj.caps.setTrackingParam);
+            end
+            if obj.caps.setShowPupil
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL'  ,0, ~obj.caps.setTrackingParam);
+            end
+            if obj.caps.setShowCR
+                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX' ,0, ~obj.caps.setTrackingParam);
+            end
             HideCursor;
         end
         
@@ -1180,7 +1258,9 @@ classdef SMIWrapper < handle
         
         function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer)
             % disable SMI key listeners, we'll deal with key presses
-            obj.iView.setUseCalibrationKeys(0);
+            if obj.caps.useCalibrationKeys
+                obj.iView.setUseCalibrationKeys(0);
+            end
             % calibrate
             obj.startRecording(qClearBuffer);
             % enter calibration mode
