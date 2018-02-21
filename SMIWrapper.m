@@ -397,19 +397,23 @@ classdef SMIWrapper < handle
         end
         
         function saveData(obj,filename, user, description, doAppendVersion)
-            % 1. remove .idf from filename if already there. iV_SaveData
-            % adds that
+            % check if 2 computer setup
+            isTwoComputerSetup = ~isempty(obj.settings.connectInfo) && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
+            
+            % 1. get filename and path
             [path,file,ext] = fileparts(filename);
             assert(~isempty(path),'saveData: filename should contain a path')
-            if ~strcmpi(ext,'idf') && ~isempty(ext)
-                file = [file '.' ext];
+            % eat .idf off filename, preserve any other extension user may
+            % have provided
+            if ~isempty(ext) && ~strcmpi(ext,'.idf')
+                file = [file ext];
             end
             % add versioning info to file name, if wanted and if already
             % exists
             if nargin>=5 && doAppendVersion
                 % see what files we have in data folder with the same name
                 f = FileFromFolder(path,'ssilent','idf');
-                f = regexp({f.fname},['^' regexptranslate('escape',file) '(_\d+)?'],'tokens');
+                f = regexp({f.fname},['^' regexptranslate('escape',file) '(_\d+)?$'],'tokens');
                 % see if any. if so, see what number to append
                 f = [f{:}];
                 if ~isempty(f)
@@ -423,6 +427,8 @@ classdef SMIWrapper < handle
                     end
                 end
             end
+            % now make sure file ends with .idf
+            file = [file '.idf'];
             % set defaults
             if nargin<3 || isempty(user)
                 user = file;
@@ -434,12 +440,74 @@ classdef SMIWrapper < handle
             % construct full filename
             filename = fullfile(path,file);
             
-            % TODO: deal with two computer setup. Would probably want to
-            % save without path info and allowing overwrite on remote
-            % machine, then transfer, then store on this machine with path
-            % info.
-            ret = obj.iView.saveData([filename '.idf'], description, user, 0);
-            obj.processError(ret,'SMI: Error saving data');
+            if isTwoComputerSetup
+                % Two computer setup: file gets saved on eye-tracker
+                % computer (do so with without path info and allowing
+                % overwrite). Transfer the file using the
+                % FileTransferServer running on the remote machine. NB:
+                % this seems to only work when iView is running on the
+                % remote machine.
+                
+                % 1: connect to file transfer server
+                % 1a: request FileTransferServer.exe's version (always
+                %     happens when experiment center is just started)
+                con = pnet('tcpconnect',obj.settings.connectInfo{1},9050);
+                pnet(con,'setreadtimeout',0.1);
+                pnet(con,'write',uint8(4));
+                data = '';
+                while isempty(data)
+                    data = pnet(con,'read',2^20,'uint8');
+                end
+                fprintf('FileTransferServer.exe version: %s\n',char(data(6:end)));    % first 5 bytes are a response header
+                pnet(con,'close');  % copy exact order of events, perhaps important
+                % 1b: ask what the data folder is
+                con = pnet('tcpconnect',obj.settings.connectInfo{1},9050);
+                pnet(con,'setreadtimeout',0.1);
+                pnet(con,'write',uint8(0));
+                allDat = '';
+                tries = 0;
+                while tries<5
+                    data = pnet(con,'read',2^20,'uint8');
+                    if isempty(data)
+                        tries = tries+1;
+                    end
+                    allDat = [allDat data];
+                end
+                remotePath = allDat(6:end); % skip first 5 bits, they are a response header
+                
+                % 2: now save file on remote computer with path indicated
+                % by remote computer. Overwrite if exists
+                remoteFile = fullfile(remotePath,[file(1:3) '-eye_data.idf']);   % nearly hardcode remote file name. Only very specific file names are transferred by the remote endpoint
+                ret = obj.iView.saveData(remoteFile, description, user, 1);
+                obj.processError(ret,'SMI: Error saving data');
+                
+                % 3a: now request remote file to be transferred
+                pnet(con,'write', [uint8([1 50 0 0 0]) uint8(remoteFile)]);
+                
+                % 3b: receive file: read from socket until exhausted
+                allDat = '';
+                tries = 0;
+                pnet(con,'setreadtimeout',0.5);
+                while tries<10
+                    data = pnet(con,'read',2^20,'uint8');
+                    if isempty(data)
+                        tries = tries+1;
+                    else
+                        tries = 0;
+                    end
+                    allDat = [allDat data];
+                end
+                pnet(con,'close');
+                
+                % 4: now save file locally
+                assert(~isempty(allDat),'SMIWrapper: remote file could not be received')
+                fid=fopen(filename,'w');
+                fwrite(fid,allDat(6:end));  % skip first 5 bits, they are a response header
+                fclose(fid);
+            else
+                ret = obj.iView.saveData(filename, description, user, 0);
+                obj.processError(ret,'SMI: Error saving data');
+            end
         end
         
         function out = deInit(obj,qQuit)
