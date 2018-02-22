@@ -61,6 +61,7 @@ classdef SMIWrapper < handle
         
         function out = get.options(obj)
             if ~obj.isInitialized
+                % return all settings
                 out = obj.settings;
             else
                 % only the subset that can be changed "live"
@@ -74,7 +75,7 @@ classdef SMIWrapper < handle
         function set.options(obj,settings)
             if obj.isInitialized
                 % only a subset of settings is allowed. Hardcode here, and
-                % copy over if exist
+                % copy over if exist. Ignore all others silently
                 allowed = obj.getAllowedOptions();
                 for p=1:size(allowed,1)
                     if isfield(settings,allowed{p,1}) && isfield(settings.(allowed{p,1}),allowed{p,2})
@@ -84,7 +85,8 @@ classdef SMIWrapper < handle
             else
                 % just copy it over. If user didn't remove fields from
                 % settings struct, we're good. If they did, they're an
-                % idiot.
+                % idiot. If they added any, they'll be ignored, so no
+                % problem.
                 obj.settings = settings;
             end
             % setup colors
