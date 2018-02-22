@@ -1,5 +1,5 @@
 classdef SMIWrapper < handle
-    properties (Access = private, Hidden = true)
+    properties (Access = protected, Hidden = true)
         % state
         iView;
         debugLevel      = 0;
@@ -18,9 +18,7 @@ classdef SMIWrapper < handle
     % computed properties (so not actual properties)
     properties (Dependent, SetAccess = private)
         raw;            % get naked obj.iViewXAPI instance
-        % things like sampling which machine, freq, settings? NB: i dont
-        % think i want to support changing settings once inited. how does
-        % eyelink toolbox do this again?
+        % things like sampling which machine, freq, settings?
     end
     properties (Dependent)
         options;    % subset of settings that can actually be changed. contents differ based on state of class (once inited, much less can be set)
@@ -30,7 +28,8 @@ classdef SMIWrapper < handle
         function obj = SMIWrapper(settingsOrETName,scrInfo)
             % deal with inputs
             if ischar(settingsOrETName)
-                % eye-tracker name provided, load defaults for this tracker
+                % only eye-tracker name provided, load defaults for this
+                % tracker
                 obj.options = obj.getDefaults(settingsOrETName);
             else
                 obj.options = settingsOrETName;
@@ -44,11 +43,16 @@ classdef SMIWrapper < handle
                 obj.scrInfo             = scrInfo;
             end
             
-            % Load in plugin (SMI dll)
-            obj.iView = iViewXAPI();
-            
             % get capabilities for the connected eye-tracker
             obj.setCapabilities();
+            
+            % Load in plugin (SMI dll)
+            obj.iView = iViewXAPI();
+        end
+        
+        function out = setDummyMode(obj)
+            assert(nargout==1,'you must use the output argument of setDummyMode, like: SMIhandle = SMIhandle.setDummyMode(), or SMIhandle = setDummyMode(SMIhandle)')
+            out = SMIWrapperDummyMode(obj);
         end
         
         function out = get.raw(obj)
@@ -549,7 +553,7 @@ classdef SMIWrapper < handle
                 case {'RED250mobile','REDn'}
                     settings.etApp              = 'iViewNG';
                 otherwise
-                    error('tracker "%s" not known/supported by this wrapper',tracker);
+                    error('tracker "%s" not known/supported by this wrapper.\nSupported are: HiSpeed240, HiSpeed1250, RED250, RED500, RED-m, RED250mobile, REDn',tracker);
             end
             % connection info
             switch tracker
@@ -610,7 +614,7 @@ classdef SMIWrapper < handle
             % are general. Many are hard to set...
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.autoPace       = true;                             % false: manually confirm each calibration point. true: only manually confirm the first point, the rest will be autoaccepted
-            settings.cal.pointPos       = [];                               % if empty, default positions are used
+            settings.cal.pointPos       = [];                               % if empty, default positions are used, else, specify N calibration point positions in an Nx2 matrix
             settings.cal.bgColor        = 127;
             settings.cal.fixBackSize    = 20;
             settings.cal.fixFrontSize   = 5;
