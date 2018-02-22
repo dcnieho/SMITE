@@ -64,7 +64,10 @@ classdef SMIWrapper < handle
                 out = obj.settings;
             else
                 % only the subset that can be changed "live"
-                out = obj.getAllowedOptions();
+                opts = obj.getAllowedOptions();
+                for p=1:size(opts,1)
+                    out.(opts{p,1}).(opts{p,2}) = obj.settings.(opts{p,1}).(opts{p,2});
+                end
             end
         end
         
@@ -74,8 +77,8 @@ classdef SMIWrapper < handle
                 % copy over if exist
                 allowed = obj.getAllowedOptions();
                 for p=1:size(allowed,1)
-                    if isfield(settings,allowed{1}) && isfield(settings.(allowed{1}),allowed{2})
-                        obj.settings.(allowed{1}).(allowed{2}) = settings.(allowed{1}).(allowed{2});
+                    if isfield(settings,allowed{p,1}) && isfield(settings.(allowed{p,1}),allowed{p,2})
+                        obj.settings.(allowed{p,1}).(allowed{p,2}) = settings.(allowed{p,1}).(allowed{p,2});
                     end
                 end
             else
@@ -656,8 +659,8 @@ classdef SMIWrapper < handle
     methods (Access = private, Hidden)
         function allowed = getAllowedOptions(obj)
             allowed = {...
+                'cal','autoPace'
                 'cal','nPoint'
-                'cal','useSmartCalibration'
                 'cal','bgColor'
                 'cal','fixBackSize'
                 'cal','fixFrontSize'
@@ -672,7 +675,7 @@ classdef SMIWrapper < handle
                 'string','simplePositionInstruction'
                 };
             for p=size(allowed,1):-1:1
-                if ~isfield(obj.settings,allowed{1}) || ~isfield(obj.settings.(allowed{1}),allowed{2})
+                if ~isfield(obj.settings,allowed{p,1}) || ~isfield(obj.settings.(allowed{p,1}),allowed{p,2})
                     allowed(p,:) = [];
                 end
             end
