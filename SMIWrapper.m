@@ -399,6 +399,18 @@ classdef SMIWrapper < handle
             obj.processError(ret,'SMI: Error sending message to data file');
         end
         
+        function setTrialImage(obj,filename)
+            [path,~,ext] = fileparts(filename);
+            % TODO: must there be a path or must there not be a path?
+            % relative path ok but not absolute? (I can imagine some
+            % folder organization in stimulus locations, but dunno if
+            % BeGaze likes that
+            if isempty(ext)
+                warning('SMIWrapper::setTrialImage: are you sure you are providing a filename as input? input: "%s"',filename);
+            end
+            obj.sendMessage(filename);
+        end
+        
         function sample = getLatestSample(obj)
             % returns empty when sample not gotten successfully
             [ret,sample] = obj.iView.getSample();
