@@ -649,6 +649,7 @@ classdef SMIWrapper < handle
             settings.cal.fixFrontSize   = 5;
             settings.cal.fixBackColor   = 0;
             settings.cal.fixFrontColor  = 255;
+            settings.cal.drawFunction   = @drawFixationPoint;
             settings.logFileName        = 'iView_log.txt';
             settings.text.font          = 'Consolas';
             settings.text.size          = 20;
@@ -682,6 +683,7 @@ classdef SMIWrapper < handle
                 'cal','fixFrontSize'
                 'cal','fixBackColor'
                 'cal','fixFrontColor'
+                'cal','drawFunction'
                 'text','font'
                 'text','size'
                 'text','style'
@@ -913,7 +915,7 @@ classdef SMIWrapper < handle
                     DrawMonospacedText(validateButTextCache);
                 end
                 % draw fixation points
-                obj.drawfixpoint(wpnt,fixPos);
+                obj.drawAFixPoint(wpnt,fixPos);
                 
                 % drawing done, show
                 Screen('Flip',wpnt);
@@ -1255,7 +1257,7 @@ classdef SMIWrapper < handle
                     DrawMonospacedText(glintButTextCache);
                 end
                 % draw fixation points
-                obj.drawfixpoint(wpnt,fixPos);
+                obj.drawAFixPoint(wpnt,fixPos);
                 
                 % drawing done, show
                 Screen('Flip',wpnt);
@@ -1398,7 +1400,7 @@ classdef SMIWrapper < handle
             end
         end
         
-        function drawfixpoint(obj,wpnt,pos)
+        function drawAFixPoint(obj,wpnt,pos)
             % draws Thaler et al. 2012's ABC fixation point
             sz = [obj.settings.cal.fixBackSize obj.settings.cal.fixFrontSize];
             
@@ -1420,7 +1422,7 @@ classdef SMIWrapper < handle
             obj.sendMessage('CALIBRATION START');
             obj.iView.calibrate();
             % show display
-            [status,out.cal] = obj.DoCalPointDisplay(wpnt);
+            [status,out.cal,tick] = obj.DoCalPointDisplay(wpnt,-1);
             obj.sendMessage('CALIBRATION END');
             if status~=1
                 return;
@@ -1431,7 +1433,7 @@ classdef SMIWrapper < handle
             obj.sendMessage('VALIDATION START');
             obj.iView.validate();
             % show display
-            [status,out.val] = obj.DoCalPointDisplay(wpnt);
+            [status,out.val] = obj.DoCalPointDisplay(wpnt,tick);
             obj.sendMessage('VALIDATION END');
             obj.stopRecording();
             
@@ -1439,7 +1441,7 @@ classdef SMIWrapper < handle
             Screen('Flip',wpnt);
         end
         
-        function [status,out] = DoCalPointDisplay(obj,wpnt)
+        function [status,out,tick] = DoCalPointDisplay(obj,wpnt,tick)
             % status output:
             %  1: finished succesfully (you should query SMI software whether they think
             %     calibration was succesful though)
@@ -1450,7 +1452,6 @@ classdef SMIWrapper < handle
             
             % clear screen, anchor timing, get ready for displaying calibration points
             out.flips = Screen('Flip',wpnt);
-            out.point = nan;
             out.pointPos = [];
             
             % wait till keys released
@@ -1461,25 +1462,30 @@ classdef SMIWrapper < handle
             end
             
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
+            currentPoint = -1;
             while true
-                nextFlipT = out.flips(end)+1/1000;
-                ret = obj.iView.getCurrentCalibrationPoint(pCalibrationPoint);
+                tick        = tick+1;
+                nextFlipT   = out.flips(end)+1/1000;
+                ret         = obj.iView.getCurrentCalibrationPoint(pCalibrationPoint);
                 if ret==2   % RET_NO_VALID_DATA
                     % calibration/validation finished
                     Screen('Flip',wpnt);    % clear
-                    obj.sendMessage(sprintf('POINT OFF %d',out.point(end)));
+                    obj.sendMessage(sprintf('POINT OFF %d',currentPoint));
                     status = 1;
                     break;
                 end
                 pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
-                obj.drawfixpoint(wpnt,pos);
                 
-                out.point(end+1) = pCalibrationPoint.number;
+                % call drawer function
+                obj.settings.cal.drawFunction(wpnt,currentPoint,pos,tick);
+                
                 out.flips(end+1) = Screen('Flip',wpnt,nextFlipT);
-                if out.point(end)~=out.point(end-1)
-                    obj.sendMessage(sprintf('POINT ON %d (%d %d)',out.point(end),pos));
-                    out.pointPos(end+1,1:3) = [out.point(end) pos];
+                if pCalibrationPoint.number~=currentPoint
+                    currentPoint = pCalibrationPoint.number;
+                    obj.sendMessage(sprintf('POINT ON %d (%d %d)',currentPoint,pos));
+                    out.pointPos(end+1,1:3) = [currentPoint pos];
                 end
+                
                 % check for keys
                 [keyPressed,~,keyCode] = KbCheck();
                 if keyPressed
@@ -1507,6 +1513,10 @@ classdef SMIWrapper < handle
                     end
                 end
             end
+        end
+        
+        function drawFixationPoint(obj,wpnt,~,pos,~)
+            obj.drawAFixPoint(wpnt,pos);
         end
         
         function [status,selection] = showValidationResult(obj,wpnt,cal,kCal)
@@ -1669,7 +1679,7 @@ classdef SMIWrapper < handle
                             end
                         end
                         % draw fixation points
-                        obj.drawfixpoint(wpnt,fixPos);
+                        obj.drawAFixPoint(wpnt,fixPos);
                     end
                     % drawing done, show
                     Screen('Flip',wpnt);
