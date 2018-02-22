@@ -109,6 +109,10 @@ classdef SMIWrapper < handle
             
             % Connect to server
             obj.iView.disconnect();  % disconnect first, found this necessary as API otherwise apparently does not recognize it when eye tracker server crashed or closed by hand while connected. Well, calling 'iV_IsConnected' twice seems to work...
+            if obj.settings.start.removeTempDataFile && ~obj.isTwoComputerSetup()
+                % remove temp idf file on this computer
+                system('del /F /S /Q /A "C:\ProgramData\SMI\iView X\temp\*.idf"');
+            end
             ret = obj.iView.start(obj.settings.etApp);  % returns 1 when starting app, 4 if its already running
             qStarting = ret==1;
             
@@ -412,9 +416,6 @@ classdef SMIWrapper < handle
         end
         
         function saveData(obj,filename, user, description, doAppendVersion)
-            % check if 2 computer setup
-            isTwoComputerSetup = ~isempty(obj.settings.connectInfo) && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
-            
             % 1. get filename and path
             [path,file,ext] = fileparts(filename);
             assert(~isempty(path),'saveData: filename should contain a path')
@@ -455,7 +456,7 @@ classdef SMIWrapper < handle
             % construct full filename
             filename = fullfile(path,file);
             
-            if isTwoComputerSetup
+            if obj.isTwoComputerSetup()
                 % Two computer setup: file gets saved on eye-tracker
                 % computer (do so with without path info and allowing
                 % overwrite). Transfer the file using the
@@ -627,6 +628,7 @@ classdef SMIWrapper < handle
             
             % the rest here are good defaults for the RED-m (mostly), some
             % are general. Many are hard to set...
+            settings.start.removeTempDataFile   = true;                     % when calling iV_Start, it always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.autoPace       = true;                             % false: manually confirm each calibration point. true: only manually confirm the first point, the rest will be autoaccepted
             settings.cal.pointPos       = [];                               % if empty, default positions are used, else, specify N calibration point positions in an Nx2 matrix
@@ -1787,5 +1789,8 @@ classdef SMIWrapper < handle
         function iValid = getValidCalibrations(~,cal)
             iValid = find(cellfun(@(x) isfield(x,'calStatusSMI') && strcmp(x.calStatusSMI,'calibrationValid'),cal));
         end
+        
+        function out = isTwoComputerSetup(obj)
+            out = isempty(obj.settings.connectInfo) && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
     end
 end
