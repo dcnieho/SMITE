@@ -136,6 +136,8 @@ classdef SMIWrapper < handle
             end
             
             % check this is the device the user specified
+            % TODO: also use ETDevice in getSystemInfo, which should work
+            % for all supported trackers
             if obj.caps.deviceName
                 [~,trackerName] = obj.iView.getDeviceName;
                 assert(strcmp(trackerName,obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
@@ -143,8 +145,10 @@ classdef SMIWrapper < handle
             
             % deal with device geometry
             if obj.caps.REDGeometry
+                % TODO, RED500 settings.setup.geomMode: check or can set
+                % remotely?
                 % setup device geometry
-                ret = obj.iView.selectREDGeometry(obj.settings.geomProfile);
+                ret = obj.iView.selectREDGeometry(obj.settings.setup.geomProfile);
                 assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
                 % get info about the setup
                 [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
@@ -605,9 +609,15 @@ classdef SMIWrapper < handle
             end
             
             % some settings only for remotes
-            if ismember(tracker,{'RED250','RED500','RED-m','RED250mobile','REDn'})
-                settings.setup.viewingDist      = 65;
-                settings.geomProfile            = 'Desktop 22in Monitor';    % TODO: check it works for old REDs, does iViewX have these profiles?
+            switch tracker
+                case {'RED250','RED500'}
+                    settings.setup.viewingDist      = 65;
+                    settings.setup.geomMode         = 'monitorIntegrated';      % monitorIntegrated or standalone
+                    settings.setup.geomProfile      = 'Desktop 22in Monitor';   % only when in standalone mode. check whether setting it works for old REDs
+                case 'RED-m'
+                    settings.setup.viewingDist      = 65;
+                    settings.setup.geomProfile      = 'Desktop 22in Monitor';   % check it works for old REDs, does iViewX have these profiles?
+                case {'RED250mobile','REDn'}
             end
             
             % the rest here are good defaults for the RED-m (mostly), some
