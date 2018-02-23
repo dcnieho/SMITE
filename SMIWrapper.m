@@ -138,7 +138,7 @@ classdef SMIWrapper < handle
                     error('SMI: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
                 case 123
                     error('SMI: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
-                case 201
+                case 201 % TODO: 201 here, 200 in the message?
                     error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error 200: %s)',SMIErrCode2String(ret));
                 otherwise
                     error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
@@ -626,7 +626,7 @@ classdef SMIWrapper < handle
             settings.cal.fixFrontSize   = 5;
             settings.cal.fixBackColor   = 0;
             settings.cal.fixFrontColor  = 255;
-            settings.cal.drawFunction   = @drawFixationPoint;
+            settings.cal.drawFunction   = @obj.drawFixationPoint;
             settings.logFileName        = 'iView_log.txt';
             settings.text.font          = 'Consolas';
             settings.text.size          = 20;
