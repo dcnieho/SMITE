@@ -1,0 +1,187 @@
+#include "SMIbuffer/SMIbuffer.h"
+#define DLL_EXPORT_SYM __declspec(dllexport)
+#include "mex.h"
+#include "class_handle.hpp"
+#include "strHash.h"
+
+#include <cwchar>
+#include <algorithm>
+
+mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_);
+mxArray* EventVectorToMatlab(std::vector<EventStruct> data_);
+
+void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+{
+    // Get the command string
+    char cmd[64] = {0};
+    if (nrhs < 1 || mxGetString(prhs[0], cmd, sizeof(cmd)))
+        mexErrMsgTxt("First input should be a command string less than 64 characters long.");
+    size_t nChar = std::min(strlen(cmd),size_t(64));
+
+    // New
+    if (!strcmp("new", cmd)) {
+        // Check parameters
+        if (nlhs != 1)
+            mexErrMsgTxt("New: One output expected.");
+        // Return a handle to a new C++ instance
+        plhs[0] = convertPtr2Mat<SMIbuffer>(new SMIbuffer);
+        return;
+    }
+
+    // Check there is a second input, which should be the class instance handle
+    if (nrhs < 2)
+        mexErrMsgTxt("Second input should be a class instance handle.");
+
+    // Delete
+    if (!strcmp("delete", cmd)) {
+        // Destroy the C++ object
+        destroyObject<SMIbuffer>(prhs[1]);
+        // Warn if other commands were ignored
+        if (nlhs != 0 || nrhs != 2)
+            mexWarnMsgTxt("Delete: Unexpected arguments ignored.");
+        return;
+    }
+
+    // Get the class instance pointer from the second input
+    SMIbuffer *SMIBufInstance = convertMat2Ptr<SMIbuffer>(prhs[1]);
+
+    // Call the various class methods
+    switch (rt::crc32(cmd,nChar))
+    {
+        case ct::crc32("startSampleBuffering"):
+            // Check parameters
+            if (nlhs < 0 || nrhs < 2)
+                mexErrMsgTxt("startSampleBuffering: Unexpected arguments.");
+            if (nrhs > 2)
+            {
+                if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
+                    mexErrMsgTxt("startSampleBuffering: Expected argument to be a uint64 scalar.");
+                // Call the method
+                SMIBufInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+            }
+            else
+            {
+                SMIBufInstance->startSampleBuffering();
+            }
+            return;
+        case ct::crc32("startEventBuffering"):
+            // Check parameters
+            if (nlhs < 0 || nrhs < 2)
+                mexErrMsgTxt("startEventBuffering: Unexpected arguments.");
+            if (nrhs > 2)
+            {
+                if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
+                    mexErrMsgTxt("startEventBuffering: Expected argument to be a uint64 scalar.");
+                // Call the method
+                SMIBufInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+            }
+            else
+            {
+                SMIBufInstance->startEventBuffering();
+            }
+            return;
+        case ct::crc32("stopSampleBuffering"):
+        {
+            // Check parameters
+            if (nlhs < 0 || nrhs < 3)
+                mexErrMsgTxt("stopSampleBuffering: Expected deleteBuffer input.");
+            if (!(mxIsDouble(prhs[2]) && !mxIsComplex(prhs[2]) && mxIsScalar(prhs[2])) && !mxIsLogicalScalar(prhs[2]))
+                mexErrMsgTxt("stopSampleBuffering: Expected argument to be a logical scalar.");
+            bool deleteBuffer;
+            if (mxIsDouble(prhs[2]))
+                deleteBuffer = !!mxGetScalar(prhs[2]);
+            else
+                deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
+            // Call the method
+            SMIBufInstance->stopSampleBuffering(deleteBuffer);
+            return;
+        }
+        case ct::crc32("stopEventBuffering"):
+        {
+            // Check parameters
+            if (nlhs < 0 || nrhs < 3)
+                mexErrMsgTxt("stopEventBuffering: Expected deleteBuffer input.");
+            if (!(mxIsDouble(prhs[2]) && !mxIsComplex(prhs[2]) && mxIsScalar(prhs[2])) && !mxIsLogicalScalar(prhs[2]))
+                mexErrMsgTxt("stopEventBuffering: Expected argument to be a logical scalar.");
+            bool deleteBuffer;
+            if (mxIsDouble(prhs[2]))
+                deleteBuffer = !!mxGetScalar(prhs[2]);
+            else
+                deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
+            // Call the method
+            SMIBufInstance->stopEventBuffering(deleteBuffer);
+            return;
+        }
+        case ct::crc32("getSamples"):
+            // Check parameters
+            if (nlhs < 1 || nrhs < 2)
+                mexErrMsgTxt("getSamples: Unexpected arguments.");
+            // Call the method
+            plhs[0] = SampleVectorToMatlab(SMIBufInstance->getSamples());
+            return;
+        case ct::crc32("getEvents"):
+            // Check parameters
+            if (nlhs < 1 || nrhs < 2)
+                mexErrMsgTxt("getEvents: Unexpected arguments.");
+            // Call the method
+            plhs[0] = EventVectorToMatlab(SMIBufInstance->getEvents());
+            return;
+        default:
+            // Got here, so command not recognized
+            mexErrMsgTxt("Command not recognized.");
+    }
+}
+
+mxArray* EventVectorToMatlab(std::vector<EventStruct> data_)
+{
+    const char* fieldNames[] = {"eventType","eye","startTime","endTime","duration","positionX","positionY"};
+    mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
+    size_t i = 0;
+    for (auto &evt : data_)
+    {
+        mxArray *temp;
+        mxSetFieldByNumber(out, i, 0, temp = mxCreateUninitNumericMatrix(1, 1, mxCHAR_CLASS, mxREAL));
+        *static_cast<char*>(mxGetData(temp)) = evt.eventType;
+        mxSetFieldByNumber(out, i, 1, temp = mxCreateUninitNumericMatrix(1, 1, mxCHAR_CLASS, mxREAL));
+        *static_cast<char*>(mxGetData(temp)) = evt.eye;
+        mxSetFieldByNumber(out, i, 2, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = evt.startTime;
+        mxSetFieldByNumber(out, i, 3, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = evt.endTime;
+        mxSetFieldByNumber(out, i, 4, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = evt.duration;
+        mxSetFieldByNumber(out, i, 5, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
+        *static_cast<double*>(mxGetData(temp)) = evt.positionX;
+        mxSetFieldByNumber(out, i, 6, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
+        *static_cast<double*>(mxGetData(temp)) = evt.positionY;
+        i++;
+    }
+    return out;
+}
+
+mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
+{
+    const char* fieldNames[] = {"eventType","eye","startTime","endTime","duration","positionX","positionY"};
+    mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
+    size_t i = 0;
+    for (auto &evt : data_)
+    {
+        mxArray *temp;
+        mxSetFieldByNumber(out, i, 0, temp = mxCreateUninitNumericMatrix(1, 1, mxCHAR_CLASS, mxREAL));
+        *static_cast<char*>(mxGetData(temp)) = evt.eventType;
+        mxSetFieldByNumber(out, i, 1, temp = mxCreateUninitNumericMatrix(1, 1, mxCHAR_CLASS, mxREAL));
+        *static_cast<char*>(mxGetData(temp)) = evt.eye;
+        mxSetFieldByNumber(out, i, 2, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = evt.startTime;
+        mxSetFieldByNumber(out, i, 3, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = evt.endTime;
+        mxSetFieldByNumber(out, i, 4, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = evt.duration;
+        mxSetFieldByNumber(out, i, 5, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
+        *static_cast<double*>(mxGetData(temp)) = evt.positionX;
+        mxSetFieldByNumber(out, i, 6, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
+        *static_cast<double*>(mxGetData(temp)) = evt.positionY;
+        i++;
+    }
+    return out;
+}
