@@ -1,4 +1,7 @@
 classdef SMIWrapperDummyMode < SMIWrapper
+    properties
+        doMouseSimulation = false;
+    end
     
     methods
         function obj = SMIWrapperDummyMode(SMIWrapperInstance)
@@ -56,9 +59,13 @@ classdef SMIWrapperDummyMode < SMIWrapper
         function sendMessage(~,~)
         end
         
-        function sample = getLatestSample(~)
-            sample = [];
-        end
+        function sample = getLatestSample(obj)
+            if obj.doMouseSimulation
+                [mx, my] = GetMouse();
+                sample = [mx my];
+            else
+                sample = [];
+            end
         
         function time = getTimeStamp(~)
             time = 0;
