@@ -367,19 +367,6 @@ classdef SMIWrapper < handle
             WaitSecs(.1); % give it some time to get started. not needed according to doc, but never hurts
         end
         
-        function pauseRecording(obj)
-            ret = obj.iView.pauseRecording();
-            obj.processError(ret,'SMI: Error pausing recording');
-        end
-        
-        function continueRecording(obj,message)
-            if nargin<2
-                message = 'SMIWrapper: continueRecording called';
-            end
-            ret = obj.iView.continueRecording(message);
-            obj.processError(ret,'SMI: Error continuing recording');
-        end
-        
         function stopRecording(obj)
             ret = obj.iView.stopRecording();
             obj.processError(ret,'SMI: Error stopping recording');
@@ -414,14 +401,6 @@ classdef SMIWrapper < handle
             [ret,sample] = obj.iView.getSample();
             if ret~=1
                 sample = [];
-            end
-        end
-        
-        function time = getTimeStamp(obj)
-            % returns empty when sample not gotten successfully
-            [ret,time] = obj.iView.getCurrentTimestamp();
-            if ret~=1
-                time = [];
             end
         end
         
@@ -1812,5 +1791,6 @@ classdef SMIWrapper < handle
         
         function out = isTwoComputerSetup(obj)
             out = isempty(obj.settings.connectInfo) && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
+        end
     end
 end

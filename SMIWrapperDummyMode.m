@@ -43,12 +43,6 @@ classdef SMIWrapperDummyMode < SMIWrapper
         function startRecording(~,~)
         end
         
-        function pauseRecording(~)
-        end
-        
-        function continueRecording(~,~)
-        end
-        
         function stopRecording(~)
         end
         
@@ -66,9 +60,6 @@ classdef SMIWrapperDummyMode < SMIWrapper
             else
                 sample = [];
             end
-        
-        function time = getTimeStamp(~)
-            time = 0;
         end
         
         function saveData(~,~,~,~,~)
