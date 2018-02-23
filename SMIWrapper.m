@@ -401,13 +401,11 @@ classdef SMIWrapper < handle
         
         function setTrialImage(obj,filename)
             [path,~,ext] = fileparts(filename);
-            % TODO: must there be a path or must there not be a path?
-            % relative path ok but not absolute? (I can imagine some
-            % folder organization in stimulus locations, but dunno if
-            % BeGaze likes that
-            if isempty(ext)
-                warning('SMIWrapper::setTrialImage: are you sure you are providing a filename as input? input: "%s"',filename);
-            end
+            % 1. there must not be a path
+            assert(isempty(path),'SMI trial image/video must not contain a path to be usable by BeGaze')
+            % 2. check extention is one of the supported ones
+            assert(ismember(ext,{'.png','.jpg','.jpeg','.bmp','.avi'}),'SMI trial image/video must have one of the following extensions: .png, .jpg, .jpeg, .bmp or .avi')
+            % ok, send
             obj.sendMessage(filename);
         end
         
