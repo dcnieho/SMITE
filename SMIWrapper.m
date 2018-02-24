@@ -1,7 +1,10 @@
 classdef SMIWrapper < handle
     properties (Access = protected, Hidden = true)
-        % state
+        % dll and mex files
         iView;
+        sampEvtBuffers;
+        
+        % state
         debugLevel      = 0;
         isInitialized   = false;
         
@@ -48,6 +51,9 @@ classdef SMIWrapper < handle
             
             % Load in plugin (SMI dll)
             obj.iView = iViewXAPI();
+            
+            % Load in our callback buffer
+            obj.sampEvtBuffers = SMIbuffer();
         end
         
         function out = setDummyMode(obj)
