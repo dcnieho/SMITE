@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2C6137C2-382B-4A3E-B06D-38DC4F6E5EE7}</ProjectGuid>
-    <RootNamespace>UDPClient_python</RootNamespace>
+    <RootNamespace>SMIbuffer_python</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>SMIbuffer_python_cpp</ProjectName>
   </PropertyGroup>
@@ -71,24 +71,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.pyd</TargetExt>
-    <OutDir>.\UDPClient\</OutDir>
+    <OutDir>.\SMIbuffer\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <TargetName>UDPClient_python</TargetName>
+    <TargetName>SMIbuffer_python</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.pyd</TargetExt>
-    <TargetName>UDPClient_python_d</TargetName>
-    <OutDir>.\</OutDir>
+    <TargetName>SMIbuffer_python_d</TargetName>
+    <OutDir>.\SMIbuffer\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\UDPClient\</OutDir>
-    <TargetName>UDPClient_python</TargetName>
+    <OutDir>.\SMIbuffer\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SMIbuffer_python</TargetName>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\UDPClient</OutDir>
+    <OutDir>.\SMIbuffer\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <TargetName>UDPClient_python</TargetName>
+    <TargetName>SMIbuffer_python</TargetName>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -96,13 +98,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\.;..\..\Dependency\boost;C:\Users\Diederick\Anaconda2\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\.;C:\dat\software\dependencies\boost;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Diederick\Anaconda2\libs;..\..\Dependency\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\Diederick\temp\libs;C:\dat\software\dependencies\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>..\$(Configuration)\SMIBuffer.lib;iViewXAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\$(Configuration)\SMIbuffer.lib;iViewXAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -110,14 +112,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\Dependency\boost;C:\Users\Diederick\Anaconda22\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\.;C:\dat\software\dependencies\boost;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Diederick\Anaconda2\libs;..\..\Dependency\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\temp\Anaconda2\libs;C:\dat\software\dependencies\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>..\$(IntDir)SMIBuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -127,14 +129,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\.;..\..\Dependency\boost;C:\Users\Diederick\Anaconda2\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\.;C:\dat\software\dependencies\boost;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>..\$(Configuration)\SMIBuffer.lib;iViewXAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\Diederick\Anaconda2\libs;..\..\Dependency\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>..\$(Configuration)\SMIbuffer.lib;iViewXAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\temp\Anaconda2\libs;C:\dat\software\dependencies\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -144,14 +146,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\Dependency\boost;C:\Users\Diederick\Anaconda2\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\.;C:\dat\software\dependencies\boost;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\Diederick\Anaconda2\libs;..\..\Dependency\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>..\$(IntDir)SMIBuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\temp\Anaconda2\libs;C:\dat\software\dependencies\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

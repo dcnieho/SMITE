@@ -150,37 +150,40 @@ mxArray* EventVectorToMatlab(std::vector<EventStruct> data_)
         *static_cast<long long*>(mxGetData(temp)) = evt.endTime;
         mxSetFieldByNumber(out, i, 4, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
         *static_cast<long long*>(mxGetData(temp)) = evt.duration;
-        mxSetFieldByNumber(out, i, 5, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
-        *static_cast<double*>(mxGetData(temp)) = evt.positionX;
-        mxSetFieldByNumber(out, i, 6, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
-        *static_cast<double*>(mxGetData(temp)) = evt.positionY;
+        mxSetFieldByNumber(out, i, 5, mxCreateDoubleScalar(evt.positionX));
+        mxSetFieldByNumber(out, i, 6, mxCreateDoubleScalar(evt.positionY));
         i++;
     }
     return out;
 }
 
+mxArray* EyeDataStructToMatlab(const EyeDataStruct& data_)
+{
+    const char* fieldNames[] = {"gazeX","gazeY","diam","eyePositionX","eyePositionY","eyePositionZ"};
+    mxArray* out = mxCreateStructMatrix(1, 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
+    mxSetFieldByNumber(out, 0, 0, mxCreateDoubleScalar(data_.gazeX));
+    mxSetFieldByNumber(out, 0, 1, mxCreateDoubleScalar(data_.gazeY));
+    mxSetFieldByNumber(out, 0, 2, mxCreateDoubleScalar(data_.diam));
+    mxSetFieldByNumber(out, 0, 3, mxCreateDoubleScalar(data_.eyePositionX));
+    mxSetFieldByNumber(out, 0, 4, mxCreateDoubleScalar(data_.eyePositionY));
+    mxSetFieldByNumber(out, 0, 5, mxCreateDoubleScalar(data_.eyePositionZ));
+    return out;
+}
+
 mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
 {
-    const char* fieldNames[] = {"eventType","eye","startTime","endTime","duration","positionX","positionY"};
+    const char* fieldNames[] = {"timestamp","leftEye","rightEye","planeNumber"};
     mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
     size_t i = 0;
-    for (auto &evt : data_)
+    for (auto &samp : data_)
     {
         mxArray *temp;
-        mxSetFieldByNumber(out, i, 0, temp = mxCreateUninitNumericMatrix(1, 1, mxCHAR_CLASS, mxREAL));
-        *static_cast<char*>(mxGetData(temp)) = evt.eventType;
-        mxSetFieldByNumber(out, i, 1, temp = mxCreateUninitNumericMatrix(1, 1, mxCHAR_CLASS, mxREAL));
-        *static_cast<char*>(mxGetData(temp)) = evt.eye;
-        mxSetFieldByNumber(out, i, 2, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
-        *static_cast<long long*>(mxGetData(temp)) = evt.startTime;
-        mxSetFieldByNumber(out, i, 3, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
-        *static_cast<long long*>(mxGetData(temp)) = evt.endTime;
-        mxSetFieldByNumber(out, i, 4, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
-        *static_cast<long long*>(mxGetData(temp)) = evt.duration;
-        mxSetFieldByNumber(out, i, 5, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
-        *static_cast<double*>(mxGetData(temp)) = evt.positionX;
-        mxSetFieldByNumber(out, i, 6, temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL));
-        *static_cast<double*>(mxGetData(temp)) = evt.positionY;
+        mxSetFieldByNumber(out, i, 0, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+        *static_cast<long long*>(mxGetData(temp)) = samp.timestamp;
+        mxSetFieldByNumber(out, i, 1, EyeDataStructToMatlab(samp.leftEye));
+        mxSetFieldByNumber(out, i, 2, EyeDataStructToMatlab(samp.rightEye));
+        mxSetFieldByNumber(out, i, 3, temp = mxCreateUninitNumericMatrix(1, 1, mxINT32_CLASS, mxREAL));
+        *static_cast<int*>(mxGetData(temp)) = samp.planeNumber;
         i++;
     }
     return out;

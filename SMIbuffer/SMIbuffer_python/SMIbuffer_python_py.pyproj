@@ -12,7 +12,7 @@
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>SMIbuffer_python_py</Name>
-    <RootNamespace>SMIBuffer_python</RootNamespace>
+    <RootNamespace>SMIbuffer_python</RootNamespace>
     <InterpreterId>Global|PythonCore|2.7-32</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
@@ -31,7 +31,7 @@
     <Compile Include="SMIbuffer\__init__.py" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="SMIBuffer_python_cpp.vcxproj">
+    <ProjectReference Include="SMIbuffer_python_cpp.vcxproj">
       <Name>UDPClient_python_cpp</Name>
       <Project>{2c6137c2-382b-4a3e-b06d-38dc4f6e5ee7}</Project>
       <Private>True</Private>
@@ -41,7 +41,7 @@
     <InterpreterReference Include="Global|PythonCore|2.7-32" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="C:\dat\projects\SMI toolbox\theToolbox\SMIbuffer\SMIBuffer_python\SMIbuffer\" />
+    <Folder Include="C:\dat\projects\SMI toolbox\theToolbox\SMIbuffer\SMIbuffer_python\SMIbuffer\" />
     <Folder Include="SMIbuffer\" />
   </ItemGroup>
   <PropertyGroup>

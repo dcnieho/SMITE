@@ -164,7 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="SMIbuffer.m" />
-    <None Include="SMIBufferTest.m" />
+    <None Include="SMIbufferTest.m" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

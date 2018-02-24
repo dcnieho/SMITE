@@ -26,10 +26,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="SMIBuffer.m">
+    <None Include="SMIbuffer.m">
       <Filter>m-files</Filter>
     </None>
-    <None Include="SMIBufferTest.m">
+    <None Include="SMIbufferTest.m">
       <Filter>m-files</Filter>
     </None>
   </ItemGroup>
