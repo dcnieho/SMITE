@@ -112,7 +112,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\MATLAB\R2017b\extern\lib\win64\microsoft;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\MATLAB\R2017b\extern\lib\win64\microsoft;..\64bitImportLib</AdditionalLibraryDirectories>
       <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;libmx.lib;libmex.lib;libmat.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/export:mexFunction %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -150,7 +150,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files\MATLAB\R2017b\extern\lib\win64\microsoft;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\MATLAB\R2017b\extern\lib\win64\microsoft;..\64bitImportLib</AdditionalLibraryDirectories>
       <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;libmx.lib;libmex.lib;libmat.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

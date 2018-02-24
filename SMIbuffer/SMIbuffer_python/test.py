@@ -1,3 +1,5 @@
 ﻿import SMIbuffer
 
-udp = SMIbuffer.UDPClient()
+sampEvtBuffers = SMIbuffer.SMIbuffer()
+
+success = sampEvtBuffers.startSampleBuffering()

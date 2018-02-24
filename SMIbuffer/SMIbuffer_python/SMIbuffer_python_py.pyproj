@@ -29,6 +29,8 @@
   <ItemGroup>
     <Compile Include="test.py" />
     <Compile Include="SMIbuffer\__init__.py" />
+    <Compile Include="SMIbuffer\x86\__init__.py" />
+    <Compile Include="SMIbuffer\x64\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="SMIbuffer_python_cpp.vcxproj">
@@ -43,6 +45,8 @@
   <ItemGroup>
     <Folder Include="C:\dat\projects\SMI toolbox\theToolbox\SMIbuffer\SMIbuffer_python\SMIbuffer\" />
     <Folder Include="SMIbuffer\" />
+    <Folder Include="SMIbuffer\x86\" />
+    <Folder Include="SMIbuffer\x64\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

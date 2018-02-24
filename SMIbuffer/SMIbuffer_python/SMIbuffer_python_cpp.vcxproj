@@ -71,24 +71,24 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.pyd</TargetExt>
-    <OutDir>.\SMIbuffer\</OutDir>
+    <OutDir>.\SMIbuffer\x86\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <TargetName>SMIbuffer_python</TargetName>
+    <TargetName>SMIbuffer_python_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.pyd</TargetExt>
     <TargetName>SMIbuffer_python_d</TargetName>
-    <OutDir>.\SMIbuffer\</OutDir>
+    <OutDir>.\SMIbuffer\x64\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\SMIbuffer\</OutDir>
+    <OutDir>.\SMIbuffer\x64\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <TargetName>SMIbuffer_python</TargetName>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\SMIbuffer\</OutDir>
+    <OutDir>.\SMIbuffer\x86\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <TargetName>SMIbuffer_python</TargetName>
     <TargetExt>.pyd</TargetExt>
@@ -117,7 +117,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\dat\software\dependencies\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\dat\software\dependencies\boost\stage\$(Platform)\lib;..\64bitImportLib;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -152,7 +152,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\dat\software\dependencies\boost\stage\$(Platform)\lib;$(PROGRAMFILES)\SMI\iView X SDK\lib;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\dat\software\dependencies\boost\stage\$(Platform)\lib;..\64bitImportLib;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalLibraryDirectories>
       <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

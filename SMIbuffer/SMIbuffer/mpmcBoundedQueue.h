@@ -37,7 +37,7 @@ public:
         : buffer_(new cell_t[buffer_size])
         , buffer_mask_(buffer_size - 1)
     {
-		// buffer size must be a power of 2 and at least 2
+        // buffer size must be a power of 2 and at least 2
         assert((buffer_size >= 2) && ((buffer_size & (buffer_size - 1)) == 0));
         for (size_t i = 0; i != buffer_size; i += 1)
             buffer_[i].sequence_.store(i, std::memory_order_relaxed);

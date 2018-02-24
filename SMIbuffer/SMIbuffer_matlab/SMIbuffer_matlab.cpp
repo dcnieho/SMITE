@@ -46,39 +46,63 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     SMIbuffer *SMIBufInstance = convertMat2Ptr<SMIbuffer>(prhs[1]);
 
     // Call the various class methods
-    switch (rt::crc32(cmd,nChar))
+    switch (rt::crc32(cmd, nChar))
     {
         case ct::crc32("startSampleBuffering"):
+        {
             // Check parameters
             if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("startSampleBuffering: Unexpected arguments.");
+            bool success;
             if (nrhs > 2)
             {
                 if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
                     mexErrMsgTxt("startSampleBuffering: Expected argument to be a uint64 scalar.");
                 // Call the method
-                SMIBufInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+                success = SMIBufInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
             }
             else
             {
-                SMIBufInstance->startSampleBuffering();
+                success = SMIBufInstance->startSampleBuffering();
             }
+            plhs[0] = mxCreateLogicalMatrix(1, 1);
+            *static_cast<bool*>(mxGetData(plhs[0])) = success;
             return;
+        }
         case ct::crc32("startEventBuffering"):
+        {
             // Check parameters
             if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("startEventBuffering: Unexpected arguments.");
+            bool success;
             if (nrhs > 2)
             {
                 if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
                     mexErrMsgTxt("startEventBuffering: Expected argument to be a uint64 scalar.");
                 // Call the method
-                SMIBufInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+                success = SMIBufInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
             }
             else
             {
-                SMIBufInstance->startEventBuffering();
+                success = SMIBufInstance->startEventBuffering();
             }
+            plhs[0] = mxCreateLogicalMatrix(1, 1);
+            *static_cast<bool*>(mxGetData(plhs[0])) = success;
+            return;
+        }
+        case ct::crc32("clearSampleBuffer"):
+            // Check parameters
+            if (nrhs < 2)
+                mexErrMsgTxt("clearSampleBuffer: Unexpected arguments.");
+            // Call the method
+            SMIBufInstance->clearSampleBuffer();
+            return;
+        case ct::crc32("clearEventBuffer"):
+            // Check parameters
+            if (nrhs < 2)
+                mexErrMsgTxt("clearEventBuffer: Unexpected arguments.");
+            // Call the method
+            SMIBufInstance->clearEventBuffer();
             return;
         case ct::crc32("stopSampleBuffering"):
         {
@@ -134,6 +158,9 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
 
 mxArray* EventVectorToMatlab(std::vector<EventStruct> data_)
 {
+    if (data_.empty())
+        return mxCreateDoubleMatrix(0, 0, mxREAL);
+
     const char* fieldNames[] = {"eventType","eye","startTime","endTime","duration","positionX","positionY"};
     mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
     size_t i = 0;
@@ -172,6 +199,9 @@ mxArray* EyeDataStructToMatlab(const EyeDataStruct& data_)
 
 mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
 {
+    if (data_.empty())
+        return mxCreateDoubleMatrix(0, 0, mxREAL);
+
     const char* fieldNames[] = {"timestamp","leftEye","rightEye","planeNumber"};
     mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
     size_t i = 0;

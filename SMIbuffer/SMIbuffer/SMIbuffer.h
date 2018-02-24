@@ -1,7 +1,11 @@
 #pragma once
 #include <vector>
 #include <iViewXAPI.h>
-#pragma comment(lib, "iViewXAPI.lib")
+#if _WIN64
+#	pragma comment(lib, "iViewXAPI64.lib")
+#else
+#	pragma comment(lib, "iViewXAPI.lib")
+#endif
 #include "mpmcBoundedQueue.h"
 
 
@@ -14,7 +18,10 @@ public:
 
     bool startSampleBuffering(size_t bufferSize_ = 1<<22);
     bool startEventBuffering (size_t bufferSize_ = 1<<20);
-    // stop discards all data in the buffer
+    // clear all buffer contents
+    void clearSampleBuffer();
+    void clearEventBuffer ();
+    // stop optionally deletes the buffer
     void stopSampleBuffering(bool deleteBuffer_);
     void stopEventBuffering (bool deleteBuffer_);
 
