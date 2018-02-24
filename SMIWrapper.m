@@ -20,7 +20,8 @@ classdef SMIWrapper < handle
     
     % computed properties (so not actual properties)
     properties (Dependent, SetAccess = private)
-        raw;            % get naked obj.iViewXAPI instance
+        rawET;          % get naked iViewXAPI instance
+        rawBuffers;     % get naked SMIbuffer instance
         % things like sampling which machine, freq, settings?
     end
     properties (Dependent)
@@ -61,8 +62,12 @@ classdef SMIWrapper < handle
             out = SMIWrapperDummyMode(obj);
         end
         
-        function out = get.raw(obj)
+        function out = get.rawET(obj)
             out = obj.iView;
+        end
+        
+        function out = get.rawBuffers(obj)
+            out = obj.sampEvtBuffers;
         end
         
         function out = get.options(obj)
@@ -357,15 +362,22 @@ classdef SMIWrapper < handle
             end
         end
         
-        function startRecording(obj,qClearBuffer)
+        function startRecording(obj,qClearFileBuffer,qBufferSamples,qBufferEvents)
             % by default do not clear recording buffer. For SMI, by the time
             % user calls startRecording, we already have data recorded during
             % calibration and validation in the buffer
-            if nargin<2
-                qClearBuffer = false;
+            if nargin<2 || isempty(qClearFileBuffer)
+                qClearFileBuffer = false;
+            end
+            if nargin<3 || isempty(qBufferSamples)
+                qBufferSamples = false;
+                % TODO
+            end
+            if nargin<4 || isempty(qBufferEvents)
+                qBufferEvents = false;
             end
             obj.iView.stopRecording();      % make sure we're not already recording when we startRecording(), or we get an error. Ignore error return code here
-            if qClearBuffer
+            if qClearFileBuffer
                 obj.iView.clearRecordingBuffer();
             end
             ret = obj.iView.startRecording();
