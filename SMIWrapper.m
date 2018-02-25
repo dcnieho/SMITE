@@ -362,19 +362,12 @@ classdef SMIWrapper < handle
             end
         end
         
-        function startRecording(obj,qClearFileBuffer,qBufferSamples,qBufferEvents)
+        function startRecording(obj,qClearFileBuffer)
             % by default do not clear recording buffer. For SMI, by the time
             % user calls startRecording, we already have data recorded during
             % calibration and validation in the buffer
             if nargin<2 || isempty(qClearFileBuffer)
                 qClearFileBuffer = false;
-            end
-            if nargin<3 || isempty(qBufferSamples)
-                qBufferSamples = false;
-                % TODO
-            end
-            if nargin<4 || isempty(qBufferEvents)
-                qBufferEvents = false;
             end
             obj.iView.stopRecording();      % make sure we're not already recording when we startRecording(), or we get an error. Ignore error return code here
             if qClearFileBuffer
@@ -383,6 +376,30 @@ classdef SMIWrapper < handle
             ret = obj.iView.startRecording();
             obj.processError(ret,'SMI: Error starting recording');
             WaitSecs(.1); % give it some time to get started. not needed according to doc, but never hurts
+        end
+        
+        function startBuffer(obj,size)
+            if nargin<2
+                size = [];
+            end
+            ret = obj.sampEvtBuffers.startSampleBuffering(size);
+            obj.processError(ret,'SMI: Error starting sample buffer');
+        end
+        
+        function data = getBufferData(obj)
+            data = obj.sampEvtBuffers.getSamples();
+        end    
+        
+        function sample = getLatestSample(obj)
+            % returns empty when sample not gotten successfully
+            [ret,sample] = obj.iView.getSample();
+            if ret~=1
+                sample = [];
+            end
+        end
+        
+        function stopBuffer(obj,deleteData)
+            obj.sampEvtBuffers.stopSampleBuffering(deleteData);
         end
         
         function stopRecording(obj)
@@ -412,14 +429,6 @@ classdef SMIWrapper < handle
             assert(ismember(ext,{'.png','.jpg','.jpeg','.bmp','.avi'}),'SMI trial image/video must have one of the following extensions: .png, .jpg, .jpeg, .bmp or .avi')
             % ok, send
             obj.sendMessage(filename);
-        end
-        
-        function sample = getLatestSample(obj)
-            % returns empty when sample not gotten successfully
-            [ret,sample] = obj.iView.getSample();
-            if ret~=1
-                sample = [];
-            end
         end
         
         function saveData(obj,filename, user, description, doAppendVersion)
