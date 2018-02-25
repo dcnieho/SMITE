@@ -67,18 +67,18 @@ SMIbuffer::~SMIbuffer()
     classPtr = nullptr;
 }
 
-bool SMIbuffer::startSampleBuffering(size_t bufferSize_ /*= 1<<22*/)
+int SMIbuffer::startSampleBuffering(size_t bufferSize_ /*= 1<<22*/)
 {
     if (!_sampleData)
         _sampleData = new mpmc_bounded_queue<SampleStruct>(bufferSize_);
-    return RET_SUCCESS != iV_SetSampleCallback(SMISampleCallback);
+    return iV_SetSampleCallback(SMISampleCallback);
 }
 
-bool SMIbuffer::startEventBuffering(size_t bufferSize_ /*= 1<<20*/)
+int SMIbuffer::startEventBuffering(size_t bufferSize_ /*= 1<<20*/)
 {
     if (!_eventData)
         _eventData = new mpmc_bounded_queue<EventStruct>(bufferSize_);
-    return RET_SUCCESS != iV_SetEventCallback(SMIEventCallback);
+    return iV_SetEventCallback(SMIEventCallback);
 }
 
 void SMIbuffer::clearSampleBuffer()

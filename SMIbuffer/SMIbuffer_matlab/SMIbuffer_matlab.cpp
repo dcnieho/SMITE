@@ -53,20 +53,19 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             // Check parameters
             if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("startSampleBuffering: Unexpected arguments.");
-            bool success;
-            if (nrhs > 2)
+            int ret;
+            if (nrhs > 2 && !mxIsEmpty(prhs[2]))
             {
                 if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
                     mexErrMsgTxt("startSampleBuffering: Expected argument to be a uint64 scalar.");
                 // Call the method
-                success = SMIBufInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+                ret = SMIBufInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
             }
             else
             {
-                success = SMIBufInstance->startSampleBuffering();
+                ret = SMIBufInstance->startSampleBuffering();
             }
-            plhs[0] = mxCreateLogicalMatrix(1, 1);
-            *static_cast<bool*>(mxGetData(plhs[0])) = success;
+            plhs[0] = mxCreateDoubleScalar(ret);
             return;
         }
         case ct::crc32("startEventBuffering"):
@@ -74,20 +73,19 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             // Check parameters
             if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("startEventBuffering: Unexpected arguments.");
-            bool success;
-            if (nrhs > 2)
+            int ret;
+            if (nrhs > 2 && !mxIsEmpty(prhs[2]))
             {
                 if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
                     mexErrMsgTxt("startEventBuffering: Expected argument to be a uint64 scalar.");
                 // Call the method
-                success = SMIBufInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+                ret = SMIBufInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
             }
             else
             {
-                success = SMIBufInstance->startEventBuffering();
+                ret = SMIBufInstance->startEventBuffering();
             }
-            plhs[0] = mxCreateLogicalMatrix(1, 1);
-            *static_cast<bool*>(mxGetData(plhs[0])) = success;
+            plhs[0] = mxCreateDoubleScalar(ret);
             return;
         }
         case ct::crc32("clearSampleBuffer"):

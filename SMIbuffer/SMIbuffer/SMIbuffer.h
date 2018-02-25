@@ -16,8 +16,8 @@ public:
     SMIbuffer();
     ~SMIbuffer();
 
-    bool startSampleBuffering(size_t bufferSize_ = 1<<22);
-    bool startEventBuffering (size_t bufferSize_ = 1<<20);
+    int startSampleBuffering(size_t bufferSize_ = 1<<22);
+    int startEventBuffering (size_t bufferSize_ = 1<<20);
     // clear all buffer contents
     void clearSampleBuffer();
     void clearEventBuffer ();
