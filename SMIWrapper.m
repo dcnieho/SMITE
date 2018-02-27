@@ -7,8 +7,9 @@ classdef SMIWrapper < handle
         % state
         debugLevel      = 0;
         isInitialized   = false;
+        whichTextRenderer;
         
-        % obj.settings and external info
+        % settings and external info
         settings;
         scrInfo;
         
@@ -47,13 +48,19 @@ classdef SMIWrapper < handle
                 obj.scrInfo             = scrInfo;
             end
             
+            % see what text renderer to use
+            obj.whichTextRenderer = Screen('Preference', 'TextRenderer');
+            if obj.whichTextRenderer == 0
+                assert(isfield(obj.settings.text,'lineCentOff'),'PTB''s TextRenderer changed between calls to getDefaults and the SMIWrapper constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMIWrapper.getDefaults(), as it has differnt settings than the recommended TextRendered number 1'
+            end
+            
             % get capabilities for the connected eye-tracker
             obj.setCapabilities();
             
             % Load in plugin (SMI dll)
             obj.iView = iViewXAPI();
             
-            % Load in our callback buffer
+            % Load in our callback buffer mex
             obj.sampEvtBuffers = SMIbuffer();
         end
         
@@ -656,14 +663,15 @@ classdef SMIWrapper < handle
             settings.cal.drawFunction   = @obj.drawFixationPoint;
             settings.logFileName        = 'iView_log.txt';
             settings.text.font          = 'Consolas';
-            settings.text.size          = 20;
             settings.text.style         = 0;                                % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
             settings.text.wrapAt        = 62;
             settings.text.vSpacing      = 1;
-            % TODO
-            %if ~Is64Bit
+            if Screen('Preference', 'TextRenderer')==0 % if old text renderer, we have different defaults and an extra settings
+                settings.text.size          = 20;
                 settings.text.lineCentOff   = 3;                                % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
-            %end
+            else
+                settings.text.size          = 24;
+            end
             settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
             settings.debugMode          = false;                            % for use with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
             settings.logLevel           = 1;                                % TODO: implement
@@ -910,13 +918,13 @@ classdef SMIWrapper < handle
                     end
                     % draw buttons
                     Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
-                    DrawMonospacedText(advancedButTextCache);
+                    obj.drawCachedText(advancedButTextCache);
                 end
                 Screen('FillRect',wpnt,[  0 120   0],calibButRect);
-                DrawMonospacedText(calibButTextCache);
+                obj.drawCachedText(calibButTextCache);
                 if qHaveValidCalibrations
                     Screen('FillRect',wpnt,[150 150   0],validateButRect);
-                    DrawMonospacedText(validateButTextCache);
+                    obj.drawCachedText(validateButTextCache);
                 end
                 % draw fixation points
                 obj.drawAFixPoint(wpnt,fixPos);
@@ -1005,6 +1013,10 @@ classdef SMIWrapper < handle
             % setup eye image
             margin  = 80;
             ret = 0;
+            % TODO: bad idea, this never returns until first eye image is
+            % successfully gotten. Probably better to hardcode per machine,
+            % and adjust first time we get an actual eye image. Before
+            % that, just have a text containing full black to draw
             while ret~=1
                 [ret,eyeImage] = obj.iView.getEyeImage();
             end
@@ -1241,24 +1253,24 @@ classdef SMIWrapper < handle
                 end
                 % draw buttons
                 Screen('FillRect',wpnt,[37  97 163],basicButRect);
-                DrawMonospacedText(basicButTextCache);
+                obj.drawCachedText(basicButTextCache);
                 Screen('FillRect',wpnt,[ 0 120   0],calibButRect);
-                DrawMonospacedText(calibButTextCache);
+                obj.drawCachedText(calibButTextCache);
                 if qHaveValidCalibrations
                     Screen('FillRect',wpnt,[150 150   0],validateButRect);
-                    DrawMonospacedText(validateButTextCache);
+                    obj.drawCachedText(validateButTextCache);
                 end
                 if obj.caps.setShowContour
                     Screen('FillRect',wpnt,eyeButClrs{overlays(1)+1},contourButRect);
-                    DrawMonospacedText(contourButTextCache);
+                    obj.drawCachedText(contourButTextCache);
                 end
                 if obj.caps.setShowPupil
                     Screen('FillRect',wpnt,eyeButClrs{overlays(2)+1},pupilButRect);
-                    DrawMonospacedText(pupilButTextCache);
+                    obj.drawCachedText(pupilButTextCache);
                 end
                 if obj.caps.setShowCR
                     Screen('FillRect',wpnt,eyeButClrs{overlays(3)+1},glintButRect);
-                    DrawMonospacedText(glintButTextCache);
+                    obj.drawCachedText(glintButTextCache);
                 end
                 % draw fixation points
                 obj.drawAFixPoint(wpnt,fixPos);
@@ -1373,7 +1385,21 @@ classdef SMIWrapper < handle
         end
         
         function cache = getButtonTextCache(obj,wpnt,lbl,rect)
-            [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff));
+            if obj.whichTextRenderer==0
+                % TODO: implement cache only mode for DrawMonospacedText 
+                [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff));
+            else
+                [sx,sy] = RectCenterd(rect);
+                [~,~,~,cache] = DrawFormattedText2(lbl,'win',wpnt,'sx',sx,'xalign','center','sy',sy,'yalign','center','baseColor',0,'cacheOnly',true);
+            end
+        end
+        
+        function drawCachedText(obj,cache)
+            if obj.whichTextRenderer==0
+                DrawMonospacedText(cache);
+            else
+                DrawFormattedText2(cache);
+            end
         end
         
         function arrowColor = getArrowColor(~,posRating,thresh,col1,col2,col3)
@@ -1645,20 +1671,24 @@ classdef SMIWrapper < handle
                     else
                         valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: % 2.2f°  % 2.2f°\n  <color=00ff00>Right<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
                     end
-                    DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
+                    if obj.whichTextRenderer==0
+                        DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
+                    else
+                        DrawFormattedText2(valText,'win',w,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
+                    end
                     % draw buttons
                     Screen('FillRect',wpnt,[150 0 0],recalButRect);
-                    DrawMonospacedText(recalButTextCache);
+                    obj.drawCachedText(recalButTextCache);
                     Screen('FillRect',wpnt,[0 120 0],continueButRect);
-                    DrawMonospacedText(continueButTextCache);
+                    obj.drawCachedText(continueButTextCache);
                     if qHaveMultipleValidCals
                         Screen('FillRect',wpnt,[150 150 0],selectButRect);
-                        DrawMonospacedText(selectButTextCache);
+                        obj.drawCachedText(selectButTextCache);
                     end
                     Screen('FillRect',wpnt,[150 0 0],setupButRect);
-                    DrawMonospacedText(setupButTextCache);
+                    obj.drawCachedText(setupButTextCache);
                     Screen('FillRect',wpnt,showGazeButClrs{qShowGaze+1},showGazeButRect);
-                    DrawMonospacedText(showGazeButTextCache);
+                    obj.drawCachedText(showGazeButTextCache);
                     % if selection menu open, draw on top
                     if qSelectMenuOpen
                         % menu background
@@ -1667,7 +1697,7 @@ classdef SMIWrapper < handle
                         Screen('FillRect',wpnt,110,menuRects.');
                         % text in each rect
                         for c=1:length(iValid)
-                            DrawMonospacedText(menuTextCache(c));
+                            obj.drawCachedText(menuTextCache(c));
                         end
                     end
                     % if showing gaze, draw
