@@ -12,22 +12,24 @@ classdef iViewXAPI < handle
                 try
                     loadlibrary(libfile, input{:});
                 catch %#ok<CTCH>
-                    % iViewXAPI failed. Most likely cause would be "invalid MEX file
-                    % error" due to iViewXAPI failing to link against required DLL's.
-                    % The old drill: cd into (likely) location of DLL. Retry. If this
-                    % was the culprit, then the linker should load, link and init
-                    % iViewXAPI and we should succeed. Otherwise we fail again. Try
-                    % some common paths...
-                    wd = pwd;
+                    % iViewXAPI failed. Most likely cause would be "invalid
+                    % MEX file error" due to iViewXAPI failing to link
+                    % against required DLL's.
+                    % The old drill: temporarily add (likely) location of
+                    % DLL. Retry. If this was the culprit, then the linker
+                    % should load, link and init iViewXAPI and we should
+                    % succeed. Otherwise we fail again. Try some common
+                    % paths...
                     if exist('C:\Program Files\SMI\iView X SDK\bin','dir')
-                        cd('C:\Program Files\SMI\iView X SDK\bin');
+                        temppath = 'C:\Program Files\SMI\iView X SDK\bin';
                     elseif exist('C:\Program Files (x86)\SMI\iView X SDK\bin','dir')
-                        cd('C:\Program Files (x86)\SMI\iView X SDK\bin');
+                        temppath = 'C:\Program Files (x86)\SMI\iView X SDK\bin';
                     else
-                        warning('failed to load %s, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable',libfile)
+                        warning('failed to load SMIbuffer_matlab, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
                     end
+                    addpath(temppath);
                     loadlibrary(libfile, input{:});
-                    cd(wd);
+                    rmpath(temppath);
                 end
             end
         end

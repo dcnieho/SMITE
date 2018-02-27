@@ -16,7 +16,6 @@ classdef SMIbuffer < handle
                 % Retry. If this was the culprit, then the linker should
                 % load, link and init iViewXAPI and we should succeed.
                 % Otherwise we fail again. Try some common paths...
-                wd = pwd;
                 if exist('C:\Program Files\SMI\iView X SDK\bin','dir')
                     temppath = 'C:\Program Files\SMI\iView X SDK\bin';
                 elseif exist('C:\Program Files (x86)\SMI\iView X SDK\bin','dir')
