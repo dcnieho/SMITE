@@ -149,8 +149,8 @@ classdef SMIWrapper < handle
                     error('SMI: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
                 case 123
                     error('SMI: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
-                case 201 % TODO: 201 here, 200 in the message?
-                    error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error 200: %s)',SMIErrCode2String(ret));
+                case {201,202}
+                    error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error %d: %s)',ret,SMIErrCode2String(ret));
                 otherwise
                     error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
             end
