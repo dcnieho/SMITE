@@ -46,8 +46,9 @@ classdef SMIWrapperDummyMode < SMIWrapper
         function startBuffer(~,~)
         end
         
-        function data = getBufferData(~)
-            data = [];
+        function data = getBufferData(obj)
+            % at least returns one sample all the time...
+            data = obj.getLatestSample;
         end
         
         function sample = getLatestSample(obj)
