@@ -43,6 +43,27 @@ classdef SMIWrapperDummyMode < SMIWrapper
         function startRecording(~,~)
         end
         
+        function startBuffer(~,~)
+        end
+        
+        function data = getBufferData(~)
+            data = [];
+        end
+        
+        function sample = getLatestSample(obj)
+            if obj.doMouseSimulation
+                [mx, my] = GetMouse();
+                % put into fake SampleStruct
+                edat = struct('gazeX',mx,'gazeY',my,'diam',0,'eyePositionX',0,'eyePositionY',0,'eyePositionZ',0);
+                sample = struct('timestamp',round(GetSecs*1000*1000),'leftEye',edat,'rightEye',edat,'planeNumber',0);
+            else
+                sample = [];
+            end
+        end
+        
+        function stopBuffer(~,~)
+        end
+        
         function stopRecording(~)
         end
         
@@ -53,13 +74,7 @@ classdef SMIWrapperDummyMode < SMIWrapper
         function sendMessage(~,~)
         end
         
-        function sample = getLatestSample(obj)
-            if obj.doMouseSimulation
-                [mx, my] = GetMouse();
-                sample = [mx my];
-            else
-                sample = [];
-            end
+        function setTrialImage(~,~)
         end
         
         function saveData(~,~,~,~,~)
