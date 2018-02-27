@@ -1386,8 +1386,7 @@ classdef SMIWrapper < handle
         
         function cache = getButtonTextCache(obj,wpnt,lbl,rect)
             if obj.whichTextRenderer==0
-                % TODO: implement cache only mode for DrawMonospacedText 
-                [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff));
+                [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff),true);
             else
                 [sx,sy] = RectCenterd(rect);
                 [~,~,~,cache] = DrawFormattedText2(lbl,'win',wpnt,'sx',sx,'xalign','center','sy',sy,'yalign','center','baseColor',0,'cacheOnly',true);
