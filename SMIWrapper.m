@@ -388,7 +388,7 @@ classdef SMIWrapper < handle
         
         function data = getBufferData(obj)
             data = obj.sampEvtBuffers.getSamples();
-        end    
+        end
         
         function sample = getLatestSample(obj)
             % returns empty when sample not gotten successfully
@@ -503,7 +503,7 @@ classdef SMIWrapper < handle
                     if isempty(data)
                         tries = tries+1;
                     end
-                    allDat = [allDat data];
+                    allDat = [allDat data]; %#ok<AGROW>
                 end
                 remotePath = allDat(6:end); % skip first 5 bits, they are a response header
                 
@@ -527,7 +527,7 @@ classdef SMIWrapper < handle
                     else
                         tries = 0;
                     end
-                    allDat = [allDat data];
+                    allDat = [allDat data]; %#ok<AGROW>
                 end
                 pnet(con,'close');
                 
@@ -1596,7 +1596,7 @@ classdef SMIWrapper < handle
                     else
                         str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°), <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
                     end
-                    menuTextCache(c) = obj.getButtonTextCache(wpnt,str,menuRects(c,:));
+                    menuTextCache(c) = obj.getButtonTextCache(wpnt,str,menuRects(c,:)); %#ok<AGROW>
                 end
             end
             
