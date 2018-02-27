@@ -589,7 +589,7 @@ classdef SMIWrapper < handle
                     settings.connectInfo        = {};
                 case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
                     % template IPs, default ports
-                    settings.connectInfo        = {'ipThis',4444,'ipET',5555};
+                    settings.connectInfo        = {'ipET',4444,'ipThis',5555};
             end
             % default tracking settings per eye-tracker
             % settings (only provided if supported):

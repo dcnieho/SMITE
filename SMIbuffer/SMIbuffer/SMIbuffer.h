@@ -26,8 +26,8 @@ public:
     void stopEventBuffering (bool deleteBuffer_);
 
     // get the data received since the last call to this function
-    std::vector<SampleStruct>	getSamples();
-    std::vector<EventStruct>	getEvents ();
+    std::vector<SampleStruct> getSamples();
+    std::vector<EventStruct>  getEvents ();
 
 private:
     // SMI callbacks needs to be friends
@@ -35,6 +35,6 @@ private:
     friend int __stdcall SMIEventCallback (EventStruct   eventData_);
 
 private:
-    mpmc_bounded_queue<SampleStruct>*	_sampleData = nullptr;
-    mpmc_bounded_queue<EventStruct>*	_eventData  = nullptr;
+    mpmc_bounded_queue<SampleStruct>* _sampleData = nullptr;
+    mpmc_bounded_queue<EventStruct>*  _eventData  = nullptr;
 };
