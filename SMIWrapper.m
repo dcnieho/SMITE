@@ -248,6 +248,11 @@ classdef SMIWrapper < handle
             end
             
             %%% 1: set up calibration
+            % to be safe, disable SMI calibration keys when possible
+            if obj.caps.setUseCalibKeys
+                % TODO: manual says only NG trackers?
+                obj.iView.setUseCalibrationKeys(0);
+            end
             % set background color
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: fullscreen fillrect sets new clear color in PTB
             % SMI calibration setup
