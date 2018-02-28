@@ -131,8 +131,16 @@ classdef SMIWrapper < handle
             % Connect to server
             obj.iView.disconnect();  % disconnect first, found this necessary as API otherwise apparently does not recognize it when eye tracker server crashed or closed by hand while connected. Well, calling 'iV_IsConnected' twice seems to work...
             if obj.settings.start.removeTempDataFile && ~obj.isTwoComputerSetup()
-                % remove temp idf file on this computer
-                system('del /F /S /Q /A "C:\ProgramData\SMI\iView X\temp\*.idf"');
+                % remove temp idf file on this computer (file or even
+                % folder may not exist, no worries because then no problem)
+                % NB: we don't support one computer setup for old RED
+                % officially, so i'm not deleting anything from that temp
+                % folder here (its also likely to contain a lot of
+                % different files instead of just the temp file for the
+                % current unfinished recording, so blanket deletion is
+                % perhaps unsafe)
+                [~,~]=system('del /F /S /Q /A "C:\ProgramData\SMI\iView X\temp\*.idf"');            % RED-m location
+                [~,~]=system('del /F /S /Q /A "C:\ProgramData\SMI\TempRemoteRecordings\*.idf"');    % RED NG location
             end
             ret = obj.iView.start(obj.settings.etApp);  % returns 1 when starting app, 4 if its already running
             qStarting = ret==1;
