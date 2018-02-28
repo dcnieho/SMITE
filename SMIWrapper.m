@@ -245,16 +245,7 @@ classdef SMIWrapper < handle
             % reset calibration points in case someone else changed them
             % previously
             obj.iView.resetCalibrationPoints();
-            % change calibration points if wanted
-            if ~isempty(obj.settings.cal.pointPos)
-                error('Not implemented')
-                % TODO
-                % be careful! "If this function is used with a RED or RED-m
-                % device, the change is applied to the currently selected
-                % profile." So we better first make a temp profile or so that
-                % we then use...
-                % iV_ChangeCalibrationPoint ( int number, int positionX, int positionY )
-            end
+            
             % get where the calibration points are
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
             out.calibrationPoints = struct('X',zeros(1,obj.settings.cal.nPoint),'Y',zeros(1,obj.settings.cal.nPoint));
@@ -656,7 +647,6 @@ classdef SMIWrapper < handle
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, it always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.autoPace       = true;                             % false: manually confirm each calibration point. true: only manually confirm the first point, the rest will be autoaccepted
-            settings.cal.pointPos       = [];                               % if empty, default positions are used, else, specify N calibration point positions in an Nx2 matrix
             settings.cal.bgColor        = 127;
             settings.cal.fixBackSize    = 20;
             settings.cal.fixFrontSize   = 5;
