@@ -253,7 +253,7 @@ classdef SMIWrapper < handle
             % SMI calibration setup
             CalibrationData = SMIStructEnum.Calibration;
             CalibrationData.method               = obj.settings.cal.nPoint;
-            CalibrationData.autoAccept           = int(obj.settings.cal.autoPace);
+            CalibrationData.autoAccept           = int32(obj.settings.cal.autoPace);
             % Setup calibration look. Necessary in all cases so that
             % validate image looks similar to calibration stimuli
             CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
