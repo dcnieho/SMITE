@@ -1922,7 +1922,7 @@ classdef SMIWrapper < handle
                         
                         % these two key combinations should always be available
                         if any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
-                            status = -2;
+                            status = -4;
                             qDoneCalibSelection = true;
                             break;
                         elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
