@@ -1962,7 +1962,7 @@ classdef SMIWrapper < handle
         end
         
         function out = isTwoComputerSetup(obj)
-            out = isempty(obj.settings.connectInfo) && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
+            out = length(obj.settings.connectInfo)==4 && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
         end
     end
 end
