@@ -703,7 +703,8 @@ classdef SMIWrapper < handle
             % are general. Many are hard to set...
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, it always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
-            settings.cal.autoPace       = true;                             % false: manually confirm each calibration point. true: only manually confirm the first point, the rest will be autoaccepted
+            settings.cal.autoPace       = 1;                                % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
+            % TODO: do we have autoaccept mode two on redm and earlier?
             settings.cal.bgColor        = 127;
             settings.cal.fixBackSize    = 20;
             settings.cal.fixFrontSize   = 5;
@@ -771,13 +772,14 @@ classdef SMIWrapper < handle
             obj.caps.setSpeedMode       = false;
             obj.caps.REDGeometry        = false;
             obj.caps.setTrackingParam   = false;
+            obj.caps.setUseCalibKeys    = false;
             obj.caps.hasHeadbox         = true;
             
             % RED-m and newer functionality
             switch obj.settings.tracker
                 case {'RED-m','RED250mobile','REDn'}
                     obj.caps.connectLocal       = true;
-                    obj.caps.configureFilter    = true;         % TODO: probably, have not tried on Hispeed and NG
+                    obj.caps.configureFilter    = true;
                     obj.caps.enableHighPerfMode = true;
                     obj.caps.deviceName         = true;
                     obj.caps.serialNumber       = true;
@@ -786,6 +788,7 @@ classdef SMIWrapper < handle
             switch obj.settings.tracker
                 case {'RED250mobile','REDn'}
                     obj.caps.setSpeedMode       = true;
+                    obj.caps.setUseCalibKeys    = true;
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
@@ -800,7 +803,7 @@ classdef SMIWrapper < handle
             % setting only for hispeed
             switch obj.settings.tracker
                 case {'HiSpeed240','HiSpeed1250'}
-                    obj.caps.hasHeadbox = false;
+                    obj.caps.hasHeadbox         = false;
             end
             % supported number of calibration points
             % TODO (check if differs, or all support all)
@@ -808,7 +811,7 @@ classdef SMIWrapper < handle
             
             % some other per tracker settings.
             % TODO: I don't know which trackers support which!!. Have now
-            % checked: RED-m, RED250, RED500
+            % checked: RED-m, RED250, RED500, RED250mobile
             obj.caps.setShowContour    = ismember(obj.settings.tracker,{});
             obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m'});
             obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
@@ -1511,6 +1514,21 @@ classdef SMIWrapper < handle
         end
         
         function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer)
+            % make sure calibration settings are correct (they may have
+            % been changed below before a previous validation
+            Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: this sets the background color, because fullscreen fillrect sets new clear color in PTB
+            % SMI calibration setup
+            CalibrationData = SMIStructEnum.Calibration;
+            CalibrationData.method               = obj.settings.cal.nPoint;
+            CalibrationData.autoAccept           = int32(obj.settings.cal.autoPace);
+            % Setup calibration look. Necessary in all cases so that
+            % validate image looks similar to calibration stimuli
+            CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
+            CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
+            CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
+            ret = obj.iView.setupCalibration(CalibrationData);
+            obj.processError(ret,'SMI: Error setting up calibration');
+            
             % calibrate
             obj.startRecording(qClearBuffer);
             % enter calibration mode
@@ -1521,6 +1539,29 @@ classdef SMIWrapper < handle
             obj.sendMessage('CALIBRATION END');
             if status~=1
                 return;
+            end
+            
+            % now change calibration setup if needed
+            % if we're in semi-automatic pacing mode, for the RED NG
+            % trackers, behaviour has changed. With these, you have to
+            % manually accept the first validation point (this is not the
+            % case for any older tracker). We don't want that, so fix it by
+            % changing the mode to fully autoaccept before entering
+            % validation, in case the current mode is semi-automatic
+            if obj.settings.cal.autoPace==1
+                % set background color
+                Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: fullscreen fillrect sets new clear color in PTB
+                % SMI calibration setup
+                CalibrationData = SMIStructEnum.Calibration;
+                CalibrationData.method               = obj.settings.cal.nPoint;
+                CalibrationData.autoAccept           = int32(2);
+                % Setup calibration look. Necessary in all cases so that
+                % validate image looks similar to calibration stimuli
+                CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
+                CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
+                CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
+                ret = obj.iView.setupCalibration(CalibrationData);
+                obj.processError(ret,'SMI: Error setting up calibration');
             end
             
             % validate
@@ -1555,11 +1596,9 @@ classdef SMIWrapper < handle
             out.pointPos = [];
             
             % wait till keys released
-            keyDown = 1;
-            while keyDown
-                WaitSecs('YieldSecs', 0.002);
-                keyDown = KbCheck;
-            end
+            acceptKey           = KbName({'space'});
+            [~,~,keyCode]       = KbCheck();
+            acceptKeyDown       = any(keyCode(acceptKey));
             
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
             currentPoint = -1;
@@ -1594,11 +1633,12 @@ classdef SMIWrapper < handle
                 [keyPressed,~,keyCode] = KbCheck();
                 if keyPressed
                     keys = KbName(keyCode);
-                    % NB: SMI SDK (apparently) takes care of detecting
-                    % calibration key presses (space for acception point).
-                    % More reliably than switching that off and doing it
-                    % ourselves it appears, so we'll work with that.
-                    if any(strcmpi(keys,'r'))
+                    if any(strcmpi(keys,'space')) && ~acceptKeyDown && ((currentPoint==1 && obj.settings.cal.autoPace<2) || obj.settings.cal.autoPace==0)
+                        % if in semi-automatic and first point, or if
+                        % manual and any point, space bars triggers
+                        % accepting calibration point
+                        obj.iView.acceptCalibrationPoint();
+                    elseif any(strcmpi(keys,'r'))
                         status = -1;
                         break;
                     elseif any(strcmpi(keys,'escape'))
@@ -1616,6 +1656,7 @@ classdef SMIWrapper < handle
                         break;
                     end
                 end
+                acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
             end
         end
         
