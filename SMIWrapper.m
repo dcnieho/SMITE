@@ -944,7 +944,16 @@ classdef SMIWrapper < handle
                 pTrackingStatusS= SMIStructEnum.TrackingStatus;
                 pSampleS        = SMIStructEnum.Sample;
             end
-            qFirst          = true;
+            % make sure we don't immediately click a button just because we
+            % come from another screen where there is a button at the same
+            % location and mouse is still down (or keyboard action with
+            % same accelerator for that matter)
+            keyPressed = true;
+            buttons    = 1;
+            while keyPressed || any(buttons)
+                keyPressed      = KbCheck();
+                [~,~,buttons]   = GetMouse();
+            end
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
@@ -996,22 +1005,10 @@ classdef SMIWrapper < handle
                 
                 
                 % check for keypresses or button clicks
-                [keyPressed,~,keyCode]  = KbCheck();
+                [~,~,keyCode]  = KbCheck();
                 [mx,my,buttons]         = GetMouse();
                 % update cursor look if needed
                 cursor.update(mx,my);
-                if qFirst
-                    % make sure we don't immediately click a button
-                    % just because we come from another screen where
-                    % there is a button at the same location and mouse
-                    % is still down (or keyboard action with same
-                    % accelerator for that matter)
-                    while keyPressed || any(buttons)
-                        [keyPressed]    = KbCheck();
-                        [~,~,buttons]   = GetMouse();
-                    end
-                end
-                qFirst = false;
                 if any(buttons)
                     % don't care which button for now. determine if clicked on either
                     % of the buttons
@@ -1204,8 +1201,6 @@ classdef SMIWrapper < handle
                 pSampleS        = SMIStructEnum.Sample;
                 relPos          = zeros(3);
             end
-            eyeKeyDown      = false;
-            eyeClickDown    = false;
             % for overlays in eye image. disable them all initially
             if obj.caps.setShowContour
                 obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',0);
@@ -1218,7 +1213,18 @@ classdef SMIWrapper < handle
             end
             overlays        = false(3);
             toggleKeys      = KbName({'c','g','p'});
-            qFirst          = true;
+            eyeKeyDown      = KbCheck();
+            [~,~,buttons]   = GetMouse();
+            eyeClickDown    = any(buttons);
+            % make sure we don't immediately click a button just because we
+            % come from another screen where there is a button at the same
+            % location and mouse is still down (or keyboard action with
+            % same accelerator for that matter)
+            while eyeKeyDown || eyeClickDown
+                eyeKeyDown      = KbCheck();
+                [~,~,buttons]   = GetMouse();
+                eyeClickDown    = any(buttons);
+            end
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
@@ -1341,22 +1347,10 @@ classdef SMIWrapper < handle
                 Screen('Flip',wpnt);
                 
                 % check for keypresses or button clicks
-                [keyPressed,~,keyCode]  = KbCheck();
-                [mx,my,buttons]         = GetMouse();
+                [~,~,keyCode]   = KbCheck();
+                [mx,my,buttons] = GetMouse();
                 % update cursor look if needed
                 cursor.update(mx,my);
-                if qFirst
-                    % make sure we don't immediately click a button
-                    % just because we come from another screen where
-                    % there is a button at the same location and mouse
-                    % is still down (or keyboard action with same
-                    % accelerator for that matter)
-                    while keyPressed || any(buttons)
-                        [keyPressed]    = KbCheck();
-                        [~,~,buttons]   = GetMouse();
-                    end
-                end
-                qFirst = false;
                 if any(buttons)
                     % don't care which button for now. determine if clicked on either
                     % of the buttons
@@ -1748,11 +1742,20 @@ classdef SMIWrapper < handle
             qSelectMenuOpen     = false;
             qShowGaze           = false;
             tex                 = 0;
-            gazeKeyDown         = false;
-            gazeClickDown       = false;
             pSampleS            = SMIStructEnum.Sample;
-            toggleKeys          = KbName({'g'});
-            qFirst              = true;
+            toggleKeys          = KbName({'g','escape'});
+            toggleKeysDown      = KbCheck();
+            [~,~,buttons]       = GetMouse();
+            gazeClickDown       = any(buttons);
+            % make sure we don't immediately click a button just because we
+            % come from another screen where there is a button at the same
+            % location and mouse is still down (or keyboard action with
+            % same accelerator for that matter)
+            while toggleKeysDown || gazeClickDown
+                toggleKeysDown  = KbCheck();
+                [~,~,buttons]   = GetMouse();
+                gazeClickDown   = any(buttons);
+            end
             while ~qDoneCalibSelection
                 % draw validation screen image
                 if tex~=0
@@ -1838,18 +1841,6 @@ classdef SMIWrapper < handle
                     [mx,my,buttons]         = GetMouse();
                     % update cursor look if needed
                     cursor.update(mx,my);
-                    if qFirst
-                        % make sure we don't immediately click a button
-                        % just because we come from another screen where
-                        % there is a button at the same location and mouse
-                        % is still down (or keyboard action with same
-                        % accelerator for that matter)
-                        while keyPressed || any(buttons)
-                            [keyPressed]    = KbCheck();
-                            [~,~,buttons]   = GetMouse();
-                        end
-                    end
-                    qFirst = false;
                     if any(buttons)
                         % don't care which button for now. determine if clicked on either
                         % of the buttons
@@ -1891,6 +1882,7 @@ classdef SMIWrapper < handle
                         if qSelectMenuOpen
                             if any(strcmpi(keys,'escape'))
                                 qSelectMenuOpen = false;
+                                toggleKeysDown  = true;
                                 break;
                             elseif ismember(keys(1),{'1','2','3','4','5','6','7','8','9'})  % key 1 is '1!', for instance
                                 idx = str2double(keys(1));
@@ -1904,7 +1896,7 @@ classdef SMIWrapper < handle
                                 status = 1;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'escape')) && ~any(strcmpi(keys,'shift'))
+                            elseif any(strcmpi(keys,'escape')) && ~any(strcmpi(keys,'shift')) && ~toggleKeysDown
                                 status = -1;
                                 qDoneCalibSelection = true;
                                 break;
@@ -1915,9 +1907,9 @@ classdef SMIWrapper < handle
                             elseif any(strcmpi(keys,'c')) && qHaveMultipleValidCals
                                 qSelectMenuOpen     = true;
                                 break;
-                            elseif any(strcmpi(keys,'g')) && ~gazeKeyDown
+                            elseif any(strcmpi(keys,'g')) && ~toggleKeysDown
                                 qShowGaze           = ~qShowGaze;
-                                gazeKeyDown         = true;
+                                toggleKeysDown      = true;
                                 break;
                             end
                         end
@@ -1935,8 +1927,8 @@ classdef SMIWrapper < handle
                             break;
                         end
                     end
-                    gazeKeyDown   = gazeKeyDown && any(keyCode(toggleKeys));  % maintain button state so only one press counted until after key up
-                    gazeClickDown = gazeClickDown && any(buttons);            % maintain button state so only one press counted until after mouse up
+                    toggleKeysDown= toggleKeysDown && any(keyCode(toggleKeys));  % maintain button state so only one press counted until after key up
+                    gazeClickDown = gazeClickDown && any(buttons);               % maintain button state so only one press counted until after mouse up
                 end
             end
             % done, clean up
