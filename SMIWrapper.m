@@ -15,15 +15,18 @@ classdef SMIWrapper < handle
         
         % eye-tracker info
         caps;           % will be populated with info about capabilities of the connected eye-tracker
+    end
+    
+    properties (SetAccess=private)
         systemInfo;
         geom;
+        calibrateHistory;
     end
     
     % computed properties (so not actual properties)
     properties (Dependent, SetAccess = private)
         rawET;          % get naked iViewXAPI instance
         rawBuffers;     % get naked SMIbuffer instance
-        % things like sampling which machine, freq, settings?
     end
     properties (Dependent)
         options;    % subset of settings that can actually be changed. contents differ based on state of class (once inited, much less can be set)
@@ -359,6 +362,12 @@ classdef SMIWrapper < handle
                     otherwise
                         error('status %d not implemented',out.attempt{kCal}.valResultAccept);
                 end
+            end
+            
+            if isempty(obj.calibrateHistory)
+                obj.calibrateHistory{1} = out;
+            else
+                obj.calibrateHistory{end+1} = out;
             end
         end
         
