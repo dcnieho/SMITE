@@ -908,7 +908,7 @@ classdef SMIWrapper < handle
             totWidth    = sum(buttonWidths)+(length(buttonSz)-1)*buttonOff;
             buttonRectsX= cumsum([0 buttonWidths]+[0 ones(1,length(buttonWidths))]*buttonOff)-totWidth/2;
             b = 1;
-            if ~obj.caps.hasHeadbox
+            if obj.caps.hasHeadbox
                 advancedButRect         = OffsetRect([buttonRectsX(b) 0 buttonRectsX(b+1)-buttonOff buttonSz{b}(2)],obj.scrInfo.center(1),yposBase-buttonSz{b}(2));
                 advancedButTextCache    = obj.getButtonTextCache(wpnt,'advanced (<i>a<i>)'        ,advancedButRect);
                 b=b+1;
