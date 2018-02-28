@@ -166,11 +166,17 @@ classdef SMIWrapper < handle
             end
             
             % check this is the device the user specified
-            % TODO: also use ETDevice in getSystemInfo, which should work
-            % for all supported trackers
             if obj.caps.deviceName
+                % if possible, use this interface as its most precise
+                % (RED-m and RED250mobile are both 'REDm' in the return of
+                % getSystemInfo
                 [~,trackerName] = obj.iView.getDeviceName;
-                assert(strcmp(trackerName,obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+                assert(strcmp(trackerName(1:min(end,length(obj.settings.tracker))),obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+            else
+                % this is a old RED or a HiSpeed, check using ETDevice in
+                % getSystemInfo if it is the device specified by the user
+                [~,sysInfo] = obj.iView.getSystemInfo();
+                sysInfo.ETDevice
             end
             
             % deal with device geometry
@@ -187,13 +193,16 @@ classdef SMIWrapper < handle
             
             % if supported, set tracker to operate at requested tracking frequency
             if obj.caps.setSpeedMode
+                % NB: I found this command to be unstable at best, so i'm
+                % not checking the return value. Below we're checking if
+                % we're at the right tracking frequency anyway
                 obj.iView.setSpeedMode(obj.settings.freq);
             end
             
             % get info about the system
             [~,obj.systemInfo]          = obj.iView.getSystemInfo();
             if obj.caps.serialNumber
-                [~,out.systemInfo.Serial]   = obj.iView.getSerialNumber();
+                [~,obj.systemInfo.Serial]   = obj.iView.getSerialNumber();
             end
             out.systemInfo              = obj.systemInfo;
             
