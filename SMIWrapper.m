@@ -51,7 +51,7 @@ classdef SMIWrapper < handle
             % see what text renderer to use
             obj.whichTextRenderer = Screen('Preference', 'TextRenderer');
             if obj.whichTextRenderer == 0
-                assert(isfield(obj.settings.text,'lineCentOff'),'PTB''s TextRenderer changed between calls to getDefaults and the SMIWrapper constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMIWrapper.getDefaults(), as it has differnt settings than the recommended TextRendered number 1'
+                assert(isfield(obj.settings.text,'lineCentOff'),'PTB''s TextRenderer changed between calls to getDefaults and the SMIWrapper constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMIWrapper.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
             end
             
             % get capabilities for the connected eye-tracker
@@ -151,13 +151,13 @@ classdef SMIWrapper < handle
                 case 1
                     % connected, we're good. nothing to do here
                 case 104
-                    error('SMI: Could not establish connection. Check if Eye Tracker is running (error 104: %s)',SMIErrCode2String(ret));
+                    error('SMI: Could not establish connection. Check if Eye Tracker application is running (error 104: %s)',SMIErrCode2String(ret));
                 case 105
                     error('SMI: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
                 case 123
                     error('SMI: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
-                case {201,202}
-                    error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error %d: %s)',ret,SMIErrCode2String(ret));
+                case 201
+                    error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error 201: %s)',SMIErrCode2String(ret));
                 otherwise
                     error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
             end
