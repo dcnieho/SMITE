@@ -900,7 +900,7 @@ classdef SMIWrapper < handle
             % setup buttons
             buttonSz    = {[220 45] [320 45] [400 45]};
             buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
-            if obj.caps.hasHeadbox
+            if ~obj.caps.hasHeadbox
                 % don't show advanced button as you have all the info on
                 % the iViewX display already. but during development, it
                 % may be nice to see the eye image. So 'a' key remains
