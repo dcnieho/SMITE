@@ -173,10 +173,10 @@ classdef iViewXAPI < handle
         end
         
         function [ret,calibrationPointQualityLeft,calibrationPointQualityRight] = getCalibrationQuality(calibrationPointNumber, pCalibrationPointQualityLeft, pCalibrationPointQualityRight)
-            if nargin<1
+            if nargin<2
                 pCalibrationPointQualityLeft  = SMIStructEnum.CalibrationPointQuality;
             end
-            if nargin<2
+            if nargin<3
                 pCalibrationPointQualityRight = SMIStructEnum.CalibrationPointQuality;
             end
             ret = calllib('iViewXAPI', 'iV_GetCalibrationQuality', calibrationPointNumber, pCalibrationPointQualityLeft, pCalibrationPointQualityRight);
