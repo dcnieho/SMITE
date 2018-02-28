@@ -39,8 +39,8 @@ classdef SMIbuffer < handle
         function data = getSamples(this)
             data = SMIbuffer_matlab('getSamples', this.objectHandle);
         end
-        function cmds = getEvents(this)
-            cmds = SMIbuffer_matlab('getEvents', this.objectHandle);
+        function events = getEvents(this)
+            events = SMIbuffer_matlab('getEvents', this.objectHandle);
         end
         function success = startSampleBuffering(this,varargin)
             % optional buffer size input
