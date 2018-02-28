@@ -666,7 +666,21 @@ classdef SMIWrapper < handle
                     settings.setup.headBox          = [31 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
                     settings.setup.eyeImageSize     = [];   % TODO
                 case 'RED250mobile'
+                    settings.trackEye               = 'EYE_BOTH';
+                    settings.trackMode              = 'SMARTBINOCULAR';
+                    settings.freq                   = 250;
+                    settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = true;
+                    settings.setup.headBox          = [32 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = [160 496];
                 case 'REDn'
+                    settings.trackEye               = 'EYE_BOTH';
+                    settings.trackMode              = 'SMARTBINOCULAR';
+                    settings.freq                   = 60;
+                    settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = true;
+                    settings.setup.headBox          = [50 30];  % at 65 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = []; % TODO
             end
             
             % some settings only for remotes
@@ -678,7 +692,11 @@ classdef SMIWrapper < handle
                 case 'RED-m'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Desktop 22in Monitor';   % check it works for old REDs, does iViewX have these profiles?
-                case {'RED250mobile','REDn'}
+                case {'RED250mobile'}
+                    settings.setup.viewingDist      = 65;
+                    settings.setup.geomProfile      = 'Default Profile';        % check it works for old REDs, does iViewX have these profiles?
+                case {'REDn'}
+                    settings.setup.viewingDist      = 65;
             end
             
             % the rest here are good defaults for the RED-m (mostly), some
