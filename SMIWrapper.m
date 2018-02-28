@@ -813,6 +813,7 @@ classdef SMIWrapper < handle
             % supported number of calibration points
             % TODO (check if differs, or all support all)
             % old REDs: 2, 5 or 9 points
+            % RED NG: 0, 1, 2, 5, 9 or 13
             
             % some other per tracker settings.
             % TODO: I don't know which trackers support which!!. Have now
