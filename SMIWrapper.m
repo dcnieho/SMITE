@@ -709,7 +709,7 @@ classdef SMIWrapper < handle
             settings.cal.fixFrontSize   = 5;
             settings.cal.fixBackColor   = 0;
             settings.cal.fixFrontColor  = 255;
-            settings.cal.drawFunction   = @obj.drawFixationPoint;
+            settings.cal.drawFunction   = [];
             settings.logFileName        = 'iView_log.txt';
             settings.text.font          = 'Consolas';
             settings.text.style         = 0;                                % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
@@ -1532,6 +1532,11 @@ classdef SMIWrapper < handle
             obj.sendMessage('VALIDATION END');
             obj.stopRecording();
             
+            % cleanup message to user function (if any)
+            if isa(obj.settings.cal.drawFunction,'function_handle')
+                obj.settings.cal.drawFunction(nan);
+            end
+            
             % clear flip
             Screen('Flip',wpnt);
         end
@@ -1572,7 +1577,11 @@ classdef SMIWrapper < handle
                 pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
                 
                 % call drawer function
-                obj.settings.cal.drawFunction(wpnt,currentPoint,pos,tick);
+                if isempty(obj.settings.cal.drawFunction)
+                    obj.drawFixationPoint(wpnt,currentPoint,pos,tick);
+                else
+                    obj.settings.cal.drawFunction(wpnt,currentPoint,pos,tick);
+                end
                 
                 out.flips(end+1) = Screen('Flip',wpnt,nextFlipT);
                 if pCalibrationPoint.number~=currentPoint
