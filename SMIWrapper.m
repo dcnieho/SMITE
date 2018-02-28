@@ -5,7 +5,6 @@ classdef SMIWrapper < handle
         sampEvtBuffers;
         
         % state
-        debugLevel      = 0;
         isInitialized   = false;
         whichTextRenderer;
         
@@ -117,15 +116,12 @@ classdef SMIWrapper < handle
         end
         
         function out = init(obj)
-            % Create logger file
-            if obj.debugLevel&&0    % forced switch off as 2 always crashes on the second invocation of setlog...
-                logLvl = 1+2+8+16;  % 4 shows many internal function calls as well. as long as the server is on, it is trying to track. so every x ms you have a record of the output of the function that calculates gaze position...
-            else
-                logLvl = 1;
-            end
-            ret = obj.iView.setLogger(logLvl, obj.settings.logFileName);
-            if ret ~= 1
-                error('Logger at "%s" could not be opened (error %d: %s)',obj.settings.logFileName,ret,SMIErrCode2String(ret));
+            % Create logger file, if wanted
+            if obj.settings.logLevel
+                ret = obj.iView.setLogger(obj.settings.logLevel, obj.settings.logFileName);
+                if ret ~= 1
+                    error('Logger at "%s" could not be opened (error %d: %s)',obj.settings.logFileName,ret,SMIErrCode2String(ret));
+                end
             end
             
             % Connect to server
@@ -577,8 +573,12 @@ classdef SMIWrapper < handle
             obj.iView.disconnect();
             % also, read log, return contents as output and delete
             fid = fopen(obj.settings.logFileName, 'r');
-            out = fread(fid, inf, '*char').';
-            fclose(fid);
+            if fid~=-1
+                out = fread(fid, inf, '*char').';
+                fclose(fid);
+            else
+                out = '';
+            end
             % somehow, matlab maintains a handle to the log file, even after
             % fclose all and unloading the SMI library. Somehow a dangling
             % handle from smi, would be my guess (note that calling iV_Quit did
@@ -729,7 +729,16 @@ classdef SMIWrapper < handle
             end
             settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
             settings.debugMode          = false;                            % for use with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
-            settings.logLevel           = 1;                                % TODO: implement
+            % SDK log Level:
+            % no logs at all:               0
+            % LOG_LEVEL_BUG                 1
+            % LOG_LEVEL_iV_FCT              2: NB: for RED-m, this always crashes on the second invocation of setlog, so use with care...
+            % LOG_LEVEL_ALL_FCT             4: shows many internal function calls as well. as long as the server is on, it is trying to track. so every x ms you have a record of the output of the function that calculates gaze position...
+            % LOG_LEVEL_IV_COMMAND          8
+            % LOG_LEVEL_RECV_IV_COMMAND     16
+            % You can request multiple types of log by adding them
+            % together, e.g. logLevel = 1+4+8+16
+            settings.logLevel           = 1;
         end
         
         function processError(returnCode,errorString)
@@ -940,7 +949,7 @@ classdef SMIWrapper < handle
             cursors.rect    = {advancedButRect.' calibButRect.' validateButRect.'};
             cursors.cursor  = [2 2 2];      % Hand
             cursors.other   = 0;            % Arrow
-            if obj.debugLevel<2             % for cleanup
+            if ~obj.settings.debugMode      % for cleanup
                 cursors.reset = -1;         % hide cursor (else will reset to cursor.other by default, so we're good with that default
             end
             cursor          = cursorUpdater(cursors);
@@ -1194,7 +1203,7 @@ classdef SMIWrapper < handle
             cursors.rect    = {basicButRect.' calibButRect.' validateButRect.' contourButRect.' pupilButRect.' glintButRect.'};
             cursors.cursor  = [2 2 2 2 2 2];    % Hand
             cursors.other   = 0;                % Arrow
-            if obj.debugLevel<2                 % for cleanup
+            if ~obj.settings.debugMode          % for cleanup
                 cursors.reset = -1;             % hide cursor (else will reset to cursor.other by default, so we're good with that default
             end
             cursor          = cursorUpdater(cursors);
