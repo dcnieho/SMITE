@@ -181,6 +181,12 @@ classdef SMIWrapper < handle
                 [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
                 out.geom        = obj.geom;
             end
+            
+            % if supported, set tracker to operate at requested tracking frequency
+            if obj.caps.setSpeedMode
+                obj.iView.setSpeedMode(obj.settings.freq);
+            end
+            
             % get info about the system
             [~,obj.systemInfo]          = obj.iView.getSystemInfo();
             if obj.caps.serialNumber
@@ -189,11 +195,7 @@ classdef SMIWrapper < handle
             out.systemInfo              = obj.systemInfo;
             
             % check tracker is operating at requested tracking frequency
-            if obj.caps.setSpeedMode
-                % TODO
-            else
-                assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
-            end
+            assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
             % setup track mode
             if obj.caps.setTrackingParam
                 ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
