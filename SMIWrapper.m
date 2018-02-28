@@ -613,9 +613,13 @@ classdef SMIWrapper < handle
                     % likely one-computer setup, connectLocal() should
                     % work, so default is:
                     settings.connectInfo        = {};
+                    % NB: for RED NG trackers, it is also supported to
+                    % supply only the remote endpoint, like:
+                    % TODO: check for RED-m
+                    % settings.connectInfo        = {'ipETComputer',4444};
                 case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
                     % template IPs, default ports
-                    settings.connectInfo        = {'ipET',4444,'ipThis',5555};
+                    settings.connectInfo        = {'ipETComputer',4444,'ipThis',5555};
             end
             % default tracking settings per eye-tracker
             % settings (only provided if supported):
@@ -783,15 +787,25 @@ classdef SMIWrapper < handle
             obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
         end
         
-        function ret_con = connect(obj)
+        function ret = connect(obj)
             if isempty(obj.settings.connectInfo)
                 if obj.caps.connectLocal
-                    ret_con = obj.iView.connectLocal();
+                    ret = obj.iView.connectLocal();
                 else
-                    error('%s tracker does not support iV_ConnectLocal, provide settings.connectInfo')
+                    error('%s tracker does not support iV_ConnectLocal, provide settings.connectInfo',obj.settings.tracker)
                 end
             else
-                ret_con = obj.iView.connect(obj.settings.connectInfo{:});
+                if length(obj.settings.connectInfo)==2
+                    if ismember(obj.settings.tracker,{'RED250mobile','REDn'})
+                        ret = obj.iView.connect(obj.settings.connectInfo{:},'',0);
+                    else
+                        error('%s tracker does not support calling iV_Connect specifying only the remote endpoint. Make sure setting.connectInfo is four elements long',obj.settings.tracker)
+                    end
+                elseif length(obj.settings.connectInfo)==4
+                    ret = obj.iView.connect(obj.settings.connectInfo{:});
+                else
+                    error('setting.connectInfo misspecified. Make sure it is four elements long')
+                end
             end
         end
         
