@@ -638,17 +638,25 @@ classdef SMIWrapper < handle
                 case 'HiSpeed1250'
                 case 'HiSpeed240'
                 case 'RED250'
+                    % TODO: should i separate out the REDs like this? I
+                    % believe most of their specs are the same for all
+                    % models, except their track rate.. (check). eye image
+                    % size changes too if IIRC from 250 to 500. We can't
+                    % test with the other REDs of course... so be cautious
+                    % here.
                     % NB: averaging eyes and any tracking mode setup is not
                     % possible remotely. has to be done by hand in iViewX
                     settings.freq                   = 250;
                     settings.cal.nPoint             = 5;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = [];   % TODO
                 case 'RED500'
                     % NB: averaging eyes and any tracking mode setup is not
                     % possible remotely. has to be done by hand in iViewX
                     settings.freq                   = 500;
                     settings.cal.nPoint             = 5;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = [];   % TODO
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
@@ -656,6 +664,7 @@ classdef SMIWrapper < handle
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
                     settings.setup.headBox          = [31 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = [];   % TODO
                 case 'RED250mobile'
                 case 'REDn'
             end
@@ -1043,15 +1052,20 @@ classdef SMIWrapper < handle
                 [boxCenter(1),boxCenter(2)] = RectCenter([0 0 boxSize]);
             end
             % setup eye image
-            margin  = 80;
-            ret = 0;
-            % TODO: bad idea, this never returns until first eye image is
-            % successfully gotten. Probably better to hardcode per machine,
-            % and adjust first time we get an actual eye image. Before
-            % that, just have a text containing full black to draw
-            while ret~=1
-                [ret,eyeImage] = obj.iView.getEyeImage();
+            margin      = 80;
+            pImageDataS = SMIStructEnum.Image;
+            tex         = 0;
+            count       = 0;
+            ret         = 0;
+            while ret~=1 && count<30
+                [ret,eyeImage] = obj.iView.getEyeImage(pImageDataS);
+                WaitSecs('YieldSecs',0.01);
+                count = count+1;
             end
+            if ret~=1
+                eyeImage    = zeros(obj.settings.setup.eyeImageSize(1),obj.settings.setup.eyeImageSize(2),'uint8');
+            end
+            tex         = obj.UploadImage(tex,wpnt,eyeImage);
             eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
             
             % setup buttons
@@ -1169,8 +1183,6 @@ classdef SMIWrapper < handle
                 pSampleS        = SMIStructEnum.Sample;
                 relPos          = zeros(3);
             end
-            pImageDataS     = SMIStructEnum.Image;
-            tex             = 0;
             eyeKeyDown      = false;
             eyeClickDown    = false;
             % for overlays in eye image. disable them all initially
@@ -1228,10 +1240,7 @@ classdef SMIWrapper < handle
                 [ret,eyeImage] = obj.iView.getEyeImage(pImageDataS);
                 if ret==1
                     % clean up old one, if any
-                    if tex
-                        Screen('Close',tex);
-                    end
-                    tex = Screen('MakeTexture',wpnt,eyeImage,[],8);   % 8 to prevent mipmap generation, we don't need it
+                    tex = obj.UploadImage(tex,wpnt,eyeImage);
                 end
                 
                 % do drawing
@@ -1406,6 +1415,13 @@ classdef SMIWrapper < handle
                 obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX' ,0);
             end
             HideCursor;
+        end
+        
+        function tex = UploadImage(~,tex,wpnt,image)
+            if tex
+                Screen('Close',tex);
+            end
+            tex = Screen('MakeTexture',wpnt,image,[],8);   % 8 to prevent mipmap generation, we don't need it
         end
         
         function drawCircle(~,wpnt,refClr,center,refSz,lineWidth)
