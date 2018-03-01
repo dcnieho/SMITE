@@ -1547,6 +1547,18 @@ classdef SMIWrapper < handle
             [status,out.cal,tick] = obj.DoCalPointDisplay(wpnt,-1);
             obj.sendMessage('CALIBRATION END');
             if status~=1
+                if status~=-1
+                    % -1 means restart calibration from start. if we do not
+                    % clean up here, we e.g. get a nice animation of the
+                    % point back to the center of the screen, or however
+                    % the user wants to indicate change of point. Clean up
+                    % in all other cases, or we would maintain drawstate
+                    % accross setup screens and such.
+                    % So, send cleanup message to user function (if any)
+                    if isa(obj.settings.cal.drawFunction,'function_handle')
+                        obj.settings.cal.drawFunction(nan);
+                    end
+                end
                 return;
             end
             
@@ -1578,20 +1590,22 @@ classdef SMIWrapper < handle
             obj.sendMessage('VALIDATION START');
             obj.iView.validate();
             % show display
-            [status,out.val] = obj.DoCalPointDisplay(wpnt,tick);
+            [status,out.val] = obj.DoCalPointDisplay(wpnt,tick,out.cal.flips(end));
             obj.sendMessage('VALIDATION END');
             obj.stopRecording();
             
-            % cleanup message to user function (if any)
-            if isa(obj.settings.cal.drawFunction,'function_handle')
-                obj.settings.cal.drawFunction(nan);
+            if status~=-1   % see comment above about why not when -1
+                % cleanup message to user function (if any)
+                if isa(obj.settings.cal.drawFunction,'function_handle')
+                    obj.settings.cal.drawFunction(nan);
+                end
             end
             
             % clear flip
             Screen('Flip',wpnt);
         end
         
-        function [status,out,tick] = DoCalPointDisplay(obj,wpnt,tick)
+        function [status,out,tick] = DoCalPointDisplay(obj,wpnt,tick,lastFlip)
             % status output:
             %  1: finished succesfully (you should query SMI software whether they think
             %     calibration was succesful though)
@@ -1599,9 +1613,14 @@ classdef SMIWrapper < handle
             % -1: restart calibration (r)
             % -2: abort calibration and go back to setup (escape key)
             % -4: Exit completely (control+escape)
+            qFirst = nargin<4;
             
             % clear screen, anchor timing, get ready for displaying calibration points
-            out.flips = Screen('Flip',wpnt);
+            if qFirst
+                out.flips = Screen('Flip',wpnt);
+            else
+                out.flips = lastFlip;
+            end
             out.pointPos = [];
             
             % wait till keys released
@@ -1617,12 +1636,19 @@ classdef SMIWrapper < handle
                 ret         = obj.iView.getCurrentCalibrationPoint(pCalibrationPoint);
                 if ret==2   % RET_NO_VALID_DATA
                     % calibration/validation finished
-                    Screen('Flip',wpnt);    % clear
-                    obj.sendMessage(sprintf('POINT OFF %d',currentPoint));
+                    if ~qFirst
+                        Screen('Flip',wpnt);    % clear
+                        obj.sendMessage(sprintf('POINT OFF %d',currentPoint));
+                    end
                     status = 1;
                     break;
                 end
                 pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
+                qNewPoint = pCalibrationPoint.number~=currentPoint;
+                if qNewPoint
+                    currentPoint = pCalibrationPoint.number;
+                    out.pointPos(end+1,1:3) = [currentPoint pos];
+                end
                 
                 % call drawer function
                 if isempty(obj.settings.cal.drawFunction)
@@ -1632,10 +1658,8 @@ classdef SMIWrapper < handle
                 end
                 
                 out.flips(end+1) = Screen('Flip',wpnt,nextFlipT);
-                if pCalibrationPoint.number~=currentPoint
-                    currentPoint = pCalibrationPoint.number;
+                if qNewPoint
                     obj.sendMessage(sprintf('POINT ON %d (%d %d)',currentPoint,pos));
-                    out.pointPos(end+1,1:3) = [currentPoint pos];
                 end
                 
                 % check for keys
