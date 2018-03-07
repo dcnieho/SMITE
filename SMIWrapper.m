@@ -446,6 +446,9 @@ classdef SMIWrapper < handle
             % ret = obj.iView.sendImageMessage(str);
             ret = calllib('iViewXAPI','iV_SendImageMessage',str);
             obj.processError(ret,'SMI: Error sending message to data file');
+            if obj.settings.debugMode
+                fprintf('%s\n',str);
+            end
         end
         
         function setTrialImage(obj,filename)
