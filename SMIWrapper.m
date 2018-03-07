@@ -779,6 +779,7 @@ classdef SMIWrapper < handle
         function setCapabilities(obj)
             % preset all to false
             obj.caps.connectLocal       = false;
+            obj.caps.connectOnlyRemote  = false;
             obj.caps.configureFilter    = false;
             obj.caps.enableHighPerfMode = false;
             obj.caps.deviceName         = false;
@@ -801,6 +802,7 @@ classdef SMIWrapper < handle
             % RED NG only functionality
             switch obj.settings.tracker
                 case {'RED250mobile','REDn'}
+                    obj.caps.connectOnlyRemote  = true;
                     obj.caps.setSpeedMode       = true;
                     obj.caps.setUseCalibKeys    = true;
             end
@@ -841,7 +843,7 @@ classdef SMIWrapper < handle
                 end
             else
                 if length(obj.settings.connectInfo)==2
-                    if ismember(obj.settings.tracker,{'RED250mobile','REDn'})
+                    if obj.caps.connectOnlyRemote
                         ret = obj.iView.connect(obj.settings.connectInfo{:},'',0);
                     else
                         error('%s tracker does not support calling iV_Connect specifying only the remote endpoint. Make sure setting.connectInfo is four elements long',obj.settings.tracker)
