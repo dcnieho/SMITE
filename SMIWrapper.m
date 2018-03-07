@@ -6,7 +6,7 @@ classdef SMIWrapper < handle
         
         % state
         isInitialized   = false;
-        whichTextRenderer;
+        usingFTGLTextRenderer;
         
         % settings and external info
         settings;
@@ -51,8 +51,8 @@ classdef SMIWrapper < handle
             end
             
             % see what text renderer to use
-            obj.whichTextRenderer = Screen('Preference', 'TextRenderer');
-            if obj.whichTextRenderer == 0
+            obj.usingFTGLTextRenderer = ~~exist('libptbdrawtext_ftgl64.dll','file');    % check if we're on a Windows platform with the high quality text renderer present (was never supported for 32bit PTB, so check only for 64bit)
+            if ~obj.usingFTGLTextRenderer
                 assert(isfield(obj.settings.text,'lineCentOff'),'PTB''s TextRenderer changed between calls to getDefaults and the SMIWrapper constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMIWrapper.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
             end
             
@@ -721,7 +721,7 @@ classdef SMIWrapper < handle
             settings.text.style         = 0;                                % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
             settings.text.wrapAt        = 62;
             settings.text.vSpacing      = 1;
-            if Screen('Preference', 'TextRenderer')==0 % if old text renderer, we have different defaults and an extra settings
+            if ~exist('libptbdrawtext_ftgl64.dll','file') % if old text renderer, we have different defaults and an extra settings
                 settings.text.size          = 20;
                 settings.text.lineCentOff   = 3;                                % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
             else
@@ -1463,19 +1463,19 @@ classdef SMIWrapper < handle
         end
         
         function cache = getButtonTextCache(obj,wpnt,lbl,rect)
-            if obj.whichTextRenderer==0
-                [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff),true);
-            else
+            if obj.usingFTGLTextRenderer
                 [sx,sy] = RectCenterd(rect);
                 [~,~,~,cache] = DrawFormattedText2(lbl,'win',wpnt,'sx',sx,'xalign','center','sy',sy,'yalign','center','baseColor',0,'cacheOnly',true);
+            else
+                [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff),true);
             end
         end
         
         function drawCachedText(obj,cache)
-            if obj.whichTextRenderer==0
-                DrawMonospacedText(cache);
-            else
+            if obj.usingFTGLTextRenderer
                 DrawFormattedText2(cache);
+            else
+                DrawMonospacedText(cache);
             end
         end
         
@@ -1828,10 +1828,10 @@ classdef SMIWrapper < handle
                     else
                         valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: % 2.2f°  % 2.2f°\n  <color=00ff00>Right<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
                     end
-                    if obj.whichTextRenderer==0
-                        DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
-                    else
+                    if obj.usingFTGLTextRenderer
                         DrawFormattedText2(valText,'win',w,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
+                    else
+                        DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
                     end
                     % draw buttons
                     Screen('FillRect',wpnt,[150 0 0],recalButRect);
