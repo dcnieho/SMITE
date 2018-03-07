@@ -1784,18 +1784,18 @@ classdef SMIWrapper < handle
             qShowGaze           = false;
             tex                 = 0;
             pSampleS            = SMIStructEnum.Sample;
-            toggleKeys          = KbName({'g','escape'});
-            toggleKeysDown      = KbCheck();
-            [~,~,buttons]       = GetMouse();
-            gazeClickDown       = any(buttons);
             % make sure we don't immediately click a button just because we
             % come from another screen where there is a button at the same
             % location and mouse is still down (or keyboard action with
             % same accelerator for that matter)
-            while toggleKeysDown || gazeClickDown
+            toggleKeys          = KbName({'c','g','escape'});
+            toggleKeysDown      = KbCheck();
+            [~,~,buttons]       = GetMouse();
+            toggleClickDown     = any(buttons);
+            while toggleKeysDown || toggleClickDown
                 toggleKeysDown  = KbCheck();
                 [~,~,buttons]   = GetMouse();
-                gazeClickDown   = any(buttons);
+                toggleClickDown = any(buttons);
             end
             while ~qDoneCalibSelection
                 % draw validation screen image
@@ -1906,14 +1906,15 @@ classdef SMIWrapper < handle
                                 elseif qIn(2)
                                     status = -1;
                                     qDoneCalibSelection = true;
-                                elseif qIn(3)
+                                elseif qIn(3) && ~toggleClickDown
                                     qSelectMenuOpen     = true;
+                                    toggleClickDown     = true;
                                 elseif qIn(4)
                                     status = -2;
                                     qDoneCalibSelection = true;
-                                elseif qIn(5) && ~gazeClickDown
+                                elseif qIn(5) && ~toggleClickDown
                                     qShowGaze           = ~qShowGaze;
-                                    gazeClickDown       = true;
+                                    toggleClickDown     = true;
                                 end
                                 break;
                             end
@@ -1945,8 +1946,9 @@ classdef SMIWrapper < handle
                                 status = -2;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'c')) && qHaveMultipleValidCals
-                                qSelectMenuOpen     = true;
+                            elseif any(strcmpi(keys,'c')) && qHaveMultipleValidCals && ~toggleKeysDown
+                                qSelectMenuOpen     = ~qSelectMenuOpen;
+                                toggleKeysDown      = true;
                                 break;
                             elseif any(strcmpi(keys,'g')) && ~toggleKeysDown
                                 qShowGaze           = ~qShowGaze;
@@ -1968,8 +1970,8 @@ classdef SMIWrapper < handle
                             break;
                         end
                     end
-                    toggleKeysDown= toggleKeysDown && any(keyCode(toggleKeys));  % maintain button state so only one press counted until after key up
-                    gazeClickDown = gazeClickDown && any(buttons);               % maintain button state so only one press counted until after mouse up
+                    toggleKeysDown  = toggleKeysDown && any(keyCode(toggleKeys));   % maintain button state so only one press counted until after key up
+                    toggleClickDown = toggleClickDown && any(buttons);              % maintain button state so only one press counted until after mouse up
                 end
             end
             % done, clean up
