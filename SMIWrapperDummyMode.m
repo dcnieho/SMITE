@@ -14,7 +14,8 @@ classdef SMIWrapperDummyMode < SMIWrapper
                 name = SMIWrapperInstance.settings.tracker;
             end
             
-            % construct default class, below we overwrite some settings etc
+            % construct default base class, below we overwrite some
+            % settings, if a super class was passed in
             obj = obj@SMIWrapper(name);
             
             if qPassedSuperClass
