@@ -1628,7 +1628,7 @@ classdef SMIWrapper < handle
             end
             out.pointPos = [];
             
-            % wait till keys released
+            % check if key is already down, so it won't be accepted below
             acceptKey           = KbName({'space'});
             [~,~,keyCode]       = KbCheck();
             acceptKeyDown       = any(keyCode(acceptKey));
@@ -1676,6 +1676,7 @@ classdef SMIWrapper < handle
                         % manual and any point, space bars triggers
                         % accepting calibration point
                         obj.iView.acceptCalibrationPoint();
+                        acceptKeyDown = true;
                     elseif any(strcmpi(keys,'r'))
                         status = -1;
                         break;
