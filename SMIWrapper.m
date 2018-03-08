@@ -382,6 +382,11 @@ classdef SMIWrapper < handle
                 end
             end
             
+            % clean up
+            Screen('Flip',wpnt);
+            
+            % store calibration info in calibration history, for later
+            % retrieval if wanted
             if isempty(obj.calibrateHistory)
                 obj.calibrateHistory{1} = out;
             else
