@@ -1638,7 +1638,8 @@ classdef SMIWrapper < handle
             acceptKeyDown       = any(keyCode(acceptKey));
             
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
-            currentPoint = -1;
+            currentPoint    = -1;
+            acceptTimer     = nan;
             while true
                 tick        = tick+1;
                 nextFlipT   = out.flips(end)+1/1000;
@@ -1675,11 +1676,16 @@ classdef SMIWrapper < handle
                 [keyPressed,~,keyCode] = KbCheck();
                 if keyPressed
                     keys = KbName(keyCode);
-                    if any(strcmpi(keys,'space')) && ~acceptKeyDown && ((currentPoint==1 && obj.settings.cal.autoPace<2) || obj.settings.cal.autoPace==0)
+                    if any(strcmpi(keys,'space')) && isnan(acceptTimer) && ~acceptKeyDown && ((currentPoint==1 && obj.settings.cal.autoPace<2) || obj.settings.cal.autoPace==0)
                         % if in semi-automatic and first point, or if
                         % manual and any point, space bars triggers
                         % accepting calibration point
-                        obj.iView.acceptCalibrationPoint();
+                        % we do this on a timer to make sure eye-trackers
+                        % older than NG ones have enough samples recorded
+                        % before continuing. This appears to be needed as
+                        % accept works on these older machines as long as
+                        % there are any valid samples recorded.
+                        acceptTimer = GetSecs();
                         acceptKeyDown = true;
                     elseif any(strcmpi(keys,'r'))
                         status = -1;
@@ -1700,6 +1706,11 @@ classdef SMIWrapper < handle
                     end
                 end
                 acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
+                
+                if GetSecs-acceptTimer >= 0.4
+                    obj.iView.acceptCalibrationPoint();
+                    acceptTimer = nan;
+                end
             end
         end
         
