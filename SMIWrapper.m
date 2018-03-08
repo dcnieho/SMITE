@@ -245,10 +245,10 @@ classdef SMIWrapper < handle
             
             %%% 1: set up calibration
             % to be safe, disable SMI calibration keys when possible
-            if obj.caps.setUseCalibKeys
-                % TODO: manual says only NG trackers?
-                obj.iView.setUseCalibrationKeys(0);
-            end
+            % NB: manual says only for NG trackers, but seems to help
+            % implementation act correctly on the RED-m as well...
+            obj.iView.setUseCalibrationKeys(0);
+            
             % set background color
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: fullscreen fillrect sets new clear color in PTB
             % SMI calibration setup
@@ -790,7 +790,6 @@ classdef SMIWrapper < handle
             obj.caps.setSpeedMode       = false;
             obj.caps.REDGeometry        = false;
             obj.caps.setTrackingParam   = false;
-            obj.caps.setUseCalibKeys    = false;
             obj.caps.hasHeadbox         = true;
             
             % RED-m and newer functionality
@@ -807,7 +806,6 @@ classdef SMIWrapper < handle
                 case {'RED250mobile','REDn'}
                     obj.caps.connectOnlyRemote  = true;
                     obj.caps.setSpeedMode       = true;
-                    obj.caps.setUseCalibKeys    = true;
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
