@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DA75F547-03D8-42D2-862E-88AE216D9E72}</ProjectGuid>
-    <RootNamespace>matlabUDPWrapper</RootNamespace>
+    <RootNamespace>SMIbuffer_matlab</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>SMIbuffer_matlab</ProjectName>
   </PropertyGroup>
@@ -73,12 +73,10 @@
     <TargetExt>.mexw32</TargetExt>
     <OutDir>$(ProjectDir)</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetExt>.mexw32</TargetExt>
     <OutDir>$(ProjectDir)</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.mexw64</TargetExt>
@@ -99,7 +97,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\MATLAB\R2015b\extern\lib\win32\microsoft;$(PROGRAMFILES)\SMI\iView X SDK\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI.lib;libmx.lib;libmex.lib;libmat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\$(Configuration)\SMIbuffer.lib;iViewXAPI.lib;libmx.lib;libmex.lib;libmat.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/export:mexFunction %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -126,7 +124,6 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\.;C:\Program Files (x86)\MATLAB\R2015b\extern\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;HAS_SMI_INTEGRATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

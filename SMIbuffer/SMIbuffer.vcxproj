@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C2F34656-DC69-4C98-8D84-C768985BEE5F}</ProjectGuid>
-    <RootNamespace>UDPclient</RootNamespace>
+    <RootNamespace>SMIbuffer</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>SMIbuffer</ProjectName>
   </PropertyGroup>
@@ -104,7 +104,6 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>.;$(PROGRAMFILES)\SMI\iView X SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
