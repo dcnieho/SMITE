@@ -3,12 +3,27 @@
 classdef SMIbuffer < handle
     properties (Access = private, Hidden = true)
         objectHandle; % Handle to the underlying C++ class instance
+        mexHndl;
     end
     methods
         %% Constructor - Create a new C++ class instance 
-        function this = SMIbuffer(varargin)
+        function this = SMIbuffer(debugMode)
+            % debugmode is for developer of SMIbuffer only, no use for end
+            % users
+            if nargin<1 || isempty(debugMode)
+                debugMode = false;
+            else
+                debugMode = ~~debugMode;
+            end
+            % determine what mex file to call
+            if debugMode
+                this.mexHndl = @SMIbuffer_matlab_d;
+            else
+                this.mexHndl = @SMIbuffer_matlab;
+            end
+            % try to construct SMIBuffer C++ class instance
             try
-                this.objectHandle = SMIbuffer_matlab('new', varargin{:});
+                this.objectHandle = this.mexHndl('new');
             catch %#ok<CTCH>
                 % constructor failed. Most likely cause would be "invalid
                 % MEX file error" due to missing iViewXAPI DLL's.
@@ -24,47 +39,47 @@ classdef SMIbuffer < handle
                     warning('failed to load SMIbuffer_matlab, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
                 end
                 addpath(temppath);
-                this.objectHandle = SMIbuffer_matlab('new', varargin{:});
+                this.objectHandle = this.mexHndl('new');
                 rmpath(temppath);
             end
         end
         
         %% Destructor - Destroy the C++ class instance
         function delete(this)
-            SMIbuffer_matlab('delete', this.objectHandle);
+            this.mexHndl('delete', this.objectHandle);
         end
 
         %% methods
         % get the data and command messages received since the last call to this function
         function data = getSamples(this)
-            data = SMIbuffer_matlab('getSamples', this.objectHandle);
+            data = this.mexHndl('getSamples', this.objectHandle);
         end
         function events = getEvents(this)
-            events = SMIbuffer_matlab('getEvents', this.objectHandle);
+            events = this.mexHndl('getEvents', this.objectHandle);
         end
         function success = startSampleBuffering(this,varargin)
             % optional buffer size input
-            success = SMIbuffer_matlab('startSampleBuffering', this.objectHandle, varargin{:});
+            success = this.mexHndl('startSampleBuffering', this.objectHandle, varargin{:});
         end
         function success = startEventBuffering(this,varargin)
             % optional buffer size input
-            success = SMIbuffer_matlab('startEventBuffering' , this.objectHandle, varargin{:});
+            success = this.mexHndl('startEventBuffering' , this.objectHandle, varargin{:});
         end
         function clearSampleBuffer(this)
-            SMIbuffer_matlab('clearSampleBuffer', this.objectHandle);
+            this.mexHndl('clearSampleBuffer', this.objectHandle);
         end
         function clearEventBuffer(this)
-            SMIbuffer_matlab('clearEventBuffer' , this.objectHandle);
+            this.mexHndl('clearEventBuffer' , this.objectHandle);
         end
         function stopSampleBuffering(this,varargin)
             % required boolean input indicating whether buffer should be
             % deleted
-            SMIbuffer_matlab('stopSampleBuffering', this.objectHandle, varargin{:});
+            this.mexHndl('stopSampleBuffering', this.objectHandle, varargin{:});
         end
         function stopEventBuffering(this,varargin)
             % required boolean input indicating whether buffer should be
             % deleted
-            SMIbuffer_matlab('stopEventBuffering' , this.objectHandle, varargin{:});
+            this.mexHndl('stopEventBuffering' , this.objectHandle, varargin{:});
         end
     end
 end
