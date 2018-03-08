@@ -547,6 +547,7 @@ classdef SMIWrapper < handle
                 remoteFile = fullfile(remotePath,[file(1:3) '-eye_data.idf']);   % nearly hardcode remote file name. Only very specific file names are transferred by the remote endpoint
                 ret = obj.iView.saveData(remoteFile, description, user, 1);
                 obj.processError(ret,'SMI: Error saving data');
+                fprintf('file stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 
                 % 3a: now request remote file to be transferred
                 pnet(con,'write', [uint8([1 50 0 0 0]) uint8(remoteFile)]);
