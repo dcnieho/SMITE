@@ -44,7 +44,7 @@ classdef SMIShrinkingCalibration < handle
             obj.lastPoint= nan(1,3);
         end
         
-        function doDraw(obj,wpnt,currentPoint,pos,~)
+        function qAllowAcceptKey = doDraw(obj,wpnt,currentPoint,pos,~)
             % if called with nan as first input, this is a signal that
             % calibration/validation is done, and cleanup can occur if
             % wanted
@@ -120,6 +120,11 @@ classdef SMIShrinkingCalibration < handle
                     sz   = [obj.fixBackSizeMin obj.fixFrontSize];
                 end
             end
+            
+            % determine if we're ready to accept the user pressing the
+            % accept calibration point button. User should not be able to
+            % press it if point is not yet at the final position
+            qAllowAcceptKey = obj.calState~=obj.calStateEnum.moving;
             
             % draw
             obj.drawAFixPoint(wpnt,curPos,sz);
