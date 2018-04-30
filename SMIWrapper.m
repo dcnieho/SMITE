@@ -1553,7 +1553,7 @@ classdef SMIWrapper < handle
             obj.sendMessage('CALIBRATION START');
             obj.iView.calibrate();
             % show display
-            [status,out.cal,tick] = obj.DoCalPointDisplay(wpnt,-1);
+            [status,out.cal,tick] = obj.DoCalPointDisplay(wpnt,-1,true);
             obj.sendMessage('CALIBRATION END');
             if status~=1
                 if status~=-1
@@ -1585,8 +1585,6 @@ classdef SMIWrapper < handle
                 CalibrationData = SMIStructEnum.Calibration;
                 CalibrationData.method               = obj.settings.cal.nPoint;
                 CalibrationData.autoAccept           = int32(2);
-                % Setup calibration look. Necessary in all cases so that
-                % validate image looks similar to calibration stimuli
                 CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
                 CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
                 CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
@@ -1599,7 +1597,7 @@ classdef SMIWrapper < handle
             obj.sendMessage('VALIDATION START');
             obj.iView.validate();
             % show display
-            [status,out.val] = obj.DoCalPointDisplay(wpnt,tick,out.cal.flips(end));
+            [status,out.val] = obj.DoCalPointDisplay(wpnt,tick,false,out.cal.flips(end));
             obj.sendMessage('VALIDATION END');
             obj.stopRecording();
             
@@ -1614,7 +1612,7 @@ classdef SMIWrapper < handle
             Screen('Flip',wpnt);
         end
         
-        function [status,out,tick] = DoCalPointDisplay(obj,wpnt,tick,lastFlip)
+        function [status,out,tick] = DoCalPointDisplay(obj,wpnt,tick,qCal,lastFlip)
             % status output:
             %  1: finished succesfully (you should query SMI software whether they think
             %     calibration was succesful though)
@@ -1622,7 +1620,7 @@ classdef SMIWrapper < handle
             % -1: restart calibration (r)
             % -2: abort calibration and go back to setup (escape key)
             % -4: Exit completely (control+escape)
-            qFirst = nargin<4;
+            qFirst = nargin<5;
             
             % clear screen, anchor timing, get ready for displaying calibration points
             if qFirst
@@ -1633,13 +1631,17 @@ classdef SMIWrapper < handle
             out.pointPos = [];
             
             % check if key is already down, so it won't be accepted below
-            acceptKey           = KbName({'space'});
+            acceptKeyName       = 'space';
+            acceptKey           = KbName({acceptKeyName});
             [~,~,keyCode]       = KbCheck();
             acceptKeyDown       = any(keyCode(acceptKey));
             
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
             currentPoint    = -1;
-            acceptTimer     = nan;
+            haveAccepted    = true;     % indicates if we are waiting for a space bar press (if not, either because automatic accept or because already pressed for current point)
+            needManualAccept= @(cp) obj.settings.cal.autoPace==0 || (obj.settings.cal.autoPace==1 && qCal && cp==1);
+            acceptCount     = 0;
+            acceptInterval  = ceil(.4*Screen('NominalFrameRate',wpnt)); % 400 ms intervals
             while true
                 tick        = tick+1;
                 nextFlipT   = out.flips(end)+1/1000;
@@ -1653,18 +1655,41 @@ classdef SMIWrapper < handle
                     status = 1;
                     break;
                 end
-                pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
                 qNewPoint = pCalibrationPoint.number~=currentPoint;
-                if qNewPoint
-                    currentPoint = pCalibrationPoint.number;
-                    out.pointPos(end+1,1:3) = [currentPoint pos];
+                if haveAccepted
+                    % space bar already pressed, or not needed for current
+                    % point.
+                    if qNewPoint
+                        currentPoint = pCalibrationPoint.number;
+                        pos = [pCalibrationPoint.positionX pCalibrationPoint.positionY];
+                        out.pointPos(end+1,1:3) = [currentPoint pos];
+                        % check if manual acceptance needed for this point
+                        if needManualAccept(currentPoint)
+                            % all manual
+                            haveAccepted = false;
+                        else
+                            % all automatic
+                            haveAccepted = true;
+                        end
+                        acceptCount = 0;
+                    elseif needManualAccept(currentPoint)
+                        % send accept calibration point. Do it periodically
+                        % as it seems sometimes even though the point was
+                        % accepted, code does not move on. At all. So call
+                        % accept again at hardcoded intervals set above, as
+                        % counted by screen refreshes
+                        acceptCount = acceptCount+1;
+                        if mod(acceptCount,acceptInterval)==0
+                            obj.iView.acceptCalibrationPoint();
+                        end
+                    end
                 end
                 
                 % call drawer function
                 if isempty(obj.settings.cal.drawFunction)
-                    obj.drawFixationPoint(wpnt,currentPoint,pos,tick);
+                    qAllowAcceptKey = obj.drawFixationPoint(wpnt,currentPoint,pos,tick);
                 else
-                    obj.settings.cal.drawFunction(wpnt,currentPoint,pos,tick);
+                    qAllowAcceptKey = obj.settings.cal.drawFunction(wpnt,currentPoint,pos,tick);
                 end
                 
                 out.flips(end+1) = Screen('Flip',wpnt,nextFlipT);
@@ -1676,7 +1701,7 @@ classdef SMIWrapper < handle
                 [keyPressed,~,keyCode] = KbCheck();
                 if keyPressed
                     keys = KbName(keyCode);
-                    if any(strcmpi(keys,'space')) && isnan(acceptTimer) && ~acceptKeyDown && ((currentPoint==1 && obj.settings.cal.autoPace<2) || obj.settings.cal.autoPace==0)
+                    if any(strcmpi(keys,acceptKeyName)) && qAllowAcceptKey && ~acceptKeyDown && ~haveAccepted
                         % if in semi-automatic and first point, or if
                         % manual and any point, space bars triggers
                         % accepting calibration point
@@ -1685,8 +1710,8 @@ classdef SMIWrapper < handle
                         % before continuing. This appears to be needed as
                         % accept works on these older machines as long as
                         % there are any valid samples recorded.
-                        acceptTimer = GetSecs();
-                        acceptKeyDown = true;
+                        acceptKeyDown   = true;
+                        haveAccepted    = true;
                     elseif any(strcmpi(keys,'r'))
                         status = -1;
                         break;
@@ -1704,18 +1729,14 @@ classdef SMIWrapper < handle
                         status = 2;
                         break;
                     end
-                end
-                acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
-                
-                if GetSecs-acceptTimer >= 0.4
-                    obj.iView.acceptCalibrationPoint();
-                    acceptTimer = nan;
+                    acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
                 end
             end
         end
         
-        function drawFixationPoint(obj,wpnt,~,pos,~)
+        function qAllowAcceptKey = drawFixationPoint(obj,wpnt,~,pos,~)
             obj.drawAFixPoint(wpnt,pos);
+            qAllowAcceptKey = true;
         end
         
         function [status,selection] = showValidationResult(obj,wpnt,cal,kCal)
@@ -1850,7 +1871,7 @@ classdef SMIWrapper < handle
                         valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: % 2.2f°  % 2.2f°\n  <color=00ff00>Right<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
                     end
                     if obj.usingFTGLTextRenderer
-                        DrawFormattedText2(valText,'win',w,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
+                        DrawFormattedText2(valText,'win',wpnt,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
                     else
                         DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
                     end
