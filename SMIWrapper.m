@@ -1729,8 +1729,8 @@ classdef SMIWrapper < handle
                         status = 2;
                         break;
                     end
-                    acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
                 end
+                acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
             end
         end
         
