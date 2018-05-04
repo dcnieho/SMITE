@@ -466,6 +466,48 @@ classdef SMIWrapper < handle
             obj.sendMessage(filename);
         end
         
+        function recordEyeImages(obj,filename, format, duration)
+            % NB: does NOT work on NG eye-trackers (RED250mobile, RED-n)
+            % if using two computer setup, save location is on remote
+            % computer, if not a full path is given, it is relative to
+            % iView install directory on that computer. If single computer
+            % setup, relative paths are relative to the current working
+            % directory when this function is called
+            % duration is in ms. If provided, images for the recording
+            % duration are buffered and written to disk afterwards, so no
+            % images will be lost. If empty, images are recorded directly
+            % to disk (and lost if disk can't keep up).
+            
+            % get filename and path
+            [path,file,~] = fileparts(filename);
+            if isempty(regexp(path,'^\w:', 'once')) && ~obj.isTwoComputerSetup()
+                % single computer setup and no drive letter in provided
+                % path. Interpret path as relative to cd
+                path = fullfile(cd,path);
+            end
+            
+            % check format
+            if ischar(format)
+                format = find(strcmpi(format,{'jpg','bmp','xvid','huffyuv','alpary','xmp4'}));
+                assert(~isempty(format),'if format provided as string, should be one of ''jpg'',''bmp'',''xvid'',''huffyuv'',''alpary'',''xmp4''');
+                format = format-1;
+            end
+            assert(isnumeric(format) && format>=0 && format<=5,'format should be between 0 and 5 (inclusive)')
+            
+            % send command
+            if isempty(duration)
+                obj.rawET.sendCommand(sprintf('ET_EVB %d "%s" "%s"\n',format,file,path));
+            else
+                obj.rawET.sendCommand(sprintf('ET_EVB %d "%s" "%s" %d\n',format,file,path,duration));
+            end
+        end
+        
+        function stopRecordEyeImages(obj)
+            % if no duration specified when calling recordEyeImages, call
+            % this function to stop eye image recording
+            obj.rawET.sendCommand('ET_EVE\n');
+        end
+        
         function saveData(obj,filename, user, description, doAppendVersion)
             % 1. get filename and path
             [path,file,ext] = fileparts(filename);
