@@ -30,6 +30,48 @@ classdef SMIWrapperDummyMode < SMIWrapper
                     end
                 end
             end
+            
+            % check we overwrite all public methods (for developer, to make
+            % sure we override all accessible baseclass calls with no-ops)
+            if 0
+                thisInfo = metaclass(obj);
+                superMethods = thisInfo.SuperclassList.MethodList;
+                superMethods(~strcmp({superMethods.Access},'public') | (~~[superMethods.Static])) = [];
+                thisMethods = thisInfo.MethodList;
+                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | strcmp({thisMethods.Name},'SMIWrapperDummyMode')) = [];
+                
+                % now check for problems:
+                % 1. any methods we define here that are not in superclass?
+                notInSuper = ~ismember({thisMethods.Name},{superMethods.Name});
+                if any(notInSuper)
+                    fprintf('methods that are in %s but not in %s:\n',thisInfo.Name,thisInfo.SuperclassList.Name);
+                    fprintf('  %s\n',thisMethods(notInSuper).Name);
+                end
+                
+                % 2. methods from superclas that are not overridden.
+                qNotOverridden = arrayfun(@(x) strcmp(x.DefiningClass.Name,thisInfo.SuperclassList.Name), thisMethods);
+                if any(qNotOverridden)
+                    fprintf('methods from %s not overridden in %s:\n',thisInfo.SuperclassList.Name,thisInfo.Name);
+                    fprintf('  %s\n',thisMethods(qNotOverridden).Name);
+                end
+                
+                % 3. right number of input arguments? (NB: this code only
+                % makes sense if there are no overloads with a different
+                % number of inputs)
+                qMatchingInput = false(size(qNotOverridden));
+                for p=1:length(thisMethods)
+                    superMethod = superMethods(strcmp({superMethods.Name},thisMethods(p).Name));
+                    if isscalar(superMethod)
+                        qMatchingInput(p) = length(superMethod.InputNames) == length(thisMethods(p).InputNames);
+                    else
+                        qMatchingInput(p) = true;
+                    end
+                end
+                if any(~qMatchingInput)
+                    fprintf('methods in %s with wrong number of input arguments (mismatching %s):\n',thisInfo.Name,thisInfo.SuperclassList.Name);
+                    fprintf('  %s\n',thisMethods(~qMatchingInput).Name);
+                end
+            end
         end
         
         function out = init(obj)
