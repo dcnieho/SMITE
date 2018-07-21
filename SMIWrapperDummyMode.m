@@ -25,7 +25,7 @@ classdef SMIWrapperDummyMode < SMIWrapper
                 C = metaclass(SMIWrapperInstance);
                 P = C.Properties;
                 for k = 1:length(P)
-                    if ~P{k}.Dependent
+                    if ~P{k}.Dependent && ~strcmp(P{k}.SetAccess,'private')
                         obj.(P{k}.Name) = SMIWrapperInstance.(P{k}.Name);
                     end
                 end
