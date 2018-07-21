@@ -436,6 +436,9 @@ classdef SMIWrapper < handle
         end
         
         function stopBuffer(obj,deleteData)
+            if nargin<2
+                deleteData = false;
+            end
             obj.sampEvtBuffers.stopSampleBuffering(deleteData);
         end
         
