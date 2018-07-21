@@ -184,6 +184,7 @@ classdef SMIWrapper < handle
                 % this is a old RED or a HiSpeed, check using ETDevice in
                 % getSystemInfo if it is the device specified by the user
                 [~,sysInfo] = obj.iView.getSystemInfo();
+                warning('TODO')
                 sysInfo.ETDevice
             end
             
