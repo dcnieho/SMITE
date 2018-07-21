@@ -464,12 +464,12 @@ classdef SMIWrapper < handle
             end
         end
         
-        function setTrialImage(obj,filename)
+        function setBegazeTrialImage(obj,filename)
             [path,~,ext] = fileparts(filename);
             % 1. there must not be a path
-            assert(isempty(path),'SMI trial image/video must not contain a path to be usable by BeGaze')
+            assert(isempty(path),'SMI BeGaze trial image/video must not contain a path to be usable by BeGaze')
             % 2. check extention is one of the supported ones
-            assert(ismember(ext,{'.png','.jpg','.jpeg','.bmp','.avi'}),'SMI trial image/video must have one of the following extensions: .png, .jpg, .jpeg, .bmp or .avi')
+            assert(ismember(ext,{'.png','.jpg','.jpeg','.bmp','.avi'}),'SMI BeGaze trial image/video must have one of the following extensions: .png, .jpg, .jpeg, .bmp or .avi')
             % ok, send
             obj.sendMessage(filename);
         end
