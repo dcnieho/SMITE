@@ -4,7 +4,7 @@ namespace {
     SMIbuffer* classPtr = nullptr;
 
     template <typename T>
-    inline std::vector<T> getData(mpmc_bounded_queue<T>* dataBuffer_)
+    inline std::vector<T> getData(mpmc_bounded_queue<T>* dataBuffer_, bool justDump_=false)
     {
         std::vector<T> data;
         if (!dataBuffer_)
@@ -14,27 +14,12 @@ namespace {
         {
             T temp;
             bool success = dataBuffer_->dequeue(temp);
-            if (success)
+            if (success && !justDump_)
                 data.push_back(std::move(temp));
             else
                 break;
         }
         return data;
-    }
-
-    template <typename T>
-    inline void clearBuffer(mpmc_bounded_queue<T>* dataBuffer_)
-    {
-        if (!dataBuffer_)
-            return;
-
-        T temp;
-        while (true)
-        {
-            bool success = dataBuffer_->dequeue(temp);
-            if (!success)
-                break;
-        }
     }
 }
 
@@ -83,12 +68,12 @@ int SMIbuffer::startEventBuffering(size_t bufferSize_ /*= 1<<20*/)
 
 void SMIbuffer::clearSampleBuffer()
 {
-    return clearBuffer(_sampleData);
+    getData(_sampleData,true);
 }
 
 void SMIbuffer::clearEventBuffer()
 {
-    return clearBuffer(_eventData);
+    getData(_eventData,true);
 }
 
 void SMIbuffer::stopSampleBuffering(bool deleteBuffer_)
