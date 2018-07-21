@@ -124,7 +124,19 @@ classdef SMIWrapperDummyMode < SMIWrapper
         function sendMessage(~,~)
         end
         
-        function setTrialImage(~,~)
+        function setBegazeTrialImage(~,~)
+        end
+        
+        function setBegazeKeyPress(~,~)
+        end
+        
+        function setBegazeMouseClick(~,~,~,~)
+        end
+        
+        function recordEyeImages(~,~,~,~)
+        end
+        
+        function stopRecordEyeImages(~)
         end
         
         function saveData(~,~,~,~,~)
