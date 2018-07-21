@@ -74,9 +74,9 @@ classdef SMIWrapperDummyMode < SMIWrapper
             end
         end
         
-        function out = setDummyMode(~)
-            out = [];
-            error('You already have a dummy SMI wrapper instance, don''t call dummy mode setter again')
+        function out = setDummyMode(obj)
+            % we're already in dummy mode, just pass out the same instance
+            out = obj;
         end
         
         function out = init(obj)
