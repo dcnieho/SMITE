@@ -64,6 +64,10 @@ classdef SMIWrapper < handle
             
             % Load in our callback buffer mex
             obj.sampEvtBuffers = SMIbuffer();
+            
+            % For reasons unclear to me, a brief wait here improved
+            % stability on some of the testing systems.
+            WaitSecs(0.1);
         end
         
         function out = setDummyMode(obj)
