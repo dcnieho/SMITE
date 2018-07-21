@@ -24,7 +24,9 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
         if (nlhs != 1)
             mexErrMsgTxt("New: One output expected.");
         // Return a handle to a new C++ instance
-        plhs[0] = convertPtr2Mat<SMIbuffer>(new SMIbuffer);
+        auto a = new SMIbuffer;
+        plhs[0] = convertPtr2Mat<SMIbuffer>(a);
+        //mexPrintf("from mex, new instance %llu (%p)\n",*((uint64_t *)mxGetData(plhs[0])),a);
         return;
     }
 
@@ -35,6 +37,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     // Delete
     if (!strcmp("delete", cmd)) {
         // Destroy the C++ object
+        //mexPrintf("from mex, deleting %d\n",*((uint64_t *)mxGetData(prhs[1])));
         destroyObject<SMIbuffer>(prhs[1]);
         // Warn if other commands were ignored
         if (nlhs != 0 || nrhs != 2)
@@ -44,6 +47,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
 
     // Get the class instance pointer from the second input
     SMIbuffer *SMIBufInstance = convertMat2Ptr<SMIbuffer>(prhs[1]);
+    //mexPrintf("from mex, calling instance %llu (%p)\n",*((uint64_t *)mxGetData(prhs[1])),SMIBufInstance);
 
     // Call the various class methods
     switch (rt::crc32(cmd, nChar))

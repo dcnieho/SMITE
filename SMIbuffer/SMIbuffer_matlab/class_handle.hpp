@@ -25,7 +25,9 @@ template<class base> inline mxArray *convertPtr2Mat(base *ptr)
 {
     mexLock();
     mxArray *out = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
-    *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(new class_handle<base>(ptr));
+    auto a = new class_handle<base>(ptr);
+    *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(a);
+    //mexPrintf("from mex, new instance %p placed in %p (%llu)\n",ptr,a,*((uint64_t *)mxGetData(out)));
     return out;
 }
 
