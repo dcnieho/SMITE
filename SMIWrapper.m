@@ -474,6 +474,23 @@ classdef SMIWrapper < handle
             obj.sendMessage(filename);
         end
         
+        function setBegazeKeyPress(obj,string)
+            % can use this to send any string into BeGaze event stream (do
+            % not know length limit). I advise to keep this short
+            % special format to achieve this
+            string = sprintf('UE-keypress %s',string);
+            % ok, send
+            obj.sendMessage(string);
+        end
+        
+        function setBegazeMouseClick(obj,which,x,y)
+            assert(ismember(which,{'left','right'}),'SMI BeGaze mouse press must be for ''left'' or ''right'' mouse button')
+            % special format to achieve this
+            string = sprintf('UE-mouseclick %s x=%d y=%d',which,x,y);
+            % ok, send
+            obj.sendMessage(string);
+        end
+        
         function recordEyeImages(obj,filename, format, duration)
             % NB: does NOT work on NG eye-trackers (RED250mobile, RED-n)
             % if using two computer setup, save location is on remote
