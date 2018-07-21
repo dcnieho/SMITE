@@ -7,6 +7,9 @@ classdef SMIWrapper < handle
         % state
         isInitialized   = false;
         usingFTGLTextRenderer;
+        keyState;
+        shiftKey;
+        mouseState;
         
         % settings and external info
         settings;
@@ -55,6 +58,10 @@ classdef SMIWrapper < handle
             if ~obj.usingFTGLTextRenderer
                 assert(isfield(obj.settings.text,'lineCentOff'),'PTB''s TextRenderer changed between calls to getDefaults and the SMIWrapper constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMIWrapper.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
             end
+            % init key, mouse state
+            [~,~,obj.keyState] = KbCheck();
+            obj.shiftKey = KbName('shift');
+            [~,~,obj.mouseState] = GetMouse();
             
             % get capabilities for the connected eye-tracker
             obj.setCapabilities();
@@ -1035,16 +1042,9 @@ classdef SMIWrapper < handle
                 pTrackingStatusS= SMIStructEnum.TrackingStatus;
                 pSampleS        = SMIStructEnum.Sample;
             end
-            % make sure we don't immediately click a button just because we
-            % come from another screen where there is a button at the same
-            % location and mouse is still down (or keyboard action with
-            % same accelerator for that matter)
-            keyPressed = true;
-            buttons    = 1;
-            while keyPressed || any(buttons)
-                keyPressed      = KbCheck();
-                [~,~,buttons]   = GetMouse();
-            end
+            % Refresh internal key-/mouseState to make sure we don't
+            % trigger on already pressed buttons
+            obj.getNewMouseKeyPress();
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
@@ -1095,26 +1095,23 @@ classdef SMIWrapper < handle
                 Screen('Flip',wpnt);
                 
                 
-                % check for keypresses or button clicks
-                [~,~,keyCode]  = KbCheck();
-                [mx,my,buttons]         = GetMouse();
+                % get user response
+                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress();
                 % update cursor look if needed
                 cursor.update(mx,my);
                 if any(buttons)
                     % don't care which button for now. determine if clicked on either
                     % of the buttons
                     qIn = inRect([mx my],[advancedButRect.' calibButRect.' validateButRect.']);
-                    if any(qIn)
-                        if qIn(1)
-                            status = 10;
-                            break;
-                        elseif qIn(2)
-                            status = 1;
-                            break;
-                        elseif qIn(3)
-                            status = -3;
-                            break;
-                        end
+                    if qIn(1)
+                        status = 10;
+                        break;
+                    elseif qIn(2)
+                        status = 1;
+                        break;
+                    elseif qIn(3)
+                        status = -3;
+                        break;
                     end
                 elseif any(keyCode)
                     keys = KbName(keyCode);
@@ -1127,10 +1124,10 @@ classdef SMIWrapper < handle
                     elseif any(strcmpi(keys,'p')) && qHaveValidCalibrations
                         status = -3;
                         break;
-                    elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+                    elseif any(strcmpi(keys,'escape')) && haveShift
                         status = -4;
                         break;
-                    elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
+                    elseif any(strcmpi(keys,'s')) && haveShift
                         % skip calibration
                         obj.iView.abortCalibration();
                         status = 2;
@@ -1303,19 +1300,9 @@ classdef SMIWrapper < handle
                 obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',0);
             end
             overlays        = false(3);
-            toggleKeys      = KbName({'c','g','p'});
-            eyeKeyDown      = KbCheck();
-            [~,~,buttons]   = GetMouse();
-            eyeClickDown    = any(buttons);
-            % make sure we don't immediately click a button just because we
-            % come from another screen where there is a button at the same
-            % location and mouse is still down (or keyboard action with
-            % same accelerator for that matter)
-            while eyeKeyDown || eyeClickDown
-                eyeKeyDown      = KbCheck();
-                [~,~,buttons]   = GetMouse();
-                eyeClickDown    = any(buttons);
-            end
+            % Refresh internal key-/mouseState to make sure we don't
+            % trigger on already pressed buttons
+            obj.getNewMouseKeyPress();
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
@@ -1437,9 +1424,8 @@ classdef SMIWrapper < handle
                 % drawing done, show
                 Screen('Flip',wpnt);
                 
-                % check for keypresses or button clicks
-                [~,~,keyCode]   = KbCheck();
-                [mx,my,buttons] = GetMouse();
+                % get user response
+                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress();
                 % update cursor look if needed
                 cursor.update(mx,my);
                 if any(buttons)
@@ -1456,18 +1442,15 @@ classdef SMIWrapper < handle
                         elseif qIn(3)
                             status = -3;
                             break;
-                        elseif ~eyeClickDown
-                            if qIn(4)
-                                overlays(1) = ~overlays(1);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
-                            elseif qIn(5)
-                                overlays(2) = ~overlays(2);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
-                            elseif qIn(6)
-                                overlays(3) = ~overlays(3);
-                                obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
-                            end
-                            eyeClickDown = any(qIn);
+                        elseif qIn(4)
+                            overlays(1) = ~overlays(1);
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
+                        elseif qIn(5)
+                            overlays(2) = ~overlays(2);
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
+                        elseif qIn(6)
+                            overlays(3) = ~overlays(3);
+                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
                         end
                     end
                 elseif any(keyCode)
@@ -1478,33 +1461,28 @@ classdef SMIWrapper < handle
                     elseif any(strcmpi(keys,'space'))
                         status = 1;
                         break;
-                    elseif any(strcmpi(keys,'p')) &&qHaveValidCalibrations
+                    elseif any(strcmpi(keys,'p')) && qHaveValidCalibrations
                         status = -3;
                         break;
-                    elseif any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+                    elseif any(strcmpi(keys,'escape')) && haveShift
                         status = -4;
                         break;
-                    elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
+                    elseif any(strcmpi(keys,'s')) && haveShift
                         % skip calibration
                         obj.iView.abortCalibration();
                         status = 2;
                         break;
-                    end
-                    if ~eyeKeyDown
-                        if any(strcmpi(keys,'c')) && obj.caps.setShowContour
-                            overlays(1) = ~overlays(1);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
-                        elseif any(strcmpi(keys,'p')) && obj.caps.setShowPupil
-                            overlays(2) = ~overlays(2);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
-                        elseif any(strcmpi(keys,'g')) && obj.caps.setShowCR
-                            overlays(3) = ~overlays(3);
-                            obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
-                        end
+                    elseif any(strcmpi(keys,'c')) && obj.caps.setShowContour
+                        overlays(1) = ~overlays(1);
+                        obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_CONTOUR',overlays(1));
+                    elseif any(strcmpi(keys,'p')) && obj.caps.setShowPupil
+                        overlays(2) = ~overlays(2);
+                        obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_PUPIL',overlays(2));
+                    elseif any(strcmpi(keys,'g')) && obj.caps.setShowCR
+                        overlays(3) = ~overlays(3);
+                        obj.iView.setTrackingParameter('ET_PARAM_EYE_BOTH','ET_PARAM_SHOW_REFLEX',overlays(3));
                     end
                 end
-                eyeKeyDown   = any(keyCode(toggleKeys));        % maintain button state so only one press counted until after key up
-                eyeClickDown = eyeClickDown && any(buttons);    % maintain button state so only one press counted until after mouse up
             end
             % clean up
             if tex
@@ -1697,11 +1675,9 @@ classdef SMIWrapper < handle
             end
             out.pointPos = [];
             
-            % check if key is already down, so it won't be accepted below
-            acceptKeyName       = 'space';
-            acceptKey           = KbName({acceptKeyName});
-            [~,~,keyCode]       = KbCheck();
-            acceptKeyDown       = any(keyCode(acceptKey));
+            % Refresh internal key-/mouseState to make sure we don't
+            % trigger on already pressed buttons
+            obj.getNewMouseKeyPress();
             
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
             currentPoint    = -1;
@@ -1764,11 +1740,11 @@ classdef SMIWrapper < handle
                     obj.sendMessage(sprintf('POINT ON %d (%d %d)',currentPoint,pos));
                 end
                 
-                % check for keys
-                [keyPressed,~,keyCode] = KbCheck();
-                if keyPressed
+                % get user response
+                [~,~,~,keyCode,haveShift] = obj.getNewMouseKeyPress();
+                if any(keyCode)
                     keys = KbName(keyCode);
-                    if any(strcmpi(keys,acceptKeyName)) && qAllowAcceptKey && ~acceptKeyDown && ~haveAccepted
+                    if any(strcmpi(keys,'space')) && qAllowAcceptKey && ~haveAccepted
                         % if in semi-automatic and first point, or if
                         % manual and any point, space bars triggers
                         % accepting calibration point
@@ -1777,7 +1753,6 @@ classdef SMIWrapper < handle
                         % before continuing. This appears to be needed as
                         % accept works on these older machines as long as
                         % there are any valid samples recorded.
-                        acceptKeyDown   = true;
                         haveAccepted    = true;
                     elseif any(strcmpi(keys,'r'))
                         status = -1;
@@ -1790,14 +1765,13 @@ classdef SMIWrapper < handle
                             status = -2;
                         end
                         break;
-                    elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
+                    elseif any(strcmpi(keys,'s')) && haveShift
                         % skip calibration
                         obj.iView.abortCalibration();
                         status = 2;
                         break;
                     end
                 end
-                acceptKeyDown = acceptKeyDown && any(keyCode(acceptKey));
             end
         end
         
@@ -1891,19 +1865,9 @@ classdef SMIWrapper < handle
             qShowGaze           = false;
             tex                 = 0;
             pSampleS            = SMIStructEnum.Sample;
-            % make sure we don't immediately click a button just because we
-            % come from another screen where there is a button at the same
-            % location and mouse is still down (or keyboard action with
-            % same accelerator for that matter)
-            toggleKeys          = KbName({'c','g','escape'});
-            toggleKeysDown      = KbCheck();
-            [~,~,buttons]       = GetMouse();
-            toggleClickDown     = any(buttons);
-            while toggleKeysDown || toggleClickDown
-                toggleKeysDown  = KbCheck();
-                [~,~,buttons]   = GetMouse();
-                toggleClickDown = any(buttons);
-            end
+            % Refresh internal key-/mouseState to make sure we don't
+            % trigger on already pressed buttons
+            obj.getNewMouseKeyPress();
             while ~qDoneCalibSelection
                 % draw validation screen image
                 if tex~=0
@@ -1985,8 +1949,7 @@ classdef SMIWrapper < handle
                     Screen('Flip',wpnt);
                     
                     % get user response
-                    [keyPressed,~,keyCode]  = KbCheck();
-                    [mx,my,buttons]         = GetMouse();
+                    [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress();
                     % update cursor look if needed
                     cursor.update(mx,my);
                     if any(buttons)
@@ -2013,27 +1976,24 @@ classdef SMIWrapper < handle
                                 elseif qIn(2)
                                     status = -1;
                                     qDoneCalibSelection = true;
-                                elseif qIn(3) && ~toggleClickDown
+                                elseif qIn(3)
                                     qSelectMenuOpen     = true;
-                                    toggleClickDown     = true;
                                 elseif qIn(4)
                                     status = -2;
                                     qDoneCalibSelection = true;
-                                elseif qIn(5) && ~toggleClickDown
+                                elseif qIn(5)
                                     qShowGaze           = ~qShowGaze;
-                                    toggleClickDown     = true;
                                 end
                                 break;
                             end
                         end
-                    elseif keyPressed
+                    elseif any(keyCode)
                         keys = KbName(keyCode);
                         if qSelectMenuOpen
                             if any(strcmpi(keys,'escape'))
                                 qSelectMenuOpen = false;
-                                toggleKeysDown  = true;
                                 break;
-                            elseif ismember(keys(1),{'1','2','3','4','5','6','7','8','9'})  % key 1 is '1!', for instance
+                            elseif ismember(keys(1),{'1','2','3','4','5','6','7','8','9'})  % key 1 is '1!', for instance, so check if 1 is contained instead if strcmp
                                 idx = str2double(keys(1));
                                 selection = iValid(idx);
                                 obj.loadOtherCal(selection);
@@ -2045,31 +2005,29 @@ classdef SMIWrapper < handle
                                 status = 1;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'escape')) && ~any(strcmpi(keys,'shift')) && ~toggleKeysDown
+                            elseif any(strcmpi(keys,'escape')) && ~haveShift
                                 status = -1;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'s')) && ~any(strcmpi(keys,'shift'))
+                            elseif any(strcmpi(keys,'s')) && ~haveShift
                                 status = -2;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'c')) && qHaveMultipleValidCals && ~toggleKeysDown
+                            elseif any(strcmpi(keys,'c')) && qHaveMultipleValidCals
                                 qSelectMenuOpen     = ~qSelectMenuOpen;
-                                toggleKeysDown      = true;
                                 break;
-                            elseif any(strcmpi(keys,'g')) && ~toggleKeysDown
+                            elseif any(strcmpi(keys,'g'))
                                 qShowGaze           = ~qShowGaze;
-                                toggleKeysDown      = true;
                                 break;
                             end
                         end
                         
                         % these two key combinations should always be available
-                        if any(strcmpi(keys,'escape')) && any(strcmpi(keys,'shift'))
+                        if any(strcmpi(keys,'escape')) && haveShift
                             status = -4;
                             qDoneCalibSelection = true;
                             break;
-                        elseif any(strcmpi(keys,'s')) && any(strcmpi(keys,'shift'))
+                        elseif any(strcmpi(keys,'s')) && haveShift
                             % skip calibration
                             obj.iView.abortCalibration();
                             status = 2;
@@ -2077,8 +2035,6 @@ classdef SMIWrapper < handle
                             break;
                         end
                     end
-                    toggleKeysDown  = toggleKeysDown && any(keyCode(toggleKeys));   % maintain button state so only one press counted until after key up
-                    toggleClickDown = toggleClickDown && any(buttons);              % maintain button state so only one press counted until after mouse up
                 end
             end
             % done, clean up
@@ -2105,6 +2061,27 @@ classdef SMIWrapper < handle
         
         function out = isTwoComputerSetup(obj)
             out = length(obj.settings.connectInfo)==4 && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
+        end
+        
+        function [mx,my,mouse,key,haveShift] = getNewMouseKeyPress(obj)
+            % function that only returns key depress state changes in the
+            % down direction, not keys that are held down or anything else
+            % NB: before using this, make sure internal state is up to
+            % date!
+            [~,~,keyCode]   = KbCheck();
+            [mx,my,buttons] = GetMouse();
+            
+            % get only fresh mouse and key presses (so change from state
+            % "up" to state "down")
+            key     = keyCode & ~obj.keyState;
+            mouse   = buttons & ~obj.mouseState;
+            
+            % get if shift key is currently down
+            haveShift = ~~keyCode(obj.shiftKey);
+            
+            % store to state
+            obj.keyState    = keyCode;
+            obj.mouseState  = buttons;
         end
     end
 end
