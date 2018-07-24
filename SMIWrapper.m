@@ -1936,10 +1936,16 @@ classdef SMIWrapper < handle
                         if ret==1
                             % draw
                             if qAveragedEyes
-                                Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
+                                if ~(pSample.leftEye .gazeX==0 && pSample.leftEye .gazeY==0)
+                                    Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
+                                end
                             else
-                                Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
-                                Screen('gluDisk', wpnt,[0 255 0], pSample.rightEye.gazeX, pSample.rightEye.gazeY, 10);
+                                if ~(pSample.leftEye .gazeX==0 && pSample.leftEye .gazeY==0)
+                                    Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
+                                end
+                                if ~(pSample.rightEye.gazeX==0 && pSample.rightEye.gazeY==0)
+                                    Screen('gluDisk', wpnt,[0 255 0], pSample.rightEye.gazeX, pSample.rightEye.gazeY, 10);
+                                end
                             end
                         end
                         % draw fixation points
