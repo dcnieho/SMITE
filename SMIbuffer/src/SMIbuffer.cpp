@@ -1,7 +1,10 @@
 #include "SMIbuffer/SMIbuffer.h"
+#include <ppl.h>
+#include <vector>
 
 namespace {
-    SMIbuffer* SMIbufferClassInstance = nullptr;  // for plain C callback to be able to call into the class
+    concurrency::reader_writer_lock rwlock;
+    std::vector<SMIbuffer*> SMIbufferClassInstances;  // for plain C callback to be able to call into the class instances
 
     template <typename T>
     inline std::vector<T> getData(mpmc_bounded_queue<T>* dataBuffer_, bool justDump_=false)
@@ -25,15 +28,29 @@ namespace {
 
 int __stdcall SMISampleCallback(SampleStruct sampleData_)
 {
-    if (SMIbufferClassInstance && SMIbufferClassInstance->_sampleData)
-        SMIbufferClassInstance->_sampleData->enqueue(sampleData_);
+    rwlock.lock_read();
+    for each (auto&& instance in SMIbufferClassInstances)
+    {
+        if (instance->_sampleData)
+            instance->_sampleData->enqueue(sampleData_);
+    }
+
+    rwlock.unlock();
+
     return 1;
 }
 
 int __stdcall SMIEventCallback(EventStruct eventData_)
 {
-    if (SMIbufferClassInstance && SMIbufferClassInstance->_eventData)
-        SMIbufferClassInstance->_eventData->enqueue(eventData_);
+    rwlock.lock_read();
+    for each (auto&& instance in SMIbufferClassInstances)
+    {
+        if (instance->_eventData)
+            instance->_eventData->enqueue(eventData_);
+    }
+
+    rwlock.unlock();
+
     return 1;
 }
 
@@ -41,19 +58,24 @@ int __stdcall SMIEventCallback(EventStruct eventData_)
 
 
 SMIbuffer::SMIbuffer()
-{}
+{
+    rwlock.lock();
+    SMIbufferClassInstances.push_back(this);
+    rwlock.unlock();
+}
 
 SMIbuffer::~SMIbuffer()
 {
     stopSampleBuffering(true);
     stopEventBuffering (true);
-    SMIbufferClassInstance = nullptr;
+
+    rwlock.lock();
+    SMIbufferClassInstances.erase(std::remove(SMIbufferClassInstances.begin(), SMIbufferClassInstances.end(), this), SMIbufferClassInstances.end());
+    rwlock.unlock();
 }
 
 int SMIbuffer::startSampleBuffering(size_t bufferSize_ /*= 1<<22*/)
 {
-    SMIbufferClassInstance = this;    // make sure its set. doing this in constructor is dangerous, as destructor of an older instance of class (from precious matlab script execution) may be lingering, and destroyed **after** this instance is created. So update SMIbufferClassInstance as late as possible
-
     if (!_sampleData)
         _sampleData = new mpmc_bounded_queue<SampleStruct>(bufferSize_);
 
@@ -62,11 +84,9 @@ int SMIbuffer::startSampleBuffering(size_t bufferSize_ /*= 1<<22*/)
 
 int SMIbuffer::startEventBuffering(size_t bufferSize_ /*= 1<<20*/)
 {
-    SMIbufferClassInstance = this;
-
     if (!_eventData)
         _eventData = new mpmc_bounded_queue<EventStruct>(bufferSize_);
-    
+
     return iV_SetEventCallback(SMIEventCallback);
 }
 
