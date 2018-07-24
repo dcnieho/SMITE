@@ -71,15 +71,15 @@ classdef SMIbuffer < handle
         function clearEventBuffer(this)
             this.mexHndl('clearEventBuffer' , this.objectHandle);
         end
-        function stopSampleBuffering(this,varargin)
+        function stopSampleBuffering(this,doDeleteBuffer)
             % required boolean input indicating whether buffer should be
             % deleted
-            this.mexHndl('stopSampleBuffering', this.objectHandle, varargin{:});
+            this.mexHndl('stopSampleBuffering', this.objectHandle, doDeleteBuffer);
         end
-        function stopEventBuffering(this,varargin)
+        function stopEventBuffering(this,doDeleteBuffer)
             % required boolean input indicating whether buffer should be
             % deleted
-            this.mexHndl('stopEventBuffering' , this.objectHandle, varargin{:});
+            this.mexHndl('stopEventBuffering' , this.objectHandle, doDeleteBuffer);
         end
     end
 end
