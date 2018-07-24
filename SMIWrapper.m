@@ -442,11 +442,11 @@ classdef SMIWrapper < handle
             end
         end
         
-        function stopBuffer(obj,deleteData)
+        function stopBuffer(obj,doDeleteBuffer)
             if nargin<2
-                deleteData = false;
+                doDeleteBuffer = false;
             end
-            obj.sampEvtBuffers.stopSampleBuffering(deleteData);
+            obj.sampEvtBuffers.stopSampleBuffering(doDeleteBuffer);
         end
         
         function stopRecording(obj)
