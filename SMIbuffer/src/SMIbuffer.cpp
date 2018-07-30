@@ -1,9 +1,15 @@
 #include "SMIbuffer/SMIbuffer.h"
-#include <ppl.h>
+#include <shared_mutex>
 #include <vector>
 
 namespace {
-    concurrency::reader_writer_lock rwlock;
+    typedef std::shared_timed_mutex mutex_type;
+    typedef std::shared_lock<mutex_type> read_lock;
+    typedef std::unique_lock<mutex_type> write_lock;
+    mutex_type m;
+    read_lock  lockForReading() { return  read_lock(m); }
+    write_lock lockForWriting() { return write_lock(m); }
+
     std::vector<SMIbuffer*> SMIbufferClassInstances;  // for plain C callback to be able to call into the class instances
 
     template <typename T>
@@ -28,28 +34,24 @@ namespace {
 
 int __stdcall SMISampleCallback(SampleStruct sampleData_)
 {
-    rwlock.lock_read();
+    auto l = lockForReading();
     for each (auto&& instance in SMIbufferClassInstances)
     {
         if (instance->_sampleData)
             instance->_sampleData->enqueue(sampleData_);
     }
 
-    rwlock.unlock();
-
     return 1;
 }
 
 int __stdcall SMIEventCallback(EventStruct eventData_)
 {
-    rwlock.lock_read();
+    auto l = lockForReading();
     for each (auto&& instance in SMIbufferClassInstances)
     {
         if (instance->_eventData)
             instance->_eventData->enqueue(eventData_);
     }
-
-    rwlock.unlock();
 
     return 1;
 }
@@ -59,9 +61,8 @@ int __stdcall SMIEventCallback(EventStruct eventData_)
 
 SMIbuffer::SMIbuffer()
 {
-    rwlock.lock();
+    auto l = lockForWriting();
     SMIbufferClassInstances.push_back(this);
-    rwlock.unlock();
 }
 
 SMIbuffer::~SMIbuffer()
@@ -69,9 +70,8 @@ SMIbuffer::~SMIbuffer()
     stopSampleBuffering(true);
     stopEventBuffering (true);
 
-    rwlock.lock();
+    auto l = lockForWriting();
     SMIbufferClassInstances.erase(std::remove(SMIbufferClassInstances.begin(), SMIbufferClassInstances.end(), this), SMIbufferClassInstances.end());
-    rwlock.unlock();
 }
 
 int SMIbuffer::startSampleBuffering(size_t bufferSize_ /*= 1<<22*/)
@@ -129,4 +129,3 @@ std::vector<EventStruct> SMIbuffer::getEvents()
 {
     return getData(_eventData);
 }
-
