@@ -25,6 +25,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             mexErrMsgTxt("New: One output expected.");
         // Return a handle to a new C++ instance
         auto a = new SMIbuffer;
+        mexLock();
         plhs[0] = convertPtr2Mat<SMIbuffer>(a);
         //mexPrintf("from mex, new instance %llu (%p)\n",*((uint64_t *)mxGetData(plhs[0])),a);
         return;
@@ -39,6 +40,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
         // Destroy the C++ object
         //mexPrintf("from mex, deleting %d\n",*((uint64_t *)mxGetData(prhs[1])));
         destroyObject<SMIbuffer>(prhs[1]);
+        mexUnlock();
         // Warn if other commands were ignored
         if (nlhs != 0 || nrhs != 2)
             mexWarnMsgTxt("Delete: Unexpected arguments ignored.");
