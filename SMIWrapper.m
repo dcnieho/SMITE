@@ -703,7 +703,6 @@ classdef SMIWrapper < handle
                     settings.connectInfo        = {};
                     % NB: for RED NG trackers, it is also supported to
                     % supply only the remote endpoint, like:
-                    % TODO: check for RED-m
                     % settings.connectInfo        = {'ipETComputer',4444};
                 case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
                     % template IPs, default ports
@@ -903,9 +902,12 @@ classdef SMIWrapper < handle
                     obj.caps.hasHeadbox         = false;
             end
             % supported number of calibration points
-            % TODO (check if differs, or all support all)
+            % TODO
             % old REDs: 2, 5 or 9 points
             % RED NG: 0, 1, 2, 5, 9 or 13
+            % RED-m:
+            % Hispeed 1250:
+            % Hispeed 240:
             
             % some other per tracker settings.
             % TODO: I don't know which trackers support which!!. Have now
