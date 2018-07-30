@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SMIbuffer", "SMIbuffer.vcxproj", "{C2F34656-DC69-4C98-8D84-C768985BEE5F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SMIbuffer_matlab", "SMIbuffer_matlab\SMIbuffer_matlab.vcxproj", "{DA75F547-03D8-42D2-862E-88AE216D9E72}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C2F34656-DC69-4C98-8D84-C768985BEE5F} = {C2F34656-DC69-4C98-8D84-C768985BEE5F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SMIbuffer_python_cpp", "SMIbuffer_python\SMIbuffer_python_cpp.vcxproj", "{2C6137C2-382B-4A3E-B06D-38DC4F6E5EE7}"
 	ProjectSection(ProjectDependencies) = postProject
