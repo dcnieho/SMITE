@@ -113,13 +113,9 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             // Check parameters
             if (nlhs < 0 || nrhs < 3)
                 mexErrMsgTxt("stopSampleBuffering: Expected deleteBuffer input.");
-            if (!(mxIsDouble(prhs[2]) && !mxIsComplex(prhs[2]) && mxIsScalar(prhs[2])) && !mxIsLogicalScalar(prhs[2]))
+            if (!mxIsLogicalScalar(prhs[2]))
                 mexErrMsgTxt("stopSampleBuffering: Expected argument to be a logical scalar.");
-            bool deleteBuffer;
-            if (mxIsDouble(prhs[2]))
-                deleteBuffer = !!mxGetScalar(prhs[2]);
-            else
-                deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
+            bool deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
             // Call the method
             SMIBufInstance->stopSampleBuffering(deleteBuffer);
             return;
@@ -129,13 +125,9 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             // Check parameters
             if (nlhs < 0 || nrhs < 3)
                 mexErrMsgTxt("stopEventBuffering: Expected deleteBuffer input.");
-            if (!(mxIsDouble(prhs[2]) && !mxIsComplex(prhs[2]) && mxIsScalar(prhs[2])) && !mxIsLogicalScalar(prhs[2]))
+            if (!mxIsLogicalScalar(prhs[2]))
                 mexErrMsgTxt("stopEventBuffering: Expected argument to be a logical scalar.");
-            bool deleteBuffer;
-            if (mxIsDouble(prhs[2]))
-                deleteBuffer = !!mxGetScalar(prhs[2]);
-            else
-                deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
+            bool deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
             // Call the method
             SMIBufInstance->stopEventBuffering(deleteBuffer);
             return;
