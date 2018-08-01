@@ -1,11 +1,15 @@
 #include "SMIbuffer/SMIbuffer.h"
 #define DLL_EXPORT_SYM __declspec(dllexport)
 #include "mex.h"
-#include "class_handle.hpp"
 #include "strHash.h"
 
 #include <cwchar>
 #include <algorithm>
+
+namespace {
+    SMIbuffer* SMIbufferClassInstance=nullptr;  // as there can only be one instance (it gets reused), we can just store a ref to it in a global pointer
+    // C++ object is of minimal size and does not have to be destroyed once created other than at mex unload
+}
 
 mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_);
 mxArray* EventVectorToMatlab(std::vector<EventStruct> data_);
@@ -19,132 +23,108 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     size_t nChar = std::min(strlen(cmd),size_t(64));
 
     // New
-    if (!strcmp("new", cmd)) {
-        // Check parameters
-        if (nlhs != 1)
-            mexErrMsgTxt("New: One output expected.");
+    if (!strcmp("new", cmd))
+    {
         // Return a handle to a new C++ instance
-        auto a = new SMIbuffer;
-        mexLock();
-        plhs[0] = convertPtr2Mat<SMIbuffer>(a);
-        //mexPrintf("from mex, new instance %llu (%p)\n",*((uint64_t *)mxGetData(plhs[0])),a);
+        if (!SMIbufferClassInstance)
+            SMIbufferClassInstance = new SMIbuffer;
+        else
+        {
+            // reset instance (deletes buffers, clears registered callbacks)
+            SMIbufferClassInstance->stopEventBuffering( true);
+            SMIbufferClassInstance->stopSampleBuffering(true);
+        }
         return;
     }
 
-    // Check there is a second input, which should be the class instance handle
-    if (nrhs < 2)
-        mexErrMsgTxt("Second input should be a class instance handle.");
-
     // Delete
-    if (!strcmp("delete", cmd)) {
-        // Destroy the C++ object
-        //mexPrintf("from mex, deleting %d\n",*((uint64_t *)mxGetData(prhs[1])));
-        destroyObject<SMIbuffer>(prhs[1]);
-        mexUnlock();
+    if (!strcmp("delete", cmd))
+    {
+        // reset instance (deletes buffers, clears registered callbacks)
+        SMIbufferClassInstance->stopEventBuffering( true);
+        SMIbufferClassInstance->stopSampleBuffering(true);
         // Warn if other commands were ignored
-        if (nlhs != 0 || nrhs != 2)
+        if (nrhs != 1)
             mexWarnMsgTxt("Delete: Unexpected arguments ignored.");
         return;
     }
-
-    // Get the class instance pointer from the second input
-    SMIbuffer *SMIBufInstance = convertMat2Ptr<SMIbuffer>(prhs[1]);
-    //mexPrintf("from mex, calling instance %llu (%p)\n",*((uint64_t *)mxGetData(prhs[1])),SMIBufInstance);
 
     // Call the various class methods
     switch (rt::crc32(cmd, nChar))
     {
         case ct::crc32("startSampleBuffering"):
         {
-            // Check parameters
-            if (nlhs < 0 || nrhs < 2)
-                mexErrMsgTxt("startSampleBuffering: Unexpected arguments.");
             int ret;
-            if (nrhs > 2 && !mxIsEmpty(prhs[2]))
+            if (nrhs > 1 && !mxIsEmpty(prhs[1]))
             {
-                if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
+                if (!mxIsUint64(prhs[1]) || mxIsComplex(prhs[1]) || !mxIsScalar(prhs[1]))
                     mexErrMsgTxt("startSampleBuffering: Expected argument to be a uint64 scalar.");
                 // Call the method
-                ret = SMIBufInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+                ret = SMIbufferClassInstance->startSampleBuffering(static_cast<size_t>(mxGetScalar(prhs[1])));
             }
             else
             {
-                ret = SMIBufInstance->startSampleBuffering();
+                ret = SMIbufferClassInstance->startSampleBuffering();
             }
             plhs[0] = mxCreateDoubleScalar(ret);
             return;
         }
         case ct::crc32("startEventBuffering"):
         {
-            // Check parameters
-            if (nlhs < 0 || nrhs < 2)
-                mexErrMsgTxt("startEventBuffering: Unexpected arguments.");
             int ret;
-            if (nrhs > 2 && !mxIsEmpty(prhs[2]))
+            if (nrhs > 1 && !mxIsEmpty(prhs[1]))
             {
-                if (!mxIsUint64(prhs[2]) || mxIsComplex(prhs[2]) || !mxIsScalar(prhs[2]))
+                if (!mxIsUint64(prhs[1]) || mxIsComplex(prhs[1]) || !mxIsScalar(prhs[1]))
                     mexErrMsgTxt("startEventBuffering: Expected argument to be a uint64 scalar.");
                 // Call the method
-                ret = SMIBufInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[2])));
+                ret = SMIbufferClassInstance->startEventBuffering(static_cast<size_t>(mxGetScalar(prhs[1])));
             }
             else
             {
-                ret = SMIBufInstance->startEventBuffering();
+                ret = SMIbufferClassInstance->startEventBuffering();
             }
             plhs[0] = mxCreateDoubleScalar(ret);
             return;
         }
         case ct::crc32("clearSampleBuffer"):
-            // Check parameters
-            if (nrhs < 2)
-                mexErrMsgTxt("clearSampleBuffer: Unexpected arguments.");
             // Call the method
-            SMIBufInstance->clearSampleBuffer();
+            SMIbufferClassInstance->clearSampleBuffer();
             return;
         case ct::crc32("clearEventBuffer"):
-            // Check parameters
-            if (nrhs < 2)
-                mexErrMsgTxt("clearEventBuffer: Unexpected arguments.");
             // Call the method
-            SMIBufInstance->clearEventBuffer();
+            SMIbufferClassInstance->clearEventBuffer();
             return;
         case ct::crc32("stopSampleBuffering"):
         {
             // Check parameters
-            if (nlhs < 0 || nrhs < 3)
+            if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("stopSampleBuffering: Expected deleteBuffer input.");
-            if (!mxIsLogicalScalar(prhs[2]))
+            if (!mxIsLogicalScalar(prhs[1]))
                 mexErrMsgTxt("stopSampleBuffering: Expected argument to be a logical scalar.");
-            bool deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
+            bool deleteBuffer = mxIsLogicalScalarTrue(prhs[1]);
             // Call the method
-            SMIBufInstance->stopSampleBuffering(deleteBuffer);
+            SMIbufferClassInstance->stopSampleBuffering(deleteBuffer);
             return;
         }
         case ct::crc32("stopEventBuffering"):
         {
             // Check parameters
-            if (nlhs < 0 || nrhs < 3)
+            if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("stopEventBuffering: Expected deleteBuffer input.");
-            if (!mxIsLogicalScalar(prhs[2]))
+            if (!mxIsLogicalScalar(prhs[1]))
                 mexErrMsgTxt("stopEventBuffering: Expected argument to be a logical scalar.");
-            bool deleteBuffer = mxIsLogicalScalarTrue(prhs[2]);
+            bool deleteBuffer = mxIsLogicalScalarTrue(prhs[1]);
             // Call the method
-            SMIBufInstance->stopEventBuffering(deleteBuffer);
+            SMIbufferClassInstance->stopEventBuffering(deleteBuffer);
             return;
         }
         case ct::crc32("getSamples"):
-            // Check parameters
-            if (nlhs < 1 || nrhs < 2)
-                mexErrMsgTxt("getSamples: Unexpected arguments.");
             // Call the method
-            plhs[0] = SampleVectorToMatlab(SMIBufInstance->getSamples());
+            plhs[0] = SampleVectorToMatlab(SMIbufferClassInstance->getSamples());
             return;
         case ct::crc32("getEvents"):
-            // Check parameters
-            if (nlhs < 1 || nrhs < 2)
-                mexErrMsgTxt("getEvents: Unexpected arguments.");
             // Call the method
-            plhs[0] = EventVectorToMatlab(SMIBufInstance->getEvents());
+            plhs[0] = EventVectorToMatlab(SMIbufferClassInstance->getEvents());
             return;
         default:
             // Got here, so command not recognized

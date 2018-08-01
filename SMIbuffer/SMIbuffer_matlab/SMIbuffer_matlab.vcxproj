@@ -156,7 +156,6 @@
     <ClCompile Include="strHash.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="class_handle.hpp" />
     <ClInclude Include="strHash.h" />
   </ItemGroup>
   <ItemGroup>

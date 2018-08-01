@@ -1,8 +1,10 @@
 % MATLAB class wrapper to underlying SMIbuffer mex file
+% NB: there should only be one instance of this class at a time. Creating a
+% new instance when one already exists simple resets the first, at no
+% benefit
 
 classdef SMIbuffer < handle
     properties (Access = private, Hidden = true)
-        objectHandle; % Handle to the underlying C++ class instance
         mexHndl;
     end
     methods
@@ -23,7 +25,7 @@ classdef SMIbuffer < handle
             end
             % try to construct SMIBuffer C++ class instance
             try
-                this.objectHandle = this.mexHndl('new');
+                this.mexHndl('new');
             catch %#ok<CTCH>
                 % constructor failed. Most likely cause would be "invalid
                 % MEX file error" due to missing iViewXAPI DLL's.
@@ -39,47 +41,47 @@ classdef SMIbuffer < handle
                     warning('failed to load SMIbuffer_matlab, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
                 end
                 addpath(temppath);
-                this.objectHandle = this.mexHndl('new');
+                this.mexHndl('new');
                 rmpath(temppath);
             end
         end
         
         %% Destructor - Destroy the C++ class instance
         function delete(this)
-            this.mexHndl('delete', this.objectHandle);
+            this.mexHndl('delete');
         end
 
         %% methods
         % get the data and command messages received since the last call to this function
         function data = getSamples(this)
-            data = this.mexHndl('getSamples', this.objectHandle);
+            data = this.mexHndl('getSamples');
         end
         function events = getEvents(this)
-            events = this.mexHndl('getEvents', this.objectHandle);
+            events = this.mexHndl('getEvents');
         end
         function success = startSampleBuffering(this,varargin)
             % optional buffer size input
-            success = this.mexHndl('startSampleBuffering', this.objectHandle, varargin{:});
+            success = this.mexHndl('startSampleBuffering', varargin{:});
         end
         function success = startEventBuffering(this,varargin)
             % optional buffer size input
-            success = this.mexHndl('startEventBuffering' , this.objectHandle, varargin{:});
+            success = this.mexHndl('startEventBuffering', varargin{:});
         end
         function clearSampleBuffer(this)
-            this.mexHndl('clearSampleBuffer', this.objectHandle);
+            this.mexHndl('clearSampleBuffer');
         end
         function clearEventBuffer(this)
-            this.mexHndl('clearEventBuffer' , this.objectHandle);
+            this.mexHndl('clearEventBuffer');
         end
         function stopSampleBuffering(this,doDeleteBuffer)
             % required boolean input indicating whether buffer should be
             % deleted
-            this.mexHndl('stopSampleBuffering', this.objectHandle, doDeleteBuffer);
+            this.mexHndl('stopSampleBuffering', doDeleteBuffer);
         end
         function stopEventBuffering(this,doDeleteBuffer)
             % required boolean input indicating whether buffer should be
             % deleted
-            this.mexHndl('stopEventBuffering' , this.objectHandle, doDeleteBuffer);
+            this.mexHndl('stopEventBuffering', doDeleteBuffer);
         end
     end
 end
