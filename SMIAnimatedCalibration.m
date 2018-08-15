@@ -1,4 +1,4 @@
-classdef SMIShrinkingCalibration < handle
+classdef SMIAnimatedCalibration < handle
     properties (Access=private, Constant)
         calStateEnum = struct('undefined',0, 'moving',1, 'shrinking',2 ,'waiting',3);
     end
@@ -30,7 +30,7 @@ classdef SMIShrinkingCalibration < handle
     
     
     methods
-        function obj = SMIShrinkingCalibration()
+        function obj = SMIAnimatedCalibration()
             obj.setCleanState();
             % get size of screen. NB: i'm assuming only one screen is
             % attached (more than one is usually a bad idea for timing on
