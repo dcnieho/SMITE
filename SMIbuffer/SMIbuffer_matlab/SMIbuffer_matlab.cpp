@@ -178,7 +178,7 @@ mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
     if (data_.empty())
         return mxCreateDoubleMatrix(0, 0, mxREAL);
 
-    const char* fieldNames[] = {"timestamp","leftEye","rightEye","planeNumber"};
+    const char* fieldNames[] = {"timestamp","leftEye","rightEye"};
     mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
     size_t i = 0;
     for (auto &samp : data_)
@@ -188,8 +188,6 @@ mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
         *static_cast<long long*>(mxGetData(temp)) = samp.timestamp;
         mxSetFieldByNumber(out, i, 1, EyeDataStructToMatlab(samp.leftEye));
         mxSetFieldByNumber(out, i, 2, EyeDataStructToMatlab(samp.rightEye));
-        mxSetFieldByNumber(out, i, 3, temp = mxCreateUninitNumericMatrix(1, 1, mxINT32_CLASS, mxREAL));
-        *static_cast<int*>(mxGetData(temp)) = samp.planeNumber;
         i++;
     }
     return out;

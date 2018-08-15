@@ -44,7 +44,6 @@ struct SampConverter {
         fields.append("timestamp");
         fields.append("leftEye");
         fields.append("rightEye");
-        fields.append("planeNumber");
         sampTuple = namedtuple("sample", fields);
     }
 
@@ -59,7 +58,7 @@ struct SampConverter {
         }
         list result;
         for (auto& samp : data_)
-            result.append(sampTuple(samp.timestamp, convertEyeData.get(samp.leftEye), convertEyeData.get(samp.rightEye), samp.planeNumber));
+            result.append(sampTuple(samp.timestamp, convertEyeData.get(samp.leftEye), convertEyeData.get(samp.rightEye)));
         return result;
     }
 };
