@@ -619,7 +619,7 @@ classdef SMITE < handle
                 % 2: now save file on remote computer with path indicated
                 % by remote computer. Overwrite if exists
                 remoteFile = fullfile(remotePath,[file(1:3) '-eye_data.idf']);   % nearly hardcode remote file name. Only very specific file names are transferred by the remote endpoint
-                ret = obj.iView.saveData(remoteFile, description, user, 1);
+                ret = obj.iView.saveData(remoteFile, description, user, 1);     % 1: always overwrite existing file with same name on the remote computer
                 obj.processError(ret,'SMITE: Error saving data');
                 fprintf('file stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 
@@ -647,9 +647,13 @@ classdef SMITE < handle
                 fwrite(fid,allDat(6:end));  % skip first 5 bits, they are a response header
                 fclose(fid);
             else
-                ret = obj.iView.saveData(filename, description, user, 0);
+                ret = obj.iView.saveData(filename, description, user, 0);   % 0: never overwrite existing file with same name
                 obj.processError(ret,'SMITE: Error saving data');
             end
+        end
+        
+        function out = retrieveCalibrationHistory(obj)
+            out = obj.calibrateHistory;
         end
         
         function out = deInit(obj,qQuit)
@@ -775,13 +779,13 @@ classdef SMITE < handle
                 case {'RED250','RED500'}
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomMode         = 'monitorIntegrated';      % monitorIntegrated or standalone
-                    settings.setup.geomProfile      = 'Desktop 22in Monitor';   % only when in standalone mode. check whether setting it works for old REDs
+                    settings.setup.geomProfile      = 'Desktop 22in Monitor';   % only when in standalone mode. TODO check whether setting it works for old REDs
                 case 'RED-m'
                     settings.setup.viewingDist      = 65;
-                    settings.setup.geomProfile      = 'Desktop 22in Monitor';   % check it works for old REDs, does iViewX have these profiles?
+                    settings.setup.geomProfile      = 'Desktop 22in Monitor';
                 case {'RED250mobile'}
                     settings.setup.viewingDist      = 65;
-                    settings.setup.geomProfile      = 'Default Profile';        % check it works for old REDs, does iViewX have these profiles?
+                    settings.setup.geomProfile      = 'Default Profile';
                 case {'REDn'}
                     settings.setup.viewingDist      = 65;
             end
