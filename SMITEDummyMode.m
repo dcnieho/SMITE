@@ -1,32 +1,32 @@
-classdef SMIWrapperDummyMode < SMIWrapper
+classdef SMITEDummyMode < SMITE
     properties
         doMouseSimulation = false;
     end
     
     methods
-        function obj = SMIWrapperDummyMode(SMIWrapperInstance)
+        function obj = SMITEDummyMode(SMITEInstance)
             qPassedSuperClass = false;
-            if ischar(SMIWrapperInstance)
+            if ischar(SMITEInstance)
                 % direct construction, thats fine
-                name = SMIWrapperInstance;
-            elseif isa(SMIWrapperInstance,'SMIWrapper')
+                name = SMITEInstance;
+            elseif isa(SMITEInstance,'SMITE')
                 qPassedSuperClass = true;
-                name = SMIWrapperInstance.settings.tracker;
+                name = SMITEInstance.settings.tracker;
             end
             
             % construct default base class, below we overwrite some
             % settings, if a super class was passed in
-            obj = obj@SMIWrapper(name);
+            obj = obj@SMITE(name);
             
             if qPassedSuperClass
                 % passed the superclass. "cast" into subclass by copying
                 % over all properties. This is what TMW recommends when you
                 % want to downcast...
-                C = metaclass(SMIWrapperInstance);
+                C = metaclass(SMITEInstance);
                 P = C.Properties;
                 for k = 1:length(P)
                     if ~P{k}.Dependent && ~strcmp(P{k}.SetAccess,'private')
-                        obj.(P{k}.Name) = SMIWrapperInstance.(P{k}.Name);
+                        obj.(P{k}.Name) = SMITEInstance.(P{k}.Name);
                     end
                 end
             end
@@ -38,7 +38,7 @@ classdef SMIWrapperDummyMode < SMIWrapper
                 superMethods = thisInfo.SuperclassList.MethodList;
                 superMethods(~strcmp({superMethods.Access},'public') | (~~[superMethods.Static])) = [];
                 thisMethods = thisInfo.MethodList;
-                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | strcmp({thisMethods.Name},'SMIWrapperDummyMode')) = [];
+                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | strcmp({thisMethods.Name},'SMITEDummyMode')) = [];
                 
                 % now check for problems:
                 % 1. any methods we define here that are not in superclass?

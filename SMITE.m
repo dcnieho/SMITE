@@ -1,4 +1,4 @@
-classdef SMIWrapper < handle
+classdef SMITE < handle
     properties (Access = protected, Hidden = true)
         % dll and mex files
         iView;
@@ -35,7 +35,7 @@ classdef SMIWrapper < handle
     end
     
     methods
-        function obj = SMIWrapper(settingsOrETName,scrInfo)
+        function obj = SMITE(settingsOrETName,scrInfo)
             % deal with inputs
             if ischar(settingsOrETName)
                 % only eye-tracker name provided, load defaults for this
@@ -49,14 +49,14 @@ classdef SMIWrapper < handle
                 obj.scrInfo.resolution  = Screen('Rect',0); obj.scrInfo.resolution(1:2) = [];
                 obj.scrInfo.center      = obj.scrInfo.resolution/2;
             else
-                assert(isfield(scrInfo,'resolution') && isfield(scrInfo,'center'),'scrInfo should have a ''resolution'' and a ''center'' field')
+                assert(isfield(scrInfo,'resolution') && isfield(scrInfo,'center'),'SMITE: scrInfo should have a ''resolution'' and a ''center'' field')
                 obj.scrInfo             = scrInfo;
             end
             
             % see what text renderer to use
             obj.usingFTGLTextRenderer = ~~exist('libptbdrawtext_ftgl64.dll','file');    % check if we're on a Windows platform with the high quality text renderer present (was never supported for 32bit PTB, so check only for 64bit)
             if ~obj.usingFTGLTextRenderer
-                assert(isfield(obj.settings.text,'lineCentOff'),'PTB''s TextRenderer changed between calls to getDefaults and the SMIWrapper constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMIWrapper.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
+                assert(isfield(obj.settings.text,'lineCentOff'),'SMITE: PTB''s TextRenderer changed between calls to getDefaults and the SMITE constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMITE.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
             end
             % init key, mouse state
             [~,~,obj.keyState] = KbCheck();
@@ -78,8 +78,8 @@ classdef SMIWrapper < handle
         end
         
         function out = setDummyMode(obj)
-            assert(nargout==1,'you must use the output argument of setDummyMode, like: SMIhandle = SMIhandle.setDummyMode(), or SMIhandle = setDummyMode(SMIhandle)')
-            out = SMIWrapperDummyMode(obj);
+            assert(nargout==1,'SMITE: you must use the output argument of setDummyMode, like: SMIhandle = SMIhandle.setDummyMode(), or SMIhandle = setDummyMode(SMIhandle)')
+            out = SMITEDummyMode(obj);
         end
         
         function out = get.rawET(obj)
@@ -131,7 +131,7 @@ classdef SMIWrapper < handle
             if obj.settings.logLevel
                 ret = obj.iView.setLogger(obj.settings.logLevel, obj.settings.logFileName);
                 if ret ~= 1
-                    error('Logger at "%s" could not be opened (error %d: %s)',obj.settings.logFileName,ret,SMIErrCode2String(ret));
+                    error('SMITE: Logger at "%s" could not be opened (error %d: %s)',obj.settings.logFileName,ret,SMIErrCode2String(ret));
                 end
             end
             
@@ -169,15 +169,15 @@ classdef SMIWrapper < handle
                 case 1
                     % connected, we're good. nothing to do here
                 case 104
-                    error('SMI: Could not establish connection. Check if Eye Tracker application is running (error 104: %s)',SMIErrCode2String(ret));
+                    error('SMITE: Could not establish connection. Check if Eye Tracker application is running (error 104: %s)',SMIErrCode2String(ret));
                 case 105
-                    error('SMI: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
+                    error('SMITE: Could not establish connection. Check the communication ports (error 105: %s)',SMIErrCode2String(ret));
                 case 123
-                    error('SMI: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
+                    error('SMITE: Could not establish connection. Another process is blocking the communication ports (error 123: %s)',SMIErrCode2String(ret));
                 case 201
-                    error('SMI: Could not establish connection. Check if Eye Tracker is installed and running (error 201: %s)',SMIErrCode2String(ret));
+                    error('SMITE: Could not establish connection. Check if Eye Tracker is installed and running (error 201: %s)',SMIErrCode2String(ret));
                 otherwise
-                    error('SMI: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
+                    error('SMITE: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
             end
             
             % check this is the device the user specified
@@ -186,7 +186,7 @@ classdef SMIWrapper < handle
                 % (RED-m and RED250mobile are both 'REDm' in the return of
                 % getSystemInfo
                 [~,trackerName] = obj.iView.getDeviceName;
-                assert(strcmp(trackerName(1:min(end,length(obj.settings.tracker))),obj.settings.tracker),'Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+                assert(strcmp(trackerName(1:min(end,length(obj.settings.tracker))),obj.settings.tracker),'SMITE: Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
             else
                 % this is a old RED or a HiSpeed, check using ETDevice in
                 % getSystemInfo if it is the device specified by the user
@@ -201,7 +201,7 @@ classdef SMIWrapper < handle
                 % remotely?
                 % setup device geometry
                 ret = obj.iView.selectREDGeometry(obj.settings.setup.geomProfile);
-                assert(ret==1,'SMI: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
+                assert(ret==1,'SMITE: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
                 % get info about the setup
                 [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
                 out.geom        = obj.geom;
@@ -223,16 +223,16 @@ classdef SMIWrapper < handle
             out.systemInfo              = obj.systemInfo;
             
             % check tracker is operating at requested tracking frequency
-            assert(obj.systemInfo.samplerate == obj.settings.freq,'Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
+            assert(obj.systemInfo.samplerate == obj.settings.freq,'SMITE: Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
             % setup track mode
             if obj.caps.setTrackingParam
                 ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
-                assert(ret==1,'SMI: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
+                assert(ret==1,'SMITE: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
             end
             % switch off averaging filter so we get separate data for each eye
             if obj.caps.configureFilter && isfield(obj.settings,'doAverageEyes')
                 ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
-                assert(ret==1,'SMI: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
+                assert(ret==1,'SMITE: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
             end
             
             % prevents CPU from entering power saving mode according to
@@ -273,7 +273,7 @@ classdef SMIWrapper < handle
             CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
             CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
             ret = obj.iView.setupCalibration(CalibrationData);
-            obj.processError(ret,'SMI: Error setting up calibration');
+            obj.processError(ret,'SMITE: Error setting up calibration');
             
             % reset calibration points in case someone else changed them
             % previously
@@ -316,9 +316,9 @@ classdef SMIWrapper < handle
                             qGoToValidationViewer = true;
                         case -4
                             % full stop
-                            error('run ended from SMI calibration routine')
+                            error('SMITE: run ended from SMI calibration routine')
                         otherwise
-                            error('status %d not implemented',status);
+                            error('SMITE: status %d not implemented',status);
                     end
                 end
                 
@@ -347,9 +347,9 @@ classdef SMIWrapper < handle
                             continue;
                         case -4
                             % full stop
-                            error('run ended from SMI calibration routine')
+                            error('SMITE: run ended from SMI calibration routine')
                         otherwise
-                            error('status %d not implemented',out.attempt{kCal}.calStatus);
+                            error('SMITE: status %d not implemented',out.attempt{kCal}.calStatus);
                     end
                     
                     % check calibration status to be sure we're calibrated
@@ -388,9 +388,9 @@ classdef SMIWrapper < handle
                         continue;
                     case -4
                         % full stop
-                        error('run ended from SMI calibration routine')
+                        error('SMITE: run ended from SMI calibration routine')
                     otherwise
-                        error('status %d not implemented',out.attempt{kCal}.valResultAccept);
+                        error('SMITE: status %d not implemented',out.attempt{kCal}.valResultAccept);
                 end
             end
             
@@ -418,7 +418,7 @@ classdef SMIWrapper < handle
                 obj.iView.clearRecordingBuffer();
             end
             ret = obj.iView.startRecording();
-            obj.processError(ret,'SMI: Error starting recording');
+            obj.processError(ret,'SMITE: Error starting recording');
             WaitSecs(.1); % give it some time to get started. not needed according to doc, but never hurts
         end
         
@@ -427,7 +427,7 @@ classdef SMIWrapper < handle
                 size = [];
             end
             ret = obj.sampEvtBuffers.startSampleBuffering(size);
-            obj.processError(ret,'SMI: Error starting sample buffer');
+            obj.processError(ret,'SMITE: Error starting sample buffer');
         end
         
         function data = getBufferData(obj)
@@ -451,7 +451,7 @@ classdef SMIWrapper < handle
         
         function stopRecording(obj)
             ret = obj.iView.stopRecording();
-            obj.processError(ret,'SMI: Error stopping recording');
+            obj.processError(ret,'SMITE: Error stopping recording');
         end
         
         function out = isConnected(obj)
@@ -465,7 +465,7 @@ classdef SMIWrapper < handle
             % consider using that directly in your code for best timing
             % ret = obj.iView.sendImageMessage(str);
             ret = calllib('iViewXAPI','iV_SendImageMessage',str);
-            obj.processError(ret,'SMI: Error sending message to data file');
+            obj.processError(ret,'SMITE: Error sending message to data file');
             if obj.settings.debugMode
                 fprintf('%s\n',str);
             end
@@ -474,9 +474,9 @@ classdef SMIWrapper < handle
         function setBegazeTrialImage(obj,filename)
             [path,~,ext] = fileparts(filename);
             % 1. there must not be a path
-            assert(isempty(path),'SMI BeGaze trial image/video must not contain a path to be usable by BeGaze')
+            assert(isempty(path),'SMITE: SMI BeGaze trial image/video must not contain a path to be usable by BeGaze')
             % 2. check extention is one of the supported ones
-            assert(ismember(ext,{'.png','.jpg','.jpeg','.bmp','.avi'}),'SMI BeGaze trial image/video must have one of the following extensions: .png, .jpg, .jpeg, .bmp or .avi')
+            assert(ismember(ext,{'.png','.jpg','.jpeg','.bmp','.avi'}),'SMITE: SMI BeGaze trial image/video must have one of the following extensions: .png, .jpg, .jpeg, .bmp or .avi')
             % ok, send
             obj.sendMessage(filename);
         end
@@ -491,7 +491,7 @@ classdef SMIWrapper < handle
         end
         
         function setBegazeMouseClick(obj,which,x,y)
-            assert(ismember(which,{'left','right'}),'SMI BeGaze mouse press must be for ''left'' or ''right'' mouse button')
+            assert(ismember(which,{'left','right'}),'SMITE: SMI BeGaze mouse press must be for ''left'' or ''right'' mouse button')
             % special format to achieve this
             string = sprintf('UE-mouseclick %s x=%d y=%d',which,x,y);
             % ok, send
@@ -521,10 +521,10 @@ classdef SMIWrapper < handle
             % check format
             if ischar(format)
                 format = find(strcmpi(format,{'jpg','bmp','xvid','huffyuv','alpary','xmp4'}));
-                assert(~isempty(format),'if format provided as string, should be one of ''jpg'',''bmp'',''xvid'',''huffyuv'',''alpary'',''xmp4''');
+                assert(~isempty(format),'SMITE: if eyeimage format provided as string, should be one of ''jpg'',''bmp'',''xvid'',''huffyuv'',''alpary'',''xmp4''');
                 format = format-1;
             end
-            assert(isnumeric(format) && format>=0 && format<=5,'format should be between 0 and 5 (inclusive)')
+            assert(isnumeric(format) && format>=0 && format<=5,'SMITE eyeimage format should be between 0 and 5 (inclusive)')
             
             % send command
             if isempty(duration)
@@ -543,7 +543,7 @@ classdef SMIWrapper < handle
         function saveData(obj,filename, user, description, doAppendVersion)
             % 1. get filename and path
             [path,file,ext] = fileparts(filename);
-            assert(~isempty(path),'saveData: filename should contain a path')
+            assert(~isempty(path),'SMITE: saveData: filename should contain a path (consider using ''fullfile(cd,%s)'')',filename);
             % eat .idf off filename, preserve any other extension user may
             % have provided
             if ~isempty(ext) && ~strcmpi(ext,'.idf')
@@ -620,7 +620,7 @@ classdef SMIWrapper < handle
                 % by remote computer. Overwrite if exists
                 remoteFile = fullfile(remotePath,[file(1:3) '-eye_data.idf']);   % nearly hardcode remote file name. Only very specific file names are transferred by the remote endpoint
                 ret = obj.iView.saveData(remoteFile, description, user, 1);
-                obj.processError(ret,'SMI: Error saving data');
+                obj.processError(ret,'SMITE: Error saving data');
                 fprintf('file stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 
                 % 3a: now request remote file to be transferred
@@ -642,13 +642,13 @@ classdef SMIWrapper < handle
                 pnet(con,'close');
                 
                 % 4: now save file locally
-                assert(~isempty(allDat),'SMIWrapper: remote file could not be received')
+                assert(~isempty(allDat),'SMITE: remote file could not be received. File stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 fid=fopen(filename,'w');
                 fwrite(fid,allDat(6:end));  % skip first 5 bits, they are a response header
                 fclose(fid);
             else
                 ret = obj.iView.saveData(filename, description, user, 0);
-                obj.processError(ret,'SMI: Error saving data');
+                obj.processError(ret,'SMITE: Error saving data');
             end
         end
         
@@ -693,7 +693,7 @@ classdef SMIWrapper < handle
                 case {'RED250mobile','REDn'}
                     settings.etApp              = 'iViewNG';
                 otherwise
-                    error('tracker "%s" not known/supported by this wrapper.\nSupported are: HiSpeed240, HiSpeed1250, RED250, RED500, RED-m, RED250mobile, REDn',tracker);
+                    error('SMITE: tracker "%s" not known/supported.\nSupported are: HiSpeed240, HiSpeed1250, RED250, RED500, RED-m, RED250mobile, REDn',tracker);
             end
             % connection info
             switch tracker
@@ -922,19 +922,19 @@ classdef SMIWrapper < handle
                 if obj.caps.connectLocal
                     ret = obj.iView.connectLocal();
                 else
-                    error('%s tracker does not support iV_ConnectLocal, provide settings.connectInfo',obj.settings.tracker)
+                    error('SMITE: %s tracker does not support iV_ConnectLocal, provide settings.connectInfo',obj.settings.tracker)
                 end
             else
                 if length(obj.settings.connectInfo)==2
                     if obj.caps.connectOnlyRemote
                         ret = obj.iView.connect(obj.settings.connectInfo{:},'',0);
                     else
-                        error('%s tracker does not support calling iV_Connect specifying only the remote endpoint. Make sure setting.connectInfo is four elements long',obj.settings.tracker)
+                        error('SMITE: %s tracker does not support calling iV_Connect specifying only the remote endpoint. Make sure setting.connectInfo is four elements long',obj.settings.tracker)
                     end
                 elseif length(obj.settings.connectInfo)==4
                     ret = obj.iView.connect(obj.settings.connectInfo{:});
                 else
-                    error('setting.connectInfo misspecified. Make sure it is four elements long')
+                    error('SMITE: setting.connectInfo misspecified. Make sure it is four elements long')
                 end
             end
         end
@@ -1592,7 +1592,7 @@ classdef SMIWrapper < handle
             CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
             CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
             ret = obj.iView.setupCalibration(CalibrationData);
-            obj.processError(ret,'SMI: Error setting up calibration');
+            obj.processError(ret,'SMITE: Error setting up calibration');
             
             % calibrate
             obj.startRecording(qClearBuffer);
@@ -1636,7 +1636,7 @@ classdef SMIWrapper < handle
                 CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
                 CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
                 ret = obj.iView.setupCalibration(CalibrationData);
-                obj.processError(ret,'SMI: Error setting up calibration');
+                obj.processError(ret,'SMITE: Error setting up calibration');
             end
             
             % validate
