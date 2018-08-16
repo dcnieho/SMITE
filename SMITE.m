@@ -652,10 +652,6 @@ classdef SMITE < handle
             end
         end
         
-        function out = retrieveCalibrationHistory(obj)
-            out = obj.calibrateHistory;
-        end
-        
         function out = deInit(obj,qQuit)
             obj.iView.disconnect();
             % also, read log, return contents as output and delete

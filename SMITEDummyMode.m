@@ -142,10 +142,6 @@ classdef SMITEDummyMode < SMITE
         function saveData(~,~,~,~,~)
         end
         
-        function out = retrieveCalibrationHistory(~)
-            out = [];
-        end
-        
         function out = deInit(obj,~)
             out = [];
             % mark as deinited
