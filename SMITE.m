@@ -184,7 +184,7 @@ classdef SMITE < handle
             if obj.caps.deviceName
                 % if possible, use this interface as its most precise
                 % (RED-m and RED250mobile are both 'REDm' in the return of
-                % getSystemInfo
+                % getSystemInfo)
                 [~,trackerName] = obj.iView.getDeviceName;
                 assert(strcmp(trackerName(1:min(end,length(obj.settings.tracker))),obj.settings.tracker),'SMITE: Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
             else
@@ -622,6 +622,9 @@ classdef SMITE < handle
                 ret = obj.iView.saveData(remoteFile, description, user, 1);     % 1: always overwrite existing file with same name on the remote computer
                 obj.processError(ret,'SMITE: Error saving data');
                 fprintf('file stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
+                % now that data is savely stored remotely, check that we
+                % would not be overwriting a file locally
+                assert(~exist(filename,'file'),'SMITE: error saving data because local file already exists. File stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 
                 % 3a: now request remote file to be transferred
                 pnet(con,'write', [uint8([1 50 0 0 0]) uint8(remoteFile)]);
@@ -641,7 +644,9 @@ classdef SMITE < handle
                 end
                 pnet(con,'close');
                 
-                % 4: now save file locally
+                % 4: now save file locally (we already check above that the
+                % file does not exist, so overwriting should not happen
+                % here)
                 assert(~isempty(allDat),'SMITE: remote file could not be received. File stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 fid=fopen(filename,'w');
                 fwrite(fid,allDat(6:end));  % skip first 5 bits, they are a response header
