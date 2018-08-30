@@ -1,6 +1,7 @@
 classdef SMITEDummyMode < SMITE
     properties
-        doMouseSimulation = false;
+        isRecording = false;
+        isBuffering = false;
     end
     
     methods
@@ -33,12 +34,12 @@ classdef SMITEDummyMode < SMITE
             
             % check we overwrite all public methods (for developer, to make
             % sure we override all accessible baseclass calls with no-ops)
-            if 0
+            if 1
                 thisInfo = metaclass(obj);
                 superMethods = thisInfo.SuperclassList.MethodList;
                 superMethods(~strcmp({superMethods.Access},'public') | (~~[superMethods.Static])) = [];
                 thisMethods = thisInfo.MethodList;
-                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | strcmp({thisMethods.Name},'SMITEDummyMode')) = [];
+                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | ismember({thisMethods.Name},{'SMITEDummyMode','delete'})) = [];
                 
                 % now check for problems:
                 % 1. any methods we define here that are not in superclass?
@@ -89,32 +90,39 @@ classdef SMITEDummyMode < SMITE
             out = [];
         end
         
-        function startRecording(~,~)
+        function startRecording(obj,~)
+            % so we only get data when 'recording'
+            obj.isRecording = true;
         end
         
-        function startBuffer(~,~)
+        function startBuffer(obj,~)
+            % so we only get data when 'buffering'
+            obj.isBuffering = true;
         end
         
         function data = getBufferData(obj)
             % at least returns one sample all the time...
-            data = obj.getLatestSample;
+            if obj.isBuffering
+                data = obj.getMouseSample();
+            else
+                data = [];
+            end
         end
         
         function sample = getLatestSample(obj)
-            if obj.doMouseSimulation
-                [mx, my] = GetMouse();
-                % put into fake SampleStruct
-                edat = struct('gazeX',mx,'gazeY',my,'diam',0,'eyePositionX',0,'eyePositionY',0,'eyePositionZ',0);
-                sample = struct('timestamp',round(GetSecs*1000*1000),'leftEye',edat,'rightEye',edat,'planeNumber',0);
+            if obj.isRecording
+                sample = obj.getMouseSample();
             else
                 sample = [];
             end
         end
         
-        function stopBuffer(~,~)
+        function stopBuffer(obj,~)
+            obj.isBuffering = false;
         end
         
-        function stopRecording(~)
+        function stopRecording(obj)
+            obj.isRecording = false;
         end
         
         function out = isConnected(~)
@@ -133,19 +141,26 @@ classdef SMITEDummyMode < SMITE
         function setBegazeMouseClick(~,~,~,~)
         end
         
-        function recordEyeImages(~,~,~,~)
+        function startEyeImageRecording(~,~,~,~)
         end
         
-        function stopRecordEyeImages(~)
+        function stopEyeImageRecording(~)
         end
         
         function saveData(~,~,~,~,~)
         end
         
-        function out = deInit(obj,~)
+        function out = deInit(~,~)
             out = [];
-            % mark as deinited
-            obj.isInitialized = false;
+        end
+    end
+    
+    methods  (Access = private, Hidden)
+        function sample = getMouseSample(~)
+            [mx, my] = GetMouse();
+            % put into fake SampleStruct
+            edat = struct('gazeX',mx,'gazeY',my,'diam',0,'eyePositionX',0,'eyePositionY',0,'eyePositionZ',0);
+            sample = struct('timestamp',round(GetSecs*1000*1000),'leftEye',edat,'rightEye',edat);
         end
     end
 end
