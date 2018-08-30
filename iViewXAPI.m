@@ -25,7 +25,7 @@ classdef iViewXAPI < handle
                     elseif exist('C:\Program Files (x86)\SMI\iView X SDK\bin','dir')
                         temppath = 'C:\Program Files (x86)\SMI\iView X SDK\bin';
                     else
-                        warning('failed to load SMIbuffer_matlab, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
+                        warning('failed to load %s, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable',libfile);
                     end
                     addpath(temppath);
                     loadlibrary(libfile, input{:});
@@ -665,8 +665,8 @@ switch type
     case 'RGB'
         % iV_GetSceneVideo
         %
-        % untested/implemented. HED not supported by us. But this should
-        % probably do the trick
+        % untested. HED not supported by us. But this should probably do
+        % the trick
         image = permute(...
             reshape(image,3,pImageData.imageWidth,pImageData.imageHeight),...
             [3 2 1]);
