@@ -52,29 +52,10 @@ classdef SMITE < handle
                 assert(isfield(scrInfo,'resolution') && isfield(scrInfo,'center'),'SMITE: scrInfo should have a ''resolution'' and a ''center'' field')
                 obj.scrInfo             = scrInfo;
             end
-            
-            % see what text renderer to use
-            obj.usingFTGLTextRenderer = ~~exist('libptbdrawtext_ftgl64.dll','file');    % check if we're on a Windows platform with the high quality text renderer present (was never supported for 32bit PTB, so check only for 64bit)
-            if ~obj.usingFTGLTextRenderer
-                assert(isfield(obj.settings.text,'lineCentOff'),'SMITE: PTB''s TextRenderer changed between calls to getDefaults and the SMITE constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMITE.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
-            end
-            % init key, mouse state
-            [~,~,obj.keyState] = KbCheck();
-            obj.shiftKey = KbName('shift');
-            [~,~,obj.mouseState] = GetMouse();
-            
-            % get capabilities for the connected eye-tracker
-            obj.setCapabilities();
-            
-            % Load in plugin (SMI dll)
-            obj.iView = iViewXAPI();
-            
-            % Load in our callback buffer mex
-            obj.sampEvtBuffers = SMIbuffer();
-            
-            % For reasons unclear to me, a brief wait here improved
-            % stability on some of the testing systems.
-            WaitSecs(0.1);
+        end
+        
+        function delete(obj)
+            obj.deInit();
         end
         
         function out = setDummyMode(obj)
@@ -127,6 +108,29 @@ classdef SMITE < handle
         end
         
         function out = init(obj)
+            % see what text renderer to use
+            obj.usingFTGLTextRenderer = ~~exist('libptbdrawtext_ftgl64.dll','file');    % check if we're on a Windows platform with the high quality text renderer present (was never supported for 32bit PTB, so check only for 64bit)
+            if ~obj.usingFTGLTextRenderer
+                assert(isfield(obj.settings.text,'lineCentOff'),'SMITE: PTB''s TextRenderer changed between calls to getDefaults and the SMITE constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMITE.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
+            end
+            % init key, mouse state
+            [~,~,obj.keyState] = KbCheck();
+            obj.shiftKey = KbName('shift');
+            [~,~,obj.mouseState] = GetMouse();
+            
+            % get capabilities for the connected eye-tracker
+            obj.setCapabilities();
+            
+            % Load in plugin (SMI dll)
+            obj.iView = iViewXAPI();
+            
+            % Load in our callback buffer mex
+            obj.sampEvtBuffers = SMIbuffer();
+            
+            % For reasons unclear to me, a brief wait here improved
+            % stability on some of the testing systems.
+            WaitSecs(0.1);
+            
             % Create logger file, if wanted
             if obj.settings.logLevel
                 ret = obj.iView.setLogger(obj.settings.logLevel, obj.settings.logFileName);
@@ -278,6 +282,8 @@ classdef SMITE < handle
             % reset calibration points in case someone else changed them
             % previously
             obj.iView.resetCalibrationPoints();
+            
+            % TODO: HiSpeed only: set calibration/validation points
             
             % get where the calibration points are
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
@@ -658,6 +664,11 @@ classdef SMITE < handle
         end
         
         function out = deInit(obj,qQuit)
+            if isempty(obj.iView)
+                % init was never called, nothing to do here
+                return;
+            end
+            
             obj.iView.disconnect();
             % also, read log, return contents as output and delete
             fid = fopen(obj.settings.logFileName, 'r');
