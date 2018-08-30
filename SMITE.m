@@ -470,7 +470,7 @@ classdef SMITE < handle
         
         function sample = getLatestSample(obj)
             % returns empty when sample not gotten successfully
-            [ret,sample] = obj.iView.getSample();
+            [sample,ret] = obj.getSample();
             if ret~=1
                 sample = [];
             end
@@ -916,6 +916,7 @@ classdef SMITE < handle
             obj.caps.hasREDGeometry     = false;
             obj.caps.setTrackingParam   = false;
             obj.caps.hasHeadbox         = true;
+            obj.caps.needsEyeFlip       = false;
             
             % RED-m and newer functionality
             switch obj.settings.tracker
@@ -943,6 +944,12 @@ classdef SMITE < handle
                 case {'HiSpeed240','HiSpeed1250','RED-m','RED250mobile','REDn'}
                     obj.caps.setTrackingParam   = true;
             end
+            % indicate for which trackers the eye identities are flipped
+            % (also position in headbox needs a flip)
+            switch obj.settings.tracker
+                case {'RED500','RED250','RED120','RED60'}
+                    obj.caps.needsEyeFlip     = true;
+            end
             % setting only for hispeed
             switch obj.settings.tracker
                 case {'HiSpeed240','HiSpeed1250'}
@@ -958,7 +965,7 @@ classdef SMITE < handle
             
             % some other per tracker settings.
             % TODO: I don't know which trackers support which!!. Have now
-            % checked: RED-m, RED250, RED500, RED250mobile
+            % checked: RED-m, old RED, RED250mobile
             obj.caps.setShowContour    = ismember(obj.settings.tracker,{});
             obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m'});
             obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
@@ -1097,8 +1104,8 @@ classdef SMITE < handle
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
-                    [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
-                    [~,pSample]        =obj.iView.getSample(pSampleS);                  % for distance
+                    pTrackingStatus = obj.getTrackingStatus(pTrackingStatusS);  % for position in headbox
+                    pSample         = obj.getSample(pSampleS);                  % for distance
 
                     % get average eye distance. use distance from one eye if only one eye
                     % available
@@ -1186,6 +1193,33 @@ classdef SMITE < handle
             end
             % clean up
             HideCursor;
+        end
+        
+        function pTrackingStatus = getTrackingStatus(obj,pTrackingStatusS)
+            [~,pTrackingStatus] = obj.iView.getTrackingStatus(pTrackingStatusS);
+            if obj.caps.needsEyeFlip
+                % swap eyes
+                temp = pTrackingStatus.leftEye;
+                pTrackingStatus. leftEye = pTrackingStatus.rightEye;
+                pTrackingStatus.rightEye = temp;
+                % invert left and right (its a [-1 1] range, so
+                % negate. Also invert position rating
+                fs = {'leftEye','rightEye','total'};
+                for f=1:length(fs)
+                    pTrackingStatus.(fs{f}).relativePositionX = -pTrackingStatus.(fs{f}).relativePositionX;
+                    pTrackingStatus.(fs{f}).positionRatingX   = -pTrackingStatus.(fs{f}).positionRatingX;
+                end
+            end
+        end
+        
+        function [sample,ret] = getSample(obj,varargin)
+            [ret,sample] = obj.iView.getSample(varargin{:});
+            if obj.caps.needsEyeFlip
+                % swap eyes
+                temp = sample.leftEye;
+                sample. leftEye = sample.rightEye;
+                sample.rightEye = temp;
+            end
         end
         
         
@@ -1355,8 +1389,8 @@ classdef SMITE < handle
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
-                    [~,pTrackingStatus]=obj.iView.getTrackingStatus(pTrackingStatusS);  % for position in headbox
-                    [~,pSample]        =obj.iView.getSample(pSampleS);                  % for distance
+                    pTrackingStatus = obj.getTrackingStatus(pTrackingStatusS);  % for position in headbox
+                    pSample         = obj.getSample(pSampleS);                  % for distance
 
                     % get average eye distance. use distance from one eye if only one eye
                     % available
@@ -1400,14 +1434,14 @@ classdef SMITE < handle
                 % do drawing
                 if obj.caps.hasHeadbox
                     % draw box
-                    Screen('FillRect',wpnt,80,boxRect);
+                    Screen('FillRect', wpnt, 80, boxRect);
                     % draw distance
                     if ~isnan(avgDist)
-                        Screen('TextSize',  wpnt, 10);
-                        Screen('DrawText',wpnt,sprintf('%.0f cm',avgDist) ,boxRect(3)-40,boxRect(4)-16,255);
+                        Screen('TextSize', wpnt, 10);
+                        Screen('DrawText', wpnt, sprintf('%.0f cm',avgDist), boxRect(3)-40,boxRect(4)-16,255);
                     end
                     % draw eyes in box
-                    Screen('TextSize',  wpnt, obj.settings.text.size);
+                    Screen('TextSize', wpnt, obj.settings.text.size);
                     % scale up size of oval. define size/rect at standard distance (60cm),
                     % have a gain for how much to scale as distance changes
                     if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
@@ -1419,11 +1453,11 @@ classdef SMITE < handle
                         facL = obj.settings.setup.viewingDist/distL;
                         facR = obj.settings.setup.viewingDist/distR;
                         % left eye
-                        style = Screen('TextStyle',  wpnt, 1);
+                        style = Screen('TextStyle', wpnt, 1);
                         obj.drawEye(wpnt,pTrackingStatus.leftEye .validity,posL,posR, relPos*fac,[255 120 120],[220 186 186],round(sz*facL*gain),'L',boxRect);
                         % right eye
                         obj.drawEye(wpnt,pTrackingStatus.rightEye.validity,posR,posL,-relPos*fac,[120 255 120],[186 220 186],round(sz*facR*gain),'R',boxRect);
-                        Screen('TextStyle',  wpnt, style);
+                        Screen('TextStyle', wpnt, style);
                         % update relative eye positions - used for drawing estimated
                         % position of missing eye. X and Y are relative position in
                         % headbox, Z is difference in measured eye depths
@@ -1550,9 +1584,12 @@ classdef SMITE < handle
             HideCursor;
         end
         
-        function tex = UploadImage(~,tex,wpnt,image)
+        function tex = UploadImage(obj,tex,wpnt,image)
             if tex
                 Screen('Close',tex);
+            end
+            if obj.caps.needsEyeFlip
+                image = fliplr(image);
             end
             tex = Screen('MakeTexture',wpnt,image,[],8);   % 8 to prevent mipmap generation, we don't need it
         end
@@ -1981,7 +2018,7 @@ classdef SMITE < handle
                     end
                     % if showing gaze, draw
                     if qShowGaze
-                        [ret,pSample] = obj.iView.getSample(pSampleS);
+                        [pSample,ret] = obj.getSample(pSampleS);
                         if ret==1
                             % draw
                             if qAveragedEyes
