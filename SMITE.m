@@ -1915,9 +1915,9 @@ classdef SMITE < handle
                     Screen('TextStyle', wpnt, obj.settings.text.style);
                     % draw text with validation accuracy info
                     if qAveragedEyes
-                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n<color=0000ff>Average<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
+                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n<color=0000ff>Average<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
                     else
-                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: % 2.2f°  % 2.2f°\n  <color=00ff00>Right<color>: % 2.2f°  % 2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
                     end
                     if obj.usingFTGLTextRenderer
                         DrawFormattedText2(valText,'win',wpnt,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
