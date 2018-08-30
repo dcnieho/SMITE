@@ -504,7 +504,7 @@ classdef SMITE < handle
             obj.sendMessage(string);
         end
         
-        function recordEyeImages(obj,filename, format, duration)
+        function startEyeImageRecording(obj,filename, format, duration)
             % NB: does NOT work on NG eye-trackers (RED250mobile, RED-n)
             % if using two computer setup, save location is on remote
             % computer, if not a full path is given, it is relative to
@@ -540,7 +540,7 @@ classdef SMITE < handle
             end
         end
         
-        function stopRecordEyeImages(obj)
+        function stopEyeImageRecording(obj)
             % if no duration specified when calling recordEyeImages, call
             % this function to stop eye image recording
             obj.rawET.sendCommand('ET_EVE\n');
