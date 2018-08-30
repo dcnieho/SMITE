@@ -22,36 +22,27 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
         mexErrMsgTxt("First input should be a command string less than 64 characters long.");
     size_t nChar = std::min(strlen(cmd),size_t(64));
 
-    // New
-    if (!strcmp("new", cmd))
-    {
-        // Return a handle to a new C++ instance
-        if (!SMIbufferClassInstance)
-            SMIbufferClassInstance = new SMIbuffer;
-        else
-        {
-            // reset instance (deletes buffers, clears registered callbacks)
-            SMIbufferClassInstance->stopEventBuffering( true);
-            SMIbufferClassInstance->stopSampleBuffering(true);
-        }
-        return;
-    }
-
-    // Delete
-    if (!strcmp("delete", cmd))
-    {
-        // reset instance (deletes buffers, clears registered callbacks)
-        SMIbufferClassInstance->stopEventBuffering( true);
-        SMIbufferClassInstance->stopSampleBuffering(true);
-        // Warn if other commands were ignored
-        if (nrhs != 1)
-            mexWarnMsgTxt("Delete: Unexpected arguments ignored.");
-        return;
-    }
-
     // Call the various class methods
     switch (rt::crc32(cmd, nChar))
     {
+        case ct::crc32("new"):
+            if (!SMIbufferClassInstance)
+                SMIbufferClassInstance = new SMIbuffer;
+            else
+            {
+                // reset instance (deletes buffers, clears registered callbacks)
+                SMIbufferClassInstance->stopEventBuffering(true);
+                SMIbufferClassInstance->stopSampleBuffering(true);
+            }
+            return;
+        case ct::crc32("delete"):
+            // reset instance (deletes buffers, clears registered callbacks)
+            SMIbufferClassInstance->stopEventBuffering(true);
+            SMIbufferClassInstance->stopSampleBuffering(true);
+            // Warn if other commands were ignored
+            if (nrhs != 1)
+                mexWarnMsgTxt("Delete: Unexpected arguments ignored.");
+            return;
         case ct::crc32("startSampleBuffering"):
         {
             int ret;
