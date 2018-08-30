@@ -186,17 +186,23 @@ classdef SMITE < handle
             
             % check this is the device the user specified
             if obj.caps.deviceName
-                % if possible, use this interface as its most precise
+                % if possible, use this interface as it is most precise
                 % (RED-m and RED250mobile are both 'REDm' in the return of
                 % getSystemInfo)
                 [~,trackerName] = obj.iView.getDeviceName;
-                assert(strcmp(trackerName(1:min(end,length(obj.settings.tracker))),obj.settings.tracker),'SMITE: Connected tracker is a "%s", not the "%s" you specified',obj.settings.tracker,trackerName)
+                assert(strcmp(trackerName(1:min(end,length(obj.settings.tracker))),obj.settings.tracker),'SMITE: Connected tracker is a "%s", not the "%s" you specified',trackerName,obj.settings.tracker)
             else
                 % this is a old RED or a HiSpeed, check using ETDevice in
                 % getSystemInfo if it is the device specified by the user
                 [~,sysInfo] = obj.iView.getSystemInfo();
-                warning('TODO')
-                sysInfo.ETDevice
+                qErr = false;
+                switch obj.settings.tracker
+                    case {'HiSpeed240','HiSpeed1250'}
+                        qErr = ~strcmp(sysInfo.iV_ETDevice,'HiSpeed');
+                    case {'RED500','RED250','RED120','RED60'}
+                        qErr = ~strcmp(sysInfo.iV_ETDevice,'RED');
+                end
+                assert(~qErr,'SMITE: Connected tracker is a "%s", not the "%s" you specified',sysInfo.iV_ETDevice,obj.settings.tracker)
             end
             
             % deal with device geometry
