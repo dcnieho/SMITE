@@ -206,15 +206,37 @@ classdef SMITE < handle
             end
             
             % deal with device geometry
-            if obj.caps.REDGeometry
-                % TODO, RED500 settings.setup.geomMode: check or can set
-                % remotely?
+            if obj.caps.setREDGeometry
                 % setup device geometry
                 ret = obj.iView.selectREDGeometry(obj.settings.setup.geomProfile);
                 assert(ret==1,'SMITE: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
+            end
+            if obj.caps.hasREDGeometry
                 % get info about the setup
                 [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
+                obj.geom.setupName = char(obj.geom.setupName(obj.geom.setupName~=0));
                 out.geom        = obj.geom;
+                if ismember(obj.settings.tracker,{'RED500','RED250','RED120','RED60'})
+                    % check correct geometry is set in iViewX (NB:
+                    % technically, if iViewX is set to standalone mode,
+                    % selectREDGeometry() would work to select the profile.
+                    % but since that requires the user to set it up
+                    % correctly manually anyway, we gain nothing by
+                    % supporting that here).
+                    assert(strcmpi(obj.geom.redGeometry,obj.settings.setup.geomMode),'SMITE: incorrect RED Operation Mode selected in iViewX. Got "%s", expected "%s"',obj.geom.redGeometry, obj.settings.setup.geomMode)
+                    switch obj.geom.redGeometry
+                        case 'monitorIntegrated'
+                            assert(obj.geom.monitorSize==obj.settings.setup.monitorSize,'SMITE: incorrect monitor size selected in iViewX for monitorIntegrated RED Operation Mode. Got "%d", expected "%d"',obj.geom.monitorSize, obj.settings.setup.monitorSize)
+                        case 'standalone'
+                            assert(strcmpi(obj.geom.setupName,obj.settings.setup.geomProfile),                        'SMITE: incorrect profile selected in iViewX for standalone RED Operation Mode. Got "%s", expected "%s"'                ,obj.geom.setupName, obj.settings.setup.geomProfile)
+                            assert(obj.geom.stimX              == obj.settings.setup.scrWidth,                   'SMITE: incorrect screen width selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimX              , obj.settings.setup.scrWidth)
+                            assert(obj.geom.stimY              ==obj.settings.setup.scrHeight,                  'SMITE: incorrect screen height selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimY              , obj.settings.setup.scrHeight)
+                            assert(obj.geom.stimHeightOverFloor==obj.settings.setup.scrDistToFloor,  'SMITE: incorrect distance floor to screen selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimHeightOverFloor, obj.settings.setup.scrDistToFloor)
+                            assert(obj.geom.redHeightOverFloor ==obj.settings.setup.REDDistToFloor,     'SMITE: incorrect distance floor to RED selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.redHeightOverFloor , obj.settings.setup.REDDistToFloor)
+                            assert(obj.geom.redStimDist        ==obj.settings.setup.REDDistToScreen,            'SMITE: incorrect distance RED to screen in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.redStimDist        , obj.settings.setup.REDDistToScreen)
+                            assert(obj.geom.redInclAngle       ==obj.settings.setup.REDInclAngle,       'SMITE: incorrect RED inclination angle selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.redInclAngle       , obj.settings.setup.REDInclAngle)
+                    end
+                end
             end
             
             % if supported, set tracker to operate at requested tracking frequency
@@ -796,8 +818,17 @@ classdef SMITE < handle
             switch tracker
                 case {'RED250','RED500'}
                     settings.setup.viewingDist      = 65;
-                    settings.setup.geomMode         = 'monitorIntegrated';      % monitorIntegrated or standalone
-                    settings.setup.geomProfile      = 'Desktop 22in Monitor';   % only when in standalone mode. TODO check whether setting it works for old REDs
+                    settings.setup.geomMode         = 'monitorIntegrated';  % monitorIntegrated or standalone
+                    % only when in monitorIntegrated mode:
+                    settings.setup.monitorSize      = 22;
+                    % only when in standalone mode:
+                    settings.setup.geomProfile      = 'profileName';
+                    settings.setup.scrWidth         = 0;
+                    settings.setup.scrHeight        = 0;
+                    settings.setup.scrDistToFloor   = 0;
+                    settings.setup.REDDistToFloor   = 0;
+                    settings.setup.REDDistToScreen  = 0;
+                    settings.setup.REDInclAngle     = 0;
                 case 'RED-m'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Desktop 22in Monitor';
@@ -889,7 +920,8 @@ classdef SMITE < handle
             obj.caps.deviceName         = false;
             obj.caps.serialNumber       = false;
             obj.caps.setSpeedMode       = false;
-            obj.caps.REDGeometry        = false;
+            obj.caps.setREDGeometry     = false;
+            obj.caps.hasREDGeometry     = false;
             obj.caps.setTrackingParam   = false;
             obj.caps.hasHeadbox         = true;
             
@@ -901,6 +933,7 @@ classdef SMITE < handle
                     obj.caps.enableHighPerfMode = true;
                     obj.caps.deviceName         = true;
                     obj.caps.serialNumber       = true;
+                    obj.caps.setREDGeometry     = true;
             end
             % RED NG only functionality
             switch obj.settings.tracker
@@ -910,8 +943,8 @@ classdef SMITE < handle
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
-                case {'RED250','RED500','RED-m','RED250mobile','REDn'}
-                    obj.caps.REDGeometry        = true;
+                case {'RED500','RED250','RED120','RED60','RED-m','RED250mobile','REDn'}
+                    obj.caps.hasREDGeometry     = true;
             end
             % functionality not for old REDs
             switch obj.settings.tracker
