@@ -730,7 +730,7 @@ classdef SMITE < handle
             
             % which app to iV_Start()
             switch tracker
-                case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
+                case {'HiSpeed240','HiSpeed1250','RED500','RED250','RED120','RED60'}
                     settings.etApp              = 'iViewX';
                 case 'RED-m'
                     settings.etApp              = 'iViewXOEM';
@@ -748,7 +748,7 @@ classdef SMITE < handle
                     % NB: for RED NG trackers, it is also supported to
                     % supply only the remote endpoint, like:
                     % settings.connectInfo        = {'ipETComputer',4444};
-                case {'HiSpeed240','HiSpeed1250','RED250','RED500'}
+                case {'HiSpeed240','HiSpeed1250','RED500','RED250','RED120','RED60'}
                     % template IPs, default ports
                     settings.connectInfo        = {'ipETComputer',4444,'ipThis',5555};
             end
@@ -768,26 +768,18 @@ classdef SMITE < handle
             switch tracker
                 case 'HiSpeed1250'
                 case 'HiSpeed240'
-                case 'RED250'
-                    % TODO: should i separate out the REDs like this? I
-                    % believe most of their specs are the same for all
-                    % models, except their track rate.. (check). eye image
-                    % size changes too if IIRC from 250 to 500. We can't
-                    % test with the other REDs of course... so be cautious
-                    % here.
-                    % NB: averaging eyes and any tracking mode setup is not
-                    % possible remotely. has to be done by hand in iViewX
-                    settings.freq                   = 250;
+                case {'RED500','RED250','RED120','RED60'}
+                    % TODO: averaging eyes and any tracking mode setup is not
+                    % possible remotely. has to be done by hand in iViewX.
+                    % so, check/warn
                     settings.cal.nPoint             = 5;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    settings.setup.eyeImageSize     = [];   % TODO
-                case 'RED500'
-                    % NB: averaging eyes and any tracking mode setup is not
-                    % possible remotely. has to be done by hand in iViewX
-                    settings.freq                   = 500;
-                    settings.cal.nPoint             = 5;
-                    settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    settings.setup.eyeImageSize     = [];   % TODO
+                    if strcmp(tracker,'RED500')
+                        settings.setup.eyeImageSize     = [ 80 344];
+                    else
+                        settings.setup.eyeImageSize     = [160 496];
+                    end
+                    settings.freq                   = str2double(tracker(4:end));
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
@@ -816,7 +808,7 @@ classdef SMITE < handle
             
             % some settings only for remotes
             switch tracker
-                case {'RED250','RED500'}
+                case {'RED500','RED250','RED120','RED60'}
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomMode         = 'monitorIntegrated';  % monitorIntegrated or standalone
                     % only when in monitorIntegrated mode:
@@ -837,6 +829,7 @@ classdef SMITE < handle
                     settings.setup.geomProfile      = 'Default Profile';
                 case {'REDn'}
                     settings.setup.viewingDist      = 65;
+                    settings.setup.geomProfile      = 'Default Profile';    % TODO, is it the correct name?
             end
             
             % the rest here are good defaults for the RED-m (mostly), some
@@ -844,7 +837,6 @@ classdef SMITE < handle
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, it always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.autoPace       = 1;                                % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
-            % TODO: do we have autoaccept mode two on redm and earlier?
             settings.cal.bgColor        = 127;
             settings.cal.fixBackSize    = 20;
             settings.cal.fixFrontSize   = 5;
