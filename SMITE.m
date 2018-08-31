@@ -10,6 +10,7 @@ classdef SMITE < handle
         keyState;
         shiftKey;
         mouseState;
+        needsCheckAveraging = false;    % for systems that do not support setting averaging of eye data
         
         % settings and external info
         settings;
@@ -261,9 +262,13 @@ classdef SMITE < handle
                 obj.processError(ret,'SMITE: Error selecting tracking mode');
             end
             % switch off averaging filter so we get separate data for each eye
-            if obj.caps.configureFilter && isfield(obj.settings,'doAverageEyes')
-                ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
-                obj.processError(ret,'SMITE: Error configuring averaging filter');
+            if isfield(obj.settings,'doAverageEyes')
+                if obj.caps.configureFilter
+                    ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
+                    obj.processError(ret,'SMITE: Error configuring averaging filter');
+                else
+                    obj.needsCheckAveraging = true;
+                end
             end
             
             % prevents CPU from entering power saving mode according to
@@ -758,8 +763,7 @@ classdef SMITE < handle
             % - trackMode:              'MONOCULAR', 'BINOCULAR',
             %                           'SMARTBINOCULAR', or
             %                           'SMARTTRACKING'
-            % - doAverageEyes           true/false. TODO: check if only for
-            %                           RED-m and newer?
+            % - doAverageEyes           true/false.
             % - freq:                   eye-tracker dependant. Only for NG
             %                           trackers can it actually be set 
             % - cal.nPoint:             0, 1, 2, 5, 9 or 13 calibration
@@ -772,6 +776,7 @@ classdef SMITE < handle
                     % possible remotely. has to be done by hand in iViewX.
                     % so, check/warn
                     settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = false;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
                     if strcmp(tracker,'RED500')
                         settings.setup.eyeImageSize     = [ 80 344];
@@ -1213,6 +1218,17 @@ classdef SMITE < handle
         
         function [sample,ret] = getSample(obj,varargin)
             [ret,sample] = obj.iView.getSample(varargin{:});
+            if obj.needsCheckAveraging && ~isnan(nan) && ~isnan(nan) % check have data from both eyes. also check this is not a monocular recording... (can we?)
+                qSame = sample.leftEye.gazeX==sample.rightEye.gazeX && sample.leftEye.gazeY==sample.rightEye.gazeY;
+                if obj.settings.doAverageEyes~=qSame
+                    if obj.settings.doAverageEyes
+                        error('SMITE: You specified in settings.doAverageEyes that tracker output should be the average of the two eyes, but it is not. Switch on averaging in iViewX')
+                    else
+                        error('SMITE: You specified in settings.doAverageEyes that tracker output should not be the average of the two eyes, but it is. Switch off averaging in iViewX')
+                    end
+                end
+                obj.needsCheckAveraging = false;    % check done, no need to repeat
+            end
             if obj.caps.needsEyeFlip
                 % swap eyes
                 temp = sample.leftEye;
