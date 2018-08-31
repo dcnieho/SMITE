@@ -125,8 +125,9 @@ classdef SMITE < handle
             % Load in plugin (SMI dll)
             obj.iView = iViewXAPI();
             
-            % Load in our callback buffer mex
-            obj.sampEvtBuffers = SMIbuffer();
+            % Load in our callback buffer mex (tell it if online data has
+            % eyes swapped)
+            obj.sampEvtBuffers = SMIbuffer(obj.caps.needsEyeFlip);
             
             % For reasons unclear to me, a brief wait here improved
             % stability on some of the testing systems.
