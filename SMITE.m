@@ -181,7 +181,7 @@ classdef SMITE < handle
                 case 201
                     error('SMITE: Could not establish connection. Check if Eye Tracker is installed and running (error 201: %s)',SMIErrCode2String(ret));
                 otherwise
-                    error('SMITE: Could not establish connection (error %d: %s)',ret,SMIErrCode2String(ret));
+                    obj.processError(ret,'SMITE: Could not establish connection');
             end
             
             % check this is the device the user specified
@@ -1680,7 +1680,7 @@ classdef SMITE < handle
         
         function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer)
             % make sure calibration settings are correct (they may have
-            % been changed below before a previous validation
+            % been changed below before a previous validation)
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: this sets the background color, because fullscreen fillrect sets new clear color in PTB
             % SMI calibration setup
             CalibrationData = SMIStructEnum.Calibration;
