@@ -134,9 +134,7 @@ classdef SMITE < handle
             % Create logger file, if wanted
             if obj.settings.logLevel
                 ret = obj.iView.setLogger(obj.settings.logLevel, obj.settings.logFileName);
-                if ret ~= 1
-                    error('SMITE: Logger at "%s" could not be opened (error %d: %s)',obj.settings.logFileName,ret,SMIErrCode2String(ret));
-                end
+                obj.processError(ret,sprintf('SMITE: Logger at "%s" could not be opened',obj.settings.logFileName));
             end
             
             % Connect to server
@@ -209,7 +207,7 @@ classdef SMITE < handle
             if obj.caps.setREDGeometry
                 % setup device geometry
                 ret = obj.iView.selectREDGeometry(obj.settings.setup.geomProfile);
-                assert(ret==1,'SMITE: Error selecting geometry profile (error %d: %s)',ret,SMIErrCode2String(ret));
+                obj.processError(ret,sprintf('SMITE: Error selecting geometry profile "%s"',obj.settings.setup.geomProfile));
             end
             if obj.caps.hasREDGeometry
                 % get info about the setup
@@ -244,7 +242,8 @@ classdef SMITE < handle
                 % NB: I found this command to be unstable at best, so i'm
                 % not checking the return value. Below we're checking if
                 % we're at the right tracking frequency anyway
-                obj.iView.setSpeedMode(obj.settings.freq);
+                ret = obj.iView.setSpeedMode(obj.settings.freq);
+                obj.processError(ret,sprintf('SMITE: Error setting tracker sampling frequency to "%d"',obj.settings.freq));
             end
             
             % get info about the system
@@ -259,12 +258,12 @@ classdef SMITE < handle
             % setup track mode
             if obj.caps.setTrackingParam
                 ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
-                assert(ret==1,'SMITE: Error selecting tracking mode (error %d: %s)',ret,SMIErrCode2String(ret));
+                obj.processError(ret,'SMITE: Error selecting tracking mode');
             end
             % switch off averaging filter so we get separate data for each eye
             if obj.caps.configureFilter && isfield(obj.settings,'doAverageEyes')
                 ret = obj.iView.configureFilter('Average', 'Set', int32(obj.settings.doAverageEyes));
-                assert(ret==1,'SMITE: Error configuring averaging filter (error %d: %s)',ret,SMIErrCode2String(ret));
+                obj.processError(ret,'SMITE: Error configuring averaging filter');
             end
             
             % prevents CPU from entering power saving mode according to
