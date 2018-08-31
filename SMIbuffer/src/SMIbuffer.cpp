@@ -26,7 +26,11 @@ namespace {
 int __stdcall SMISampleCallback(SampleStruct sample_)
 {
     if (SMIbufferClassInstance && SMIbufferClassInstance->_sampleData)
+    {
+        if (SMIbufferClassInstance->_doEyeSwap)
+            std::swap(sample_.leftEye, sample_.rightEye);
         SMIbufferClassInstance->_sampleData->enqueue(sample_);
+    }
 
     return 1;
 }
@@ -42,13 +46,19 @@ int __stdcall SMIEventCallback(EventStruct event_)
 
 
 
-SMIbuffer::SMIbuffer()
+SMIbuffer::SMIbuffer(bool needsEyeSwap_ /*= false*/) :
+    _doEyeSwap(needsEyeSwap_)
 {}
 
 SMIbuffer::~SMIbuffer()
 {
     stopSampleBuffering(true);
     stopEventBuffering (true);
+}
+
+void SMIbuffer::setEyeSwap(const bool& needsEyeSwap_)
+{
+    _doEyeSwap = needsEyeSwap_;
 }
 
 int SMIbuffer::startSampleBuffering(size_t bufferSize_ /*= 1<<22*/)

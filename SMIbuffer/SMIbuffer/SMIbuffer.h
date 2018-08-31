@@ -13,8 +13,10 @@
 class SMIbuffer
 {
 public:
-    SMIbuffer();
+    SMIbuffer(bool needsEyeSwap_ = false);
     ~SMIbuffer();
+
+    void setEyeSwap(const bool& needsEyeSwap_);
 
     int startSampleBuffering(size_t bufferSize_ = 1<<22);
     int startEventBuffering (size_t bufferSize_ = 1<<20);
@@ -37,4 +39,5 @@ private:
 private:
     mpmc_bounded_queue<SampleStruct>* _sampleData = nullptr;
     mpmc_bounded_queue<EventStruct>*  _eventData  = nullptr;
+    bool                              _doEyeSwap;
 };

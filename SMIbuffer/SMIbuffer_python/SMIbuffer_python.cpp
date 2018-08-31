@@ -110,7 +110,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS( startEventBuffering_overloads, SMIbuffer
 // start module scope
 BOOST_PYTHON_MODULE(SMIbuffer_python)
 {
-    class_<SMIbuffer, boost::noncopyable>("SMIbuffer", init<>())
+    class_<SMIbuffer, boost::noncopyable>("SMIbuffer", init<optional<bool>>())
         .def("startSampleBuffering", &SMIbuffer::startSampleBuffering, startSampleBuffering_overloads())
         .def("startEventBuffering" , &SMIbuffer:: startEventBuffering,  startEventBuffering_overloads())
         .def("clearSampleBuffer", &SMIbuffer::clearSampleBuffer)

@@ -26,15 +26,24 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     switch (rt::crc32(cmd, nChar))
     {
         case ct::crc32("new"):
+        {
+            if (nlhs < 0 || nrhs < 2)
+                mexErrMsgTxt("new: Expected needsEyeSwap input.");
+            if (!mxIsLogicalScalar(prhs[1]))
+                mexErrMsgTxt("new: Expected argument to be a logical scalar.");
+            bool needsEyeSwap = mxIsLogicalScalarTrue(prhs[1]);
+
             if (!SMIbufferClassInstance)
-                SMIbufferClassInstance = new SMIbuffer;
+                SMIbufferClassInstance = new SMIbuffer(needsEyeSwap);
             else
             {
                 // reset instance (deletes buffers, clears registered callbacks)
                 SMIbufferClassInstance->stopEventBuffering(true);
                 SMIbufferClassInstance->stopSampleBuffering(true);
+                SMIbufferClassInstance->setEyeSwap(needsEyeSwap);
             }
             return;
+        }
         case ct::crc32("delete"):
             // reset instance (deletes buffers, clears registered callbacks)
             SMIbufferClassInstance->stopEventBuffering(true);

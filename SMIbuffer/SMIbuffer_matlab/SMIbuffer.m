@@ -9,10 +9,13 @@ classdef SMIbuffer < handle
     end
     methods
         %% Constructor - Create a new C++ class instance 
-        function this = SMIbuffer(debugMode)
+        function this = SMIbuffer(needsEyeSwap,debugMode)
+            if nargin<1 || isempty(needsEyeSwap)
+                needsEyeSwap = false;
+            end
             % debugmode is for developer of SMIbuffer only, no use for end
             % users
-            if nargin<1 || isempty(debugMode)
+            if nargin<2 || isempty(debugMode)
                 debugMode = false;
             else
                 debugMode = ~~debugMode;
@@ -41,7 +44,7 @@ classdef SMIbuffer < handle
                     warning('failed to load SMIbuffer_matlab, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable')
                 end
                 addpath(temppath);
-                this.mexHndl('new');
+                this.mexHndl('new',needsEyeSwap);
                 rmpath(temppath);
             end
         end
