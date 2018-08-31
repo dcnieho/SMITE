@@ -741,7 +741,7 @@ classdef SMITE < handle
                 case {'RED250mobile','REDn'}
                     settings.etApp              = 'iViewNG';
                 otherwise
-                    error('SMITE: tracker "%s" not known/supported.\nSupported are: HiSpeed240, HiSpeed1250, RED250, RED500, RED-m, RED250mobile, REDn',tracker);
+                    error('SMITE: tracker "%s" not known/supported.\nSupported are: HiSpeed240, HiSpeed1250, RED500, RED250, RED120, RED60, RED-m, RED250mobile, REDn.\nNB: correct capitalization in the name is important.',tracker);
             end
             % connection info
             switch tracker
@@ -783,7 +783,7 @@ classdef SMITE < handle
                     else
                         settings.setup.eyeImageSize     = [160 496];
                     end
-                    settings.freq                   = str2double(tracker(4:end));
+                    settings.freq                   = str2double(tracker(4:end));   % tracker sampling frequency is the number at the end of the tracker name
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
@@ -836,8 +836,7 @@ classdef SMITE < handle
                     settings.setup.geomProfile      = 'Default Profile';    % TODO, is it the correct name?
             end
             
-            % the rest here are good defaults for the RED-m (mostly), some
-            % are general. Many are hard to set...
+            % the rest here are general defaults. Many are hard to set...
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, it always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.autoPace       = 1;                                % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
@@ -859,7 +858,7 @@ classdef SMITE < handle
                 settings.text.size          = 24;
             end
             settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
-            settings.debugMode          = false;                            % for use with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
+            settings.debugMode          = false;                            % for use together with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
             % SDK log Level:
             % no logs at all:               0
             % LOG_LEVEL_BUG                 1
@@ -883,6 +882,7 @@ classdef SMITE < handle
     methods (Access = private, Hidden)
         function allowed = getAllowedOptions(obj)
             allowed = {...
+                'setup','startScreen'
                 'cal','autoPace'
                 'cal','nPoint'
                 'cal','bgColor'
