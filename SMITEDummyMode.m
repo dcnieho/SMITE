@@ -34,7 +34,7 @@ classdef SMITEDummyMode < SMITE
             
             % check we overwrite all public methods (for developer, to make
             % sure we override all accessible baseclass calls with no-ops)
-            if 1
+            if 0
                 thisInfo = metaclass(obj);
                 superMethods = thisInfo.SuperclassList.MethodList;
                 superMethods(~strcmp({superMethods.Access},'public') | (~~[superMethods.Static])) = [];
@@ -71,6 +71,21 @@ classdef SMITEDummyMode < SMITE
                 if any(~qMatchingInput)
                     fprintf('methods in %s with wrong number of input arguments (mismatching %s):\n',thisInfo.Name,thisInfo.SuperclassList.Name);
                     fprintf('  %s\n',thisMethods(~qMatchingInput).Name);
+                end
+                
+                % 4. right number of output arguments?
+                qMatchingOutput = false(size(qNotOverridden));
+                for p=1:length(thisMethods)
+                    superMethod = superMethods(strcmp({superMethods.Name},thisMethods(p).Name));
+                    if isscalar(superMethod)
+                        qMatchingOutput(p) = length(superMethod.OutputNames) == length(thisMethods(p).OutputNames);
+                    else
+                        qMatchingOutput(p) = true;
+                    end
+                end
+                if any(~qMatchingOutput)
+                    fprintf('methods in %s with wrong number of output arguments (mismatching %s):\n',thisInfo.Name,thisInfo.SuperclassList.Name);
+                    fprintf('  %s\n',thisMethods(~qMatchingOutput).Name);
                 end
             end
         end
@@ -152,6 +167,8 @@ classdef SMITEDummyMode < SMITE
         
         function out = deInit(~,~)
             out = [];
+            % mark as deinited
+            obj.isInitialized = false;
         end
     end
     
