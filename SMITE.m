@@ -274,6 +274,29 @@ classdef SMITE < handle
             if obj.caps.setTrackingMode
                 ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
                 obj.processError(ret,'SMITE: Error selecting tracking mode');
+            elseif isfield(obj.settings,'trackEye')
+                % get sample to check if recording monocular (and if so
+                % which eye) or binocular
+                a           = obj.getSample();
+                qHaveLeft   = a.leftEye .gazeX ~= -1;
+                qHaveRight  = a.rightEye.gazeX ~= -1;
+                if qHaveLeft && qHaveRight
+                    eye = 'both eyes';
+                elseif qHaveLeft
+                    eye = 'only the left eye';
+                elseif qHaveRight
+                    eye = 'only the right eye';
+                end
+                switch obj.settings.trackEye
+                    case 'EYE_BOTH'
+                        assert( qHaveLeft &&  qHaveRight,'SMITE: you requested recording from both eyes, but data from %s is available. Change eye-tracker settings in iView, or settings.trackEye',eye);
+                    case 'EYE_LEFT'
+                        assert( qHaveLeft && ~qHaveRight,'SMITE: you requested recording from the left eye, but data from %s is available. Change eye-tracker settings in iView, or settings.trackEye',eye);
+                    case 'EYE_RIGHT'
+                        assert(~qHaveLeft &&  qHaveRight,'SMITE: you requested recording from the right eye, but data from %s is available. Change eye-tracker settings in iView, or settings.trackEye',eye);
+                    otherwise
+                        error('settings.trackEye ''%s'' not understood, possible values: ''EYE_BOTH'', ''EYE_LEFT'', or ''EYE_RIGHT''', obj.settings.trackEye);
+                end
             end
             % switch off averaging filter so we get separate data for each eye
             if isfield(obj.settings,'doAverageEyes')
@@ -1921,8 +1944,24 @@ classdef SMITE < handle
                 selection = iValid(end);
             end
             qHaveMultipleValidCals = ~isscalar(iValid);
-            % detect if average eyes
-            qAveragedEyes = cal{selection}.validateAccuracy.deviationLX==cal{selection}.validateAccuracy.deviationRX && cal{selection}.validateAccuracy.deviationLY==cal{selection}.validateAccuracy.deviationRY;
+            % determine which eye, and if binocular, whether samples are
+            % averaged
+            if ~isfield(obj.settings,'trackEye')
+                qIsLeft  = false;
+                qIsRight = false;
+                qIsBinoc = true;
+            else
+                qIsLeft  = strcmp(obj.settings.trackEye,'EYE_LEFT');
+                qIsRight = strcmp(obj.settings.trackEye,'EYE_RIGHT');
+                qIsBinoc = strcmp(obj.settings.trackEye,'EYE_BOTH');
+            end
+            if qIsBinoc
+                if isfield(obj.settings,'doAverageEyes')
+                    qAveragedEyes = obj.settings.doAverageEyes;
+                else
+                    qAveragedEyes = cal{selection}.validateAccuracy.deviationLX==cal{selection}.validateAccuracy.deviationRX && cal{selection}.validateAccuracy.deviationLY==cal{selection}.validateAccuracy.deviationRY;
+                end
+            end
             
             % setup buttons
             % 1. below screen
@@ -1968,10 +2007,16 @@ classdef SMITE < handle
                 menuRects = menuRects+bsxfun(@times,[height*([0:nElem-1]+.5)+[0:nElem-1]*pad-totHeight/2].',[0 1 0 1]);
                 % text in each rect
                 for c=1:length(iValid)
-                    if qAveragedEyes
-                        str = sprintf('(%d): <color=ff0000>Average<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY);
-                    else
-                        str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°), <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
+                    if qIsLeft
+                        str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY);
+                    elseif qIsRight
+                        str = sprintf('(%d): <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
+                    elseif qIsBinoc
+                        if qAveragedEyes
+                            str = sprintf('(%d): <color=ff0000>Average<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY);
+                        else
+                            str = sprintf('(%d): <color=ff0000>Left<color>: (%.2f°,%.2f°), <color=00ff00>Right<color>: (%.2f°,%.2f°)',c,cal{iValid(c)}.validateAccuracy.deviationLX,cal{iValid(c)}.validateAccuracy.deviationLY,cal{iValid(c)}.validateAccuracy.deviationRX,cal{iValid(c)}.validateAccuracy.deviationRY);
+                        end
                     end
                     menuTextCache(c) = obj.getButtonTextCache(wpnt,str,menuRects(c,:)); %#ok<AGROW>
                 end
@@ -2016,10 +2061,16 @@ classdef SMITE < handle
                     Screen('TextSize',  wpnt, obj.settings.text.size);
                     Screen('TextStyle', wpnt, obj.settings.text.style);
                     % draw text with validation accuracy info
-                    if qAveragedEyes
-                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n<color=0000ff>Average<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
-                    else
-                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+                    if qIsLeft
+                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
+                    elseif qIsRight
+                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+                    elseif qIsBinoc
+                        if qAveragedEyes
+                            valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n<color=ff0000>Average<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
+                        else
+                            valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+                        end
                     end
                     if obj.usingFTGLTextRenderer
                         DrawFormattedText2(valText,'win',wpnt,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
@@ -2055,15 +2106,15 @@ classdef SMITE < handle
                         [pSample,ret] = obj.getSample(pSampleS);
                         if ret==1
                             % draw
-                            if qAveragedEyes
+                            if qIsBinoc && qAveragedEyes
                                 if ~(pSample.leftEye .gazeX==0 && pSample.leftEye .gazeY==0)
                                     Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
                                 end
                             else
-                                if ~(pSample.leftEye .gazeX==0 && pSample.leftEye .gazeY==0)
+                                if ~(pSample.leftEye .gazeX==0 && pSample.leftEye .gazeY==0) && ~(pSample.leftEye .gazeX==-1 && pSample.leftEye .gazeY==-1)
                                     Screen('gluDisk', wpnt,[255 0 0], pSample. leftEye.gazeX, pSample. leftEye.gazeY, 10);
                                 end
-                                if ~(pSample.rightEye.gazeX==0 && pSample.rightEye.gazeY==0)
+                                if ~(pSample.rightEye.gazeX==0 && pSample.rightEye.gazeY==0) && ~(pSample.rightEye.gazeX==-1 && pSample.rightEye.gazeY==-1)
                                     Screen('gluDisk', wpnt,[0 255 0], pSample.rightEye.gazeX, pSample.rightEye.gazeY, 10);
                                 end
                             end
