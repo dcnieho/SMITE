@@ -140,7 +140,7 @@ classdef SMITE < handle
             
             % Load in our callback buffer mex (tell it if online data has
             % eyes swapped)
-            obj.sampEvtBuffers = SMIbuffer(obj.caps.needsEyeFlip);
+            obj.sampEvtBuffers = SMIbuffer(obj.caps.mayNeedEyeFlip && obj.settings.doFlipEye);
             
             % For reasons unclear to me, a brief wait here improved
             % stability on some of the testing systems.
@@ -801,6 +801,7 @@ classdef SMITE < handle
                         settings.setup.eyeImageSize     = [160 496];
                     end
                     settings.freq                   = str2double(tracker(4:end));   % tracker sampling frequency is the number at the end of the tracker name
+                    settings.doFlipEye              = false;
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
@@ -937,7 +938,7 @@ classdef SMITE < handle
             obj.caps.hasREDGeometry     = false;
             obj.caps.setTrackingParam   = false;
             obj.caps.hasHeadbox         = true;
-            obj.caps.needsEyeFlip       = false;
+            obj.caps.mayNeedEyeFlip     = false;
             
             % RED-m and newer functionality
             switch obj.settings.tracker
@@ -961,14 +962,14 @@ classdef SMITE < handle
                     obj.caps.hasREDGeometry     = true;
             end
             % indicate for which trackers the eye identities are flipped
-            % (also position in headbox needs a flip) TODO also hispeed?
+            % (also position in headbox needs a flip)
             switch obj.settings.tracker
-                case {'RED500','RED250','RED120','RED60'}
-                    obj.caps.needsEyeFlip       = true;
+                case {'HiSpeed','RED500','RED250','RED120','RED60'}
+                    obj.caps.mayNeedEyeFlip     = true;
             end
             % setting only for hispeed
             switch obj.settings.tracker
-                case {'HiSpeed240','HiSpeed1250'}
+                case {'HiSpeed'}
                     obj.caps.hasHeadbox         = false;
             end
             % supported number of calibration points
@@ -1210,7 +1211,7 @@ classdef SMITE < handle
         
         function pTrackingStatus = getTrackingStatus(obj,pTrackingStatusS)
             [~,pTrackingStatus] = obj.iView.getTrackingStatus(pTrackingStatusS);
-            if obj.caps.needsEyeFlip
+            if obj.caps.mayNeedEyeFlip && obj.settings.doFlipEye
                 % swap eyes
                 temp = pTrackingStatus.leftEye;
                 pTrackingStatus. leftEye = pTrackingStatus.rightEye;
@@ -1227,7 +1228,7 @@ classdef SMITE < handle
         
         function [sample,ret] = getSample(obj,varargin)
             [ret,sample] = obj.iView.getSample(varargin{:});
-            if obj.caps.needsEyeFlip
+            if obj.caps.mayNeedEyeFlip && obj.settings.doFlipEye
                 % swap eyes
                 temp = sample.leftEye;
                 sample. leftEye = sample.rightEye;
@@ -1600,7 +1601,7 @@ classdef SMITE < handle
             if tex
                 Screen('Close',tex);
             end
-            if obj.caps.needsEyeFlip
+            if obj.caps.mayNeedEyeFlip && obj.settings.doFlipEye
                 image = fliplr(image);
             end
             tex = Screen('MakeTexture',wpnt,image,[],8);   % 8 to prevent mipmap generation, we don't need it
