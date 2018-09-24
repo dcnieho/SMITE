@@ -47,7 +47,8 @@ classdef SMITE < handle
             end
             
             if nargin<2 || isempty(scrInfo)
-                obj.scrInfo.resolution  = Screen('Rect',0); obj.scrInfo.resolution(1:2) = [];
+                scr                     = max(Screen('Screens'));   % make a best guess which screen is the eye tracker screen
+                obj.scrInfo.resolution  = Screen('Rect',scr); obj.scrInfo.resolution(1:2) = [];
                 obj.scrInfo.center      = obj.scrInfo.resolution/2;
             else
                 assert(isfield(scrInfo,'resolution') && isfield(scrInfo,'center'),'SMITE: scrInfo should have a ''resolution'' and a ''center'' field')
@@ -1102,7 +1103,7 @@ classdef SMITE < handle
             end
             % Refresh internal key-/mouseState to make sure we don't
             % trigger on already pressed buttons
-            obj.getNewMouseKeyPress();
+            obj.getNewMouseKeyPress(wpnt);
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
@@ -1154,7 +1155,7 @@ classdef SMITE < handle
                 
                 
                 % get user response
-                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress();
+                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
                 % update cursor look if needed
                 cursor.update(mx,my);
                 if any(buttons)
@@ -1387,7 +1388,7 @@ classdef SMITE < handle
             overlays        = false(3);
             % Refresh internal key-/mouseState to make sure we don't
             % trigger on already pressed buttons
-            obj.getNewMouseKeyPress();
+            obj.getNewMouseKeyPress(wpnt);
             while true
                 if obj.caps.hasHeadbox
                     % get tracking status info
@@ -1510,7 +1511,7 @@ classdef SMITE < handle
                 Screen('Flip',wpnt);
                 
                 % get user response
-                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress();
+                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
                 % update cursor look if needed
                 cursor.update(mx,my);
                 if any(buttons)
@@ -1783,7 +1784,7 @@ classdef SMITE < handle
             
             % Refresh internal key-/mouseState to make sure we don't
             % trigger on already pressed buttons
-            obj.getNewMouseKeyPress();
+            obj.getNewMouseKeyPress(wpnt);
             
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
             currentPoint    = -1;
@@ -1847,7 +1848,7 @@ classdef SMITE < handle
                 end
                 
                 % get user response
-                [~,~,~,keyCode,haveShift] = obj.getNewMouseKeyPress();
+                [~,~,~,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
                 if any(keyCode)
                     keys = KbName(keyCode);
                     if any(strcmpi(keys,'space')) && qAllowAcceptKey && ~haveAccepted
@@ -1973,7 +1974,7 @@ classdef SMITE < handle
             pSampleS            = SMIStructEnum.Sample;
             % Refresh internal key-/mouseState to make sure we don't
             % trigger on already pressed buttons
-            obj.getNewMouseKeyPress();
+            obj.getNewMouseKeyPress(wpnt);
             while ~qDoneCalibSelection
                 % draw validation screen image
                 if tex~=0
@@ -2061,7 +2062,7 @@ classdef SMITE < handle
                     Screen('Flip',wpnt);
                     
                     % get user response
-                    [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress();
+                    [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
                     % update cursor look if needed
                     cursor.update(mx,my);
                     if any(buttons)
@@ -2175,13 +2176,13 @@ classdef SMITE < handle
             out = length(obj.settings.connectInfo)==4 && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
         end
         
-        function [mx,my,mouse,key,haveShift] = getNewMouseKeyPress(obj)
+        function [mx,my,mouse,key,haveShift] = getNewMouseKeyPress(obj,wpnt)
             % function that only returns key depress state changes in the
             % down direction, not keys that are held down or anything else
             % NB: before using this, make sure internal state is up to
             % date!
             [~,~,keyCode]   = KbCheck();
-            [mx,my,buttons] = GetMouse();
+            [mx,my,buttons] = GetMouse(wpnt);
             
             % get only fresh mouse and key presses (so change from state
             % "up" to state "down")
