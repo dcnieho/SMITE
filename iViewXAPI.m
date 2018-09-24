@@ -328,7 +328,7 @@ classdef iViewXAPI < handle
         end
         
         function [ret,serial] = getSerialNumber()
-            pSerial = libpointer('voidPtr',zeros(1,50,'uint8'));
+            pSerial = libpointer('voidPtr',zeros(1,64,'uint8'));
             ret     = calllib('iViewXAPI', 'iV_GetSerialNumber', pSerial);
             serial  = '';
             if ret==1
