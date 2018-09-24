@@ -198,7 +198,7 @@ classdef SMITE < handle
                 [~,sysInfo] = obj.iView.getSystemInfo();
                 qErr = false;
                 switch obj.settings.tracker
-                    case {'HiSpeed240','HiSpeed1250'}
+                    case {'HiSpeed'}
                         qErr = ~strcmp(sysInfo.iV_ETDevice,'HiSpeed');
                     case {'RED500','RED250','RED120','RED60'}
                         qErr = ~strcmp(sysInfo.iV_ETDevice,'RED');
@@ -736,14 +736,14 @@ classdef SMITE < handle
             
             % which app to iV_Start()
             switch tracker
-                case {'HiSpeed240','HiSpeed1250','RED500','RED250','RED120','RED60'}
+                case {'HiSpeed','RED500','RED250','RED120','RED60'}
                     settings.etApp              = 'iViewX';
                 case 'RED-m'
                     settings.etApp              = 'iViewXOEM';
                 case {'RED250mobile','REDn'}
                     settings.etApp              = 'iViewNG';
                 otherwise
-                    error('SMITE: tracker "%s" not known/supported.\nSupported are: HiSpeed240, HiSpeed1250, RED500, RED250, RED120, RED60, RED-m, RED250mobile, REDn.\nNB: correct capitalization in the name is important.',tracker);
+                    error('SMITE: tracker "%s" not known/supported.\nSupported are: HiSpeed, RED500, RED250, RED120, RED60, RED-m, RED250mobile, REDn.\nNB: correct capitalization in the name is important.',tracker);
             end
             % connection info
             switch tracker
@@ -754,7 +754,7 @@ classdef SMITE < handle
                     % NB: for RED NG trackers, it is also supported to
                     % supply only the remote endpoint, like:
                     % settings.connectInfo        = {'ipETComputer',4444};
-                case {'HiSpeed240','HiSpeed1250','RED500','RED250','RED120','RED60'}
+                case {'HiSpeed','RED500','RED250','RED120','RED60'}
                     % template IPs, default ports
                     settings.connectInfo        = {'ipETComputer',4444,'ipThis',5555};
             end
@@ -771,8 +771,7 @@ classdef SMITE < handle
             % - cal.nPoint:             0, 1, 2, 5, 9 or 13 calibration
             %                           points are possible
             switch tracker
-                case 'HiSpeed1250'
-                case 'HiSpeed240'
+                case 'HiSpeed'
                 case {'RED500','RED250','RED120','RED60'}
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = false;
