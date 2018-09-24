@@ -809,7 +809,7 @@ classdef SMITE < handle
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
                     settings.setup.headBox          = [31 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    settings.setup.eyeImageSize     = [];   % TODO
+                    settings.setup.eyeImageSize     = [220 496];
                 case 'RED250mobile'
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
