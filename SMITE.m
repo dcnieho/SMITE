@@ -97,10 +97,22 @@ classdef SMITE < handle
                     end
                 end
             else
-                % just copy it over. If user didn't remove fields from
-                % settings struct, we're good. If they did, they're an
-                % idiot. If they added any, they'll be ignored, so no
-                % problem.
+                % get what fields there should be. error if user added or
+                % removed
+                defaults    = obj.getDefaults(settings.tracker);
+                expected    = getStructFields(defaults);
+                input       = getStructFields(settings);
+                qMissing    = ~ismember(expected,input);
+                qAdded      = ~ismember(input,expected);
+                if any(qMissing)
+                    params = sprintf('\n  settings.%s',expected{qMissing});
+                    error('SMITE: For the %s tracker, the following settings are expected, but were not provided by you:%s\nAdd these to your settings input.',settings.tracker,params);
+                end
+                if any(qAdded)
+                    params = sprintf('\n  settings.%s',input{qAdded});
+                    error('SMITE: For the %s tracker, the following settings are not expected, but were provided by you:%s\nRemove these from your settings input.',settings.tracker,params);
+                end
+                % input is fine, just copy it over
                 obj.settings = settings;
             end
             % setup colors
@@ -2196,4 +2208,26 @@ classdef SMITE < handle
             obj.mouseState  = buttons;
         end
     end
+end
+
+
+%%% helpers
+function fieldInfo = getStructFields(defaults)
+values                  = struct2cell(defaults);
+qSubStruct              = cellfun(@isstruct,values);
+fieldInfo               = fieldnames(defaults);
+fieldInfoSub            = fieldInfo(qSubStruct);
+fieldInfo(qSubStruct)   = [];
+fieldInfo               = [fieldInfo repmat({''},size(fieldInfo))];
+for p=1:length(fieldInfoSub)
+    fields      = fieldnames(defaults.(fieldInfoSub{p}));
+    fieldInfo   = [fieldInfo; [repmat(fieldInfoSub(p),size(fields)) fields]]; %#ok<AGROW>
+end
+% turn into string
+fieldInfo = MergeCell(fieldInfo(:,1),'.',fieldInfo(:,2));
+for i=1:length(fieldInfo)
+    if fieldInfo{i}(end)=='.'
+        fieldInfo{i} = fieldInfo{i}(1:end-1);
+    end
+end
 end
