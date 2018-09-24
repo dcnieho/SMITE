@@ -683,8 +683,8 @@ classdef SMITE < handle
                 end
                 pnet(con,'close');
                 
-                % 4: now save file locally (we already check above that the
-                % file does not exist, so overwriting should not happen
+                % 4: now save file locally (we already checked above that
+                % the file does not exist, so overwriting should not happen
                 % here)
                 assert(~isempty(allDat),'SMITE: remote file could not be received. File stored on the remote (eye-tracker) computer as ''%s''\n',remoteFile);
                 fid=fopen(filename,'w');
@@ -773,9 +773,6 @@ classdef SMITE < handle
                 case 'HiSpeed1250'
                 case 'HiSpeed240'
                 case {'RED500','RED250','RED120','RED60'}
-                    % TODO: averaging eyes and any tracking mode setup is not
-                    % possible remotely. has to be done by hand in iViewX.
-                    % so, check/warn
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = false;
                     settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
@@ -953,7 +950,7 @@ classdef SMITE < handle
             % (also position in headbox needs a flip)
             switch obj.settings.tracker
                 case {'RED500','RED250','RED120','RED60'}
-                    obj.caps.needsEyeFlip     = true;
+                    obj.caps.needsEyeFlip       = true;
             end
             % setting only for hispeed
             switch obj.settings.tracker
@@ -1219,17 +1216,6 @@ classdef SMITE < handle
         
         function [sample,ret] = getSample(obj,varargin)
             [ret,sample] = obj.iView.getSample(varargin{:});
-            if obj.needsCheckAveraging && ~isnan(nan) && ~isnan(nan) % check have data from both eyes. also check this is not a monocular recording... (can we?)
-                qSame = sample.leftEye.gazeX==sample.rightEye.gazeX && sample.leftEye.gazeY==sample.rightEye.gazeY;
-                if obj.settings.doAverageEyes~=qSame
-                    if obj.settings.doAverageEyes
-                        error('SMITE: You specified in settings.doAverageEyes that tracker output should be the average of the two eyes, but it is not. Switch on averaging in iViewX')
-                    else
-                        error('SMITE: You specified in settings.doAverageEyes that tracker output should not be the average of the two eyes, but it is. Switch off averaging in iViewX')
-                    end
-                end
-                obj.needsCheckAveraging = false;    % check done, no need to repeat
-            end
             if obj.caps.needsEyeFlip
                 % swap eyes
                 temp = sample.leftEye;
@@ -1716,6 +1702,24 @@ classdef SMITE < handle
                     end
                 end
                 return;
+            end
+            
+            % now check for binocularly averaged data, if needed
+            while obj.needsCheckAveraging
+                % if we have data from both eyes, check the averaging setting
+                % is correct
+                sample = obj.getSample();
+                if (sample.leftEye.gazeX~=0 && sample.leftEye.gazeY~=0) && ~isnan(sample.rightEye.gazeX~=0 && sample.rightEye.gazeY~=0)
+                    qSame = sample.leftEye.gazeX==sample.rightEye.gazeX && sample.leftEye.gazeY==sample.rightEye.gazeY;
+                    if obj.settings.doAverageEyes~=qSame
+                        if obj.settings.doAverageEyes
+                            error('SMITE: You specified in settings.doAverageEyes that tracker output should be the average of the two eyes, but it is not. Switch on averaging in iViewX')
+                        else
+                            error('SMITE: You specified in settings.doAverageEyes that tracker output should not be the average of the two eyes, but it is. Switch off averaging in iViewX')
+                        end
+                    end
+                    obj.needsCheckAveraging = false;    % check done, no need to repeat
+                end
             end
             
             % now change calibration setup if needed
