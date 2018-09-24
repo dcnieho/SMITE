@@ -338,6 +338,7 @@ classdef SMITE < handle
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: fullscreen fillrect sets new clear color in PTB
             % SMI calibration setup
             CalibrationData = SMIStructEnum.Calibration;
+            assert(ismember(obj.settings.cal.nPoint,obj.caps.nCalibrationPoints),'SMITE: You asked for %d calibration points, but the ''%s'' tracker only supports %sor %d calibration points',obj.settings.cal.nPoint,obj.settings.tracker,sprintf('%d, ',obj.caps.nCalibrationPoints(1:end-1)),obj.caps.nCalibrationPoints(end));
             CalibrationData.method               = obj.settings.cal.nPoint;
             CalibrationData.autoAccept           = int32(obj.settings.cal.autoPace);
             CalibrationData.displayDevice        = max(0,Screen('WindowScreenNumber', wpnt)-1);
@@ -962,6 +963,7 @@ classdef SMITE < handle
             obj.caps.setTrackingMode    = false;
             obj.caps.hasHeadbox         = true;
             obj.caps.mayNeedEyeFlip     = false;
+            obj.caps.nCalibrationPoints = [];
             
             % RED-m and newer functionality
             switch obj.settings.tracker
@@ -997,11 +999,20 @@ classdef SMITE < handle
                     obj.caps.hasHeadbox         = false;
             end
             % supported number of calibration points
-            % TODO
-            % old REDs: 2, 5 or 9 points
-            % RED NG: 0, 1, 2, 5, 9 or 13
-            % RED-m:
-            % Hispeed 1250: 5, 9, or 13 points
+            switch obj.settings.tracker
+                case {'RED-m'}
+                    % RED-m: 0, 1, 2, 5, 9 (I will not support 0)
+                    obj.caps.nCalibrationPoints = [1 2 5 9];
+                case {'RED250mobile','REDn'}
+                    % RED NG: 0, 1, 2, 5, 9 or 13 (I will not support 0)
+                    obj.caps.nCalibrationPoints = [1 2 5 9 13];
+                case {'RED500','RED250','RED120','RED60'}
+                    % old REDs: 2, 5 or 9 points
+                    obj.caps.nCalibrationPoints = [2 5 9];
+                case {'HiSpeed'}
+                    % Hispeed 1250: 5, 9, or 13 points
+                    obj.caps.nCalibrationPoints = [5 9 13];
+            end
             
             % per tracker eye image settings
             obj.caps.setShowContour    = ismember(obj.settings.tracker,{'HiSpeed'});
