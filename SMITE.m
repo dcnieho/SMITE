@@ -271,7 +271,7 @@ classdef SMITE < handle
             % check tracker is operating at requested tracking frequency
             assert(obj.systemInfo.samplerate == obj.settings.freq,'SMITE: Tracker not running at requested sampling rate (%d Hz), but at %d Hz',obj.settings.freq,obj.systemInfo.samplerate);
             % setup track mode
-            if obj.caps.setTrackingParam
+            if obj.caps.setTrackingMode
                 ret = obj.iView.setTrackingParameter(['ET_PARAM_' obj.settings.trackEye], ['ET_PARAM_' obj.settings.trackMode], 1);
                 obj.processError(ret,'SMITE: Error selecting tracking mode');
             end
@@ -936,7 +936,7 @@ classdef SMITE < handle
             obj.caps.setSpeedMode       = false;
             obj.caps.setREDGeometry     = false;
             obj.caps.hasREDGeometry     = false;
-            obj.caps.setTrackingParam   = false;
+            obj.caps.setTrackingMode    = false;
             obj.caps.hasHeadbox         = true;
             obj.caps.mayNeedEyeFlip     = false;
             
@@ -949,6 +949,7 @@ classdef SMITE < handle
                     obj.caps.deviceName         = true;
                     obj.caps.serialNumber       = true;
                     obj.caps.setREDGeometry     = true;
+                    obj.caps.setTrackingMode    = true;
             end
             % RED NG only functionality
             switch obj.settings.tracker
