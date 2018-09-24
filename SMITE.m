@@ -305,6 +305,7 @@ classdef SMITE < handle
             CalibrationData = SMIStructEnum.Calibration;
             CalibrationData.method               = obj.settings.cal.nPoint;
             CalibrationData.autoAccept           = int32(obj.settings.cal.autoPace);
+            CalibrationData.displayDevice        = max(0,Screen('WindowScreenNumber', wpnt)-1);
             % Setup calibration look. Necessary in all cases so that
             % validate image looks similar to calibration stimuli
             CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
@@ -1669,6 +1670,7 @@ classdef SMITE < handle
             CalibrationData = SMIStructEnum.Calibration;
             CalibrationData.method               = obj.settings.cal.nPoint;
             CalibrationData.autoAccept           = int32(obj.settings.cal.autoPace);
+            CalibrationData.displayDevice        = max(0,Screen('WindowScreenNumber', wpnt)-1);
             % Setup calibration look. Necessary in all cases so that
             % validate image looks similar to calibration stimuli
             CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
@@ -1733,6 +1735,7 @@ classdef SMITE < handle
                 CalibrationData = SMIStructEnum.Calibration;
                 CalibrationData.method               = obj.settings.cal.nPoint;
                 CalibrationData.autoAccept           = int32(2);
+                CalibrationData.displayDevice        = max(0,Screen('WindowScreenNumber', wpnt)-1);
                 CalibrationData.foregroundBrightness = obj.settings.cal.fixBackColor(1);
                 CalibrationData.backgroundBrightness = obj.settings.cal.bgColor(1);
                 CalibrationData.targetSize           = max(10,round(obj.settings.cal.fixBackSize/2));   % 10 is the minimum size. Ignored for validation image...
