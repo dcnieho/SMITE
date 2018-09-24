@@ -805,7 +805,7 @@ classdef SMITE < handle
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
                     settings.setup.headBox          = [50 30];  % at 65 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    settings.setup.eyeImageSize     = []; % TODO
+                    settings.setup.eyeImageSize     = [160 496]; % TODO, this is just a (probably wrong) guess
             end
             
             % some settings only for remotes
@@ -947,7 +947,7 @@ classdef SMITE < handle
                     obj.caps.setTrackingParam   = true;
             end
             % indicate for which trackers the eye identities are flipped
-            % (also position in headbox needs a flip)
+            % (also position in headbox needs a flip) TODO also hispeed?
             switch obj.settings.tracker
                 case {'RED500','RED250','RED120','RED60'}
                     obj.caps.needsEyeFlip       = true;
