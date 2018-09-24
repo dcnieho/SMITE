@@ -766,12 +766,18 @@ classdef SMITE < handle
             %                           'SMARTBINOCULAR', or
             %                           'SMARTTRACKING'
             % - doAverageEyes           true/false.
-            % - freq:                   eye-tracker dependant. Only for NG
+            % - freq:                   eye-tracker dependent. Only for NG
             %                           trackers can it actually be set 
             % - cal.nPoint:             0, 1, 2, 5, 9 or 13 calibration
-            %                           points are possible
+            %                           points are possible (0 is not
+            %                           implemented in SMITE)
             switch tracker
                 case 'HiSpeed'
+                    settings.trackEye               = 'EYE_LEFT';
+                    settings.cal.nPoint             = 5;
+                    settings.doAverageEyes          = false;
+                    settings.setup.eyeImageSize     = [160 640];    % 160x224 for monocular at 1250 an 500
+                    settings.freq                   = 1250;
                 case {'RED500','RED250','RED120','RED60'}
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = false;
@@ -941,11 +947,6 @@ classdef SMITE < handle
                 case {'RED500','RED250','RED120','RED60','RED-m','RED250mobile','REDn'}
                     obj.caps.hasREDGeometry     = true;
             end
-            % functionality not for old REDs
-            switch obj.settings.tracker
-                case {'HiSpeed240','HiSpeed1250','RED-m','RED250mobile','REDn'}
-                    obj.caps.setTrackingParam   = true;
-            end
             % indicate for which trackers the eye identities are flipped
             % (also position in headbox needs a flip) TODO also hispeed?
             switch obj.settings.tracker
@@ -962,15 +963,12 @@ classdef SMITE < handle
             % old REDs: 2, 5 or 9 points
             % RED NG: 0, 1, 2, 5, 9 or 13
             % RED-m:
-            % Hispeed 1250:
-            % Hispeed 240:
+            % Hispeed 1250: 5, 9, or 13 points
             
-            % some other per tracker settings.
-            % TODO: I don't know which trackers support which!!. Have now
-            % checked: RED-m, old RED, RED250mobile
-            obj.caps.setShowContour    = ismember(obj.settings.tracker,{});
-            obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m'});
-            obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m'});
+            % per tracker eye image settings
+            obj.caps.setShowContour    = ismember(obj.settings.tracker,{'HiSpeed'});
+            obj.caps.setShowPupil      = ismember(obj.settings.tracker,{'RED-m','HiSpeed'});
+            obj.caps.setShowCR         = ismember(obj.settings.tracker,{'RED-m','HiSpeed'});
         end
         
         function ret = connect(obj)
@@ -1260,15 +1258,14 @@ classdef SMITE < handle
             eyeImageRect= [0 0 size(eyeImage,2) size(eyeImage,1)];
             
             % setup buttons
+            buttonSz    = {[200 45] [320 45] [400 45]};
+            buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
+            buttonOff   = 80;
+            yposBase    = round(obj.scrInfo.resolution(2)*.95);
+            eoButSz     = [174 buttonSz{1}(2)];
+            eoButMargin = [15 20];
+            eyeButClrs  = {[37  97 163],[11 122 244]};
             if obj.caps.hasHeadbox
-                buttonSz    = {[200 45] [320 45] [400 45]};
-                buttonSz    = buttonSz(1:2+qHaveValidCalibrations);  % third button only when more than one calibration available
-                buttonOff   = 80;
-                yposBase    = round(obj.scrInfo.resolution(2)*.95);
-                eoButSz     = [174 buttonSz{1}(2)];
-                eoButMargin = [15 20];
-                eyeButClrs  = {[37  97 163],[11 122 244]};
-                
                 % position eye image, head box and buttons
                 % center headbox and eye image on screen
                 offsetV         = (obj.scrInfo.resolution(2)-boxSize(2)-margin-RectHeight(eyeImageRect))/2;
