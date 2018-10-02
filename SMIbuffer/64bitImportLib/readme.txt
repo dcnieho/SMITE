@@ -9,3 +9,4 @@ dumpbin /exports "C:\Program Files (x86)\SMI\iView X SDK\bin\iViewXAPI64.dll" > 
 3. create a def file from that info, creating what is in the folder here by using the name and ordinal columns of dumpbin's output
 4. use that def file to create a new import library:
 lib /MACHINE:x64 /def:iViewXAPI64.def
+5. optionally place the file in C:\Program Files (x86)\SMI\iView X SDK\lib, if you're compiling against it
