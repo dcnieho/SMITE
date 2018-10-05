@@ -878,7 +878,7 @@ classdef SMITE < handle
             end
             
             % the rest here are general defaults. Many are hard to set...
-            settings.start.removeTempDataFile   = true;                     % when calling iV_Start, it always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
+            settings.start.removeTempDataFile   = true;                     % when calling iV_Start, iView always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
             settings.cal.autoPace       = 1;                                % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
             settings.cal.bgColor        = 127;
