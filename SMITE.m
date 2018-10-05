@@ -36,7 +36,7 @@ classdef SMITE < handle
     end
     
     methods
-        function obj = SMITE(settingsOrETName,scrInfo)
+        function obj = SMITE(settingsOrETName)
             % deal with inputs
             if ischar(settingsOrETName)
                 % only eye-tracker name provided, load defaults for this
@@ -44,15 +44,6 @@ classdef SMITE < handle
                 obj.options = obj.getDefaults(settingsOrETName);
             else
                 obj.options = settingsOrETName;
-            end
-            
-            if nargin<2 || isempty(scrInfo)
-                scr                     = max(Screen('Screens'));   % make a best guess which screen is the eye tracker screen
-                obj.scrInfo.resolution  = Screen('Rect',scr); obj.scrInfo.resolution(1:2) = [];
-                obj.scrInfo.center      = obj.scrInfo.resolution/2;
-            else
-                assert(isfield(scrInfo,'resolution') && isfield(scrInfo,'center'),'SMITE: scrInfo should have a ''resolution'' and a ''center'' field')
-                obj.scrInfo             = scrInfo;
             end
         end
         
@@ -97,7 +88,7 @@ classdef SMITE < handle
                     end
                 end
             else
-                % get what fields there should be. error if user added or
+                % get what fields there should be. Error if user added or
                 % removed
                 defaults    = obj.getDefaults(settings.tracker);
                 expected    = getStructFields(defaults);
@@ -122,16 +113,6 @@ classdef SMITE < handle
         end
         
         function out = init(obj)
-            % see what text renderer to use
-            obj.usingFTGLTextRenderer = ~~exist('libptbdrawtext_ftgl64.dll','file');    % check if we're on a Windows platform with the high quality text renderer present (was never supported for 32bit PTB, so check only for 64bit)
-            if ~obj.usingFTGLTextRenderer
-                assert(isfield(obj.settings.text,'lineCentOff'),'SMITE: PTB''s TextRenderer changed between calls to getDefaults and the SMITE constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMITE.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
-            end
-            % init key, mouse state
-            [~,~,obj.keyState] = KbCheck();
-            obj.shiftKey = KbName('shift');
-            [~,~,obj.mouseState] = GetMouse();
-            
             % get capabilities for the connected eye-tracker
             obj.setCapabilities();
             
@@ -144,7 +125,7 @@ classdef SMITE < handle
             
             % For reasons unclear to me, a brief wait here improved
             % stability on some of the testing systems.
-            WaitSecs(0.1);
+            pause(0.1);
             
             % Create logger file, if wanted
             if obj.settings.logLevel
@@ -242,7 +223,7 @@ classdef SMITE < handle
                             assert(obj.geom.monitorSize==obj.settings.setup.monitorSize,'SMITE: incorrect monitor size selected in iViewX for monitorIntegrated RED Operation Mode. Got "%d", expected "%d"',obj.geom.monitorSize, obj.settings.setup.monitorSize)
                         case 'standalone'
                             assert(strcmpi(obj.geom.setupName,obj.settings.setup.geomProfile),                        'SMITE: incorrect profile selected in iViewX for standalone RED Operation Mode. Got "%s", expected "%s"'                ,obj.geom.setupName, obj.settings.setup.geomProfile)
-                            assert(obj.geom.stimX              == obj.settings.setup.scrWidth,                   'SMITE: incorrect screen width selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimX              , obj.settings.setup.scrWidth)
+                            assert(obj.geom.stimX              ==obj.settings.setup.scrWidth,                    'SMITE: incorrect screen width selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimX              , obj.settings.setup.scrWidth)
                             assert(obj.geom.stimY              ==obj.settings.setup.scrHeight,                  'SMITE: incorrect screen height selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimY              , obj.settings.setup.scrHeight)
                             assert(obj.geom.stimHeightOverFloor==obj.settings.setup.scrDistToFloor,  'SMITE: incorrect distance floor to screen selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.stimHeightOverFloor, obj.settings.setup.scrDistToFloor)
                             assert(obj.geom.redHeightOverFloor ==obj.settings.setup.REDDistToFloor,     'SMITE: incorrect distance floor to RED selected in iViewX for standalone profile "%s" in RED Operation Mode. Got "%d", expected "%d"',obj.geom.setupName, obj.geom.redHeightOverFloor , obj.settings.setup.REDDistToFloor)
@@ -320,6 +301,8 @@ classdef SMITE < handle
         
         function out = calibrate(obj,wpnt,qClearBuffer)
             % this function does all setup, draws the interface, etc
+            % this and the functions called by this function are the only
+            % part of this toolbox that depend on PsychToolbox
             
             % by default don't clear recording buffer. You DO NOT want to do
             % that when recalibrating, e.g. in the middle of the trial, or at
@@ -329,6 +312,21 @@ classdef SMITE < handle
             end
             
             %%% 1: set up calibration
+            % get info about screen
+            obj.scrInfo.resolution  = Screen('Rect',wpnt); obj.scrInfo.resolution(1:2) = [];
+            obj.scrInfo.center      = obj.scrInfo.resolution/2;
+            
+            % see what text renderer to use
+            obj.usingFTGLTextRenderer = ~~exist('libptbdrawtext_ftgl64.dll','file');    % check if we're on a Windows platform with the high quality text renderer present (was never supported for 32bit PTB, so check only for 64bit)
+            if ~obj.usingFTGLTextRenderer
+                assert(isfield(obj.settings.text,'lineCentOff'),'SMITE: PTB''s TextRenderer changed between calls to getDefaults and the SMITE constructor. If you force the legacy text renderer by calling ''''Screen(''Preference'', ''TextRenderer'',0)'''' (not recommended) make sure you do so before you call SMITE.getDefaults(), as it has differnt settings than the recommended TextRendered number 1')
+            end
+            
+            % init key, mouse state
+            [~,~,obj.keyState] = KbCheck();
+            obj.shiftKey = KbName('shift');
+            [~,~,obj.mouseState] = GetMouse();
+            
             % to be safe, disable SMI calibration keys when possible
             % NB: manual says only for NG trackers, but seems to help
             % implementation act correctly on the RED-m as well...
@@ -496,7 +494,7 @@ classdef SMITE < handle
             end
             ret = obj.iView.startRecording();
             obj.processError(ret,'SMITE: Error starting recording');
-            WaitSecs(.1); % give it some time to get started. not needed according to doc, but never hurts
+            pause(.1); % give it some time to get started. not needed according to doc, but never hurts
         end
         
         function startBuffer(obj,size)
@@ -538,7 +536,8 @@ classdef SMITE < handle
         function sendMessage(obj,str)
             % using
             % calllib('obj.iViewXAPI','iV_SendImageMessage','msg_string')
-            % here to save overhead
+            % directly here to save overhead (not sure if this overhead is
+            % significant, but better be safe than sorry)
             % consider using that directly in your code for best timing
             % ret = obj.iView.sendImageMessage(str);
             ret = calllib('iViewXAPI','iV_SendImageMessage',str);
@@ -2015,7 +2014,7 @@ classdef SMITE < handle
                 menuBackRect= [-.5*width+obj.scrInfo.center(1)-margin -.5*totHeight+obj.scrInfo.center(2)-margin .5*width+obj.scrInfo.center(1)+margin .5*totHeight+obj.scrInfo.center(2)+margin];
                 % menuRects
                 menuRects = repmat([-.5*width+obj.scrInfo.center(1) -height/2+obj.scrInfo.center(2) .5*width+obj.scrInfo.center(1) height/2+obj.scrInfo.center(2)],length(iValid),1);
-                menuRects = menuRects+bsxfun(@times,[height*([0:nElem-1]+.5)+[0:nElem-1]*pad-totHeight/2].',[0 1 0 1]);
+                menuRects = menuRects+bsxfun(@times,[height*([0:nElem-1]+.5)+[0:nElem-1]*pad-totHeight/2].',[0 1 0 1]); %#ok<NBRAK>
                 % text in each rect
                 for c=1:length(iValid)
                     if qIsLeft
@@ -2276,7 +2275,7 @@ end
 
 
 %%% helpers
-function fieldInfo = getStructFields(defaults)
+function fieldString = getStructFields(defaults)
 values                  = struct2cell(defaults);
 qSubStruct              = cellfun(@isstruct,values);
 fieldInfo               = fieldnames(defaults);
@@ -2288,10 +2287,10 @@ for p=1:length(fieldInfoSub)
     fieldInfo   = [fieldInfo; [repmat(fieldInfoSub(p),size(fields)) fields]]; %#ok<AGROW>
 end
 % turn into string
-fieldInfo = MergeCell(fieldInfo(:,1),'.',fieldInfo(:,2));
-for i=1:length(fieldInfo)
-    if fieldInfo{i}(end)=='.'
-        fieldInfo{i} = fieldInfo{i}(1:end-1);
+fieldString = fieldInfo(:,1);
+for i=1:size(fieldInfo,1)
+    if ~isempty(fieldInfo{i,2})
+        fieldString{i} = [fieldString{i} '.' fieldInfo{i,2}];
     end
 end
 end
