@@ -93,7 +93,7 @@ try
     
     % init
     EThndl         = SMITE(settings);
-    EThndl         = EThndl.setDummyMode();
+    % EThndl         = EThndl.setDummyMode();
     EThndl.init();
     
     
