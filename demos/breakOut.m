@@ -5,6 +5,16 @@ addpath(genpath(fullfile(cd,'..')));
 
 qDEBUG = 0;
 
+% setup eye tracker
+settings = SMITE.getDefaults('RED250');
+settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
+settings.doAverageEyes  = true;
+settings.cal.autoPace   = 0;
+settings.cal.bgColor    = bgclr;
+% custom calibration drawer
+calViz = AnimatedCalibrationDisplay();
+settings.cal.drawFunction = @calViz.doDraw;
+
 % setup world
 scr                 = max(Screen('Screens'));
 scrRect             = Screen('Rect',scr);
@@ -80,17 +90,7 @@ ball.drag   = -ballAccel;
 %% run
 addpath(genpath(fullfile(cd,'theToolbox')));
 
-try
-    % get setup struct (can edit that of course):
-    settings = SMITE.getDefaults('RED250');
-    settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
-    settings.doAverageEyes  = true;
-    settings.cal.autoPace   = 0;
-    settings.cal.bgColor    = bgclr;
-    % custom calibration drawer
-    calViz = AnimatedCalibrationDisplay();
-    settings.cal.drawFunction = @calViz.doDraw;
-    
+try 
     % init
     EThndl         = SMITE(settings);
     % EThndl         = EThndl.setDummyMode();
