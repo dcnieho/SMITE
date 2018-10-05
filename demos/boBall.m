@@ -47,7 +47,7 @@ classdef boBall < handle
                     b_oVec = this.pos-collObjects(o).AABBmid;
                     dist = norm(b_oVec);
                     qInside = dist<collObjects(o).AABBhalfSize-this.r;
-                    if ~qInside && dist>collObjects(o).AABBhalfSize-dot(this.vel,b_oVec./dist)+this.r
+                    if ~qInside && dist>collObjects(o).AABBhalfSize-dot(this.vel*(this.dt-dtUsed),b_oVec./dist)+this.r
                         continue;
                     end
                     for l=1:length(collObjects(o).edges)
