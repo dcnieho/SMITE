@@ -51,7 +51,7 @@ classdef boBall < handle
                         continue;
                     end
                     for l=1:length(collObjects(o).edges)
-                        [lintDt,lintPos] = WhenMovingCircleWillIntersectLineSegment(this.pos, this.r, this.vel, collObjects(o).edges(l));
+                        [lintDt,lintPos] = WhenMovingCircleWillIntersectLineSegment(this.pos, this.r, this.vel, collObjects(o).edges(l), min(intDt,this.dt-dtUsed));
                         if ~isempty(lintDt) && lintDt>0 && lintDt<intDt
                             intDt = lintDt;
                             intPos= lintPos;
@@ -125,28 +125,27 @@ end
 % based on https://www.reddit.com/r/programming/comments/17wwv9/determining_exactly_ifwhenwhere_a_moving_line/c89o716
 % Returns the first non-negative time, if any, where a moving circle will
 % intersect a fixed line segment.
-function [t,intPos] = WhenMovingCircleWillIntersectLineSegment(center, radius, velocity, line)
+function [t,intPos] = WhenMovingCircleWillIntersectLineSegment(center, radius, velocity, line, maxDt)
 % Point center, double radius, Vector velocity, LineSegment line
 epsilon = 0.00001;
+intPos  = [];
 
 % use whatever's earliest and is actually touching
 t1 = WhenMovingCircleWillIntersectExtendedLine(center, radius, velocity, line.p1, line.p2-line.p1);
 t2 = WhenMovingCircleWillIntersectPoint(center, radius, velocity, line.p1);
 t3 = WhenMovingCircleWillIntersectPoint(center, radius, velocity, line.p2);
-t = sort([t1 t2 t3]);
+t  = sort([t1 t2 t3]);
+t  = t(t<=maxDt);
 
 % of the touching ones, see which is first
-intPos = zeros(length(t),2);
 while ~isempty(t)
     pos = center + velocity.*t(1);
-    [d,intPos(1,:)] = DistanceFrom(pos,line);
+    [d,intPos] = DistanceFrom(pos,line);
     if d > radius + epsilon
         % wrong result, remove
         t(1) = [];
-        intPos(1,:) = [];
     else
         t = t(1);
-        intPos = intPos(1,:);
         break;
     end
 end
@@ -165,8 +164,7 @@ if (mydot(a,a) - radius^2 <= 0)
 else
     b = PerpOnto(velocity,displacementAlongLine);
     t = QuadraticRoots(mydot(b,b), mydot(a,b)*2, mydot(a,a) - radius^2);
-    t(t<0) = [];
-    t = min(t); % smallest that is equal to or larger than 0
+    t = min(t(t>=0)); % smallest that is equal to or larger than 0
 end
 end
 
@@ -182,8 +180,7 @@ if (mydot(a,a) - radius^2 <= 0)
 else
     b = velocity;
     t = QuadraticRoots(mydot(b,b), mydot(a,b)*2, mydot(a,a) - radius^2);
-    t(t<0) = [];
-    t = min(t); % smallest that is equal to or larger than 0
+    t = min(t(t>=0)); % smallest that is equal to or larger than 0
 end
 end
 
