@@ -1651,11 +1651,11 @@ classdef SMITE < handle
         end
         
         function cache = getButtonTextCache(obj,wpnt,lbl,rect)
+            [sx,sy] = RectCenterd(rect);
             if obj.usingFTGLTextRenderer
-                [sx,sy] = RectCenterd(rect);
                 [~,~,~,cache] = DrawFormattedText2(lbl,'win',wpnt,'sx',sx,'xalign','center','sy',sy,'yalign','center','baseColor',0,'cacheOnly',true);
             else
-                [~,~,~,cache] = DrawMonospacedText(wpnt,lbl,'center','center',0,[],[],[],OffsetRect(rect,0,obj.settings.text.lineCentOff),true);
+                [~,~,~,cache] = DrawFormattedText2GDI(wpnt,lbl,sx,'center',sy,'center','center',0,[],[],[],[],true);
             end
         end
         
@@ -1663,7 +1663,7 @@ classdef SMITE < handle
             if obj.usingFTGLTextRenderer
                 DrawFormattedText2(cache);
             else
-                DrawMonospacedText(cache);
+                DrawFormattedText2GDI(cache);
             end
         end
         
