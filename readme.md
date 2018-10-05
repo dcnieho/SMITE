@@ -24,11 +24,9 @@ Tested on MATLAB R2015b & R2018a. Octave is currently not supported.
 ## Usage
 As demonstrated in the demo scripts, the toolbox is configured through
 the following interface:
-1. retrieve (default) settings for eye tracker of interest:
-settings = SMITE.getDefaults('RED250');
+1. retrieve (default) settings for eye tracker of interest: `settings = SMITE.getDefaults('RED250');`
 2. edit settings if wanted (see below)
-3. initialize SMITE using this settings struct:
-EThndl = SMITE(settings);
+3. initialize SMITE using this settings struct: `EThndl = SMITE(settings);`
 
 Supported options (depending on eye tracker model):
 
