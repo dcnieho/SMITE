@@ -133,21 +133,23 @@ epsilon = 0.00001;
 t1 = WhenMovingCircleWillIntersectExtendedLine(center, radius, velocity, line.p1, line.p2-line.p1);
 t2 = WhenMovingCircleWillIntersectPoint(center, radius, velocity, line.p1);
 t3 = WhenMovingCircleWillIntersectPoint(center, radius, velocity, line.p2);
-t = [t1 t2 t3];
+t = sort([t1 t2 t3]);
 
 % of the touching ones, see which is first
 intPos = zeros(length(t),2);
-for p=length(t):-1:1
-    pos = center + velocity.*t(p);
-    [d,intPos(p,:)] = DistanceFrom(pos,line);
+while ~isempty(t)
+    pos = center + velocity.*t(1);
+    [d,intPos(1,:)] = DistanceFrom(pos,line);
     if d > radius + epsilon
         % wrong result, remove
-        t(p) = [];
-        intPos(p,:) = [];
+        t(1) = [];
+        intPos(1,:) = [];
+    else
+        t = t(1);
+        intPos = intPos(1,:);
+        break;
     end
 end
-[t,i] = min(t);
-intPos = intPos(i,:);
 end
     
 
