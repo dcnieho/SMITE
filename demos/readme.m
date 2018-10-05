@@ -1,24 +1,22 @@
 sca
 qDEBUG = 0;
-s.bclr              = 255/2;
+bgclr  = 255/2;
 
 addpath(genpath(fullfile(cd,'..')));
 
 try
-    % get setup struct (can edit that of course):
+    % get setup struct, edit to change settings
     settings = SMITE.getDefaults('RED250');
     settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
-%     settings.connectInfo    = {'127.0.0.1',4444};
-%     settings.setup.geomProfile = '250';
     settings.doAverageEyes  = false;
-    settings.cal.autoPace = 0;
+    settings.cal.bgColor    = bgclr;
     % custom calibration drawer
     calViz = AnimatedCalibrationDisplay();
     settings.cal.drawFunction = @calViz.doDraw;
     
     % init
     EThndl         = SMITE(settings);
-%     EThndl         = EThndl.setDummyMode();
+    % EThndl         = EThndl.setDummyMode();
     EThndl.init();
     
     
@@ -35,7 +33,7 @@ try
         Screen('Preference', 'Verbosity', 2);
     end
     Screen('Preference', 'SyncTestSettings', 0.002);    % the systems are a little noisy, give the test a little more leeway
-    wpnt = PsychImaging('OpenWindow', 0, s.bclr);
+    wpnt = PsychImaging('OpenWindow', 0, bgclr);
     Priority(1);
     Screen('BlendFunction', wpnt, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     Screen('Preference', 'TextAlphaBlending', 1);

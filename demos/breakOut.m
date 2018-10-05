@@ -9,7 +9,6 @@ qDEBUG = 0;
 settings = SMITE.getDefaults('RED250');
 settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
 settings.doAverageEyes  = true;
-settings.cal.autoPace   = 0;
 settings.cal.bgColor    = bgclr;
 % custom calibration drawer
 calViz = AnimatedCalibrationDisplay();
