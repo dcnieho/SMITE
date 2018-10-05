@@ -2,7 +2,7 @@ sca
 qDEBUG = 0;
 s.bclr              = 255/2;
 
-addpath(genpath(fullfile(cd,'..','theToolbox')));
+addpath(genpath(fullfile(cd,'..')));
 
 try
     % get setup struct (can edit that of course):
