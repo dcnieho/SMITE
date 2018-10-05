@@ -47,7 +47,7 @@ classdef boBall < handle
                     b_oVec = this.pos-collObjects(o).AABBmid;
                     dist = norm(b_oVec);
                     qInside = dist<collObjects(o).AABBhalfSize-this.r;
-                    if ~qInside && dist>collObjects(o).AABBhalfSize-dot(this.vel*(this.dt-dtUsed),b_oVec./dist)+this.r
+                    if ~qInside && dist>collObjects(o).AABBhalfSize-mydot(this.vel*(this.dt-dtUsed),b_oVec./dist)+this.r
                         continue;
                     end
                     for l=1:length(collObjects(o).edges)
@@ -96,9 +96,9 @@ classdef boBall < handle
                     
                     % now bounce, get new velocity vector
                     if 0 % bounce only
-                        this.vel = this.vel-(1+this.bounce)*dot(this.vel,n).*n;
+                        this.vel = this.vel-(1+this.bounce)*mydot(this.vel,n).*n;
                     else % bounce and friction
-                        Vperp    = dot(this.vel,n)*n;
+                        Vperp    = mydot(this.vel,n)*n;
                         this.vel = (1-this.friction)*this.vel + Vperp*this.friction - (1+this.bounce)*Vperp;
                     end
                     thisDt   = intDt;
@@ -156,13 +156,13 @@ end
 function t = WhenMovingCircleWillIntersectExtendedLine(center, radius, velocity, pointOnLine, displacementAlongLine)
 % Point center, double radius, Vector velocity, Point pointOnLine, Vector displacementAlongLine
 a = PerpOnto(center-pointOnLine, displacementAlongLine);
-if (dot(a,a) - radius^2 <= 0)
+if (mydot(a,a) - radius^2 <= 0)
     % already touching at t=0
     t = 0;
     return;
 else
     b = PerpOnto(velocity,displacementAlongLine);
-    t = QuadraticRoots(dot(b,b), dot(a,b)*2, dot(a,a) - radius^2);
+    t = QuadraticRoots(mydot(b,b), mydot(a,b)*2, mydot(a,a) - radius^2);
     t(t<0) = [];
     t = min(t); % smallest that is equal to or larger than 0
 end
@@ -173,13 +173,13 @@ end
 function t = WhenMovingCircleWillIntersectPoint(center, radius, velocity, point)
 % Point center, double radius, Vector velocity, Point point
 a = center - point;
-if (dot(a,a) - radius^2 <= 0)
+if (mydot(a,a) - radius^2 <= 0)
     % already touching at t=0
     t = 0;
     return;
 else
     b = velocity;
-    t = QuadraticRoots(dot(b,b), dot(a,b)*2, dot(a,a) - radius^2);
+    t = QuadraticRoots(mydot(b,b), mydot(a,b)*2, mydot(a,a) - radius^2);
     t(t<0) = [];
     t = min(t); % smallest that is equal to or larger than 0
 end
@@ -187,7 +187,7 @@ end
 
 function vec = ProjectOnto(v, p)
 % Vector v, Vector p
-vec = p .* (dot(v,p) / dot(p,p));
+vec = p .* (mydot(v,p) / mydot(p,p));
 end
 
 function vec = PerpOnto(v, p)
@@ -224,7 +224,7 @@ function s = LerpProjectOnto(point, line)
 % Point point, LineSegment line
 b = point   - line.p1;
 d = line.p2 - line.p1;
-s = dot(b, d) / dot(d, d);
+s = mydot(b, d) / mydot(d, d);
 end
 
 function p = LerpAcross(line, proportion)
@@ -271,4 +271,8 @@ if (sd == 0)
 end
     
 roots(2) = s0 + sd;
+end
+
+function c = mydot(a,b)
+c = sum(a.*b);
 end
