@@ -6,40 +6,40 @@ addpath(genpath(fullfile(cd,'..')));
 qDEBUG = 0;
 
 % setup world
-scr     = max(Screen('Screens'));
-scrRect = Screen('Rect',scr);
-fRate   = Screen('NominalFrameRate',scr);
-XMIN    = scrRect(1);
-YMIN    = scrRect(2);
-XMAX    = scrRect(3);
-YMAX    = scrRect(4);
-width   = XMAX-XMIN;
-height  = YMAX-YMIN;
+scr                 = max(Screen('Screens'));
+scrRect             = Screen('Rect',scr);
+fRate               = Screen('NominalFrameRate',scr);
+XMIN                = scrRect(1);
+YMIN                = scrRect(2);
+XMAX                = scrRect(3);
+YMAX                = scrRect(4);
+width               = XMAX-XMIN;
+height              = YMAX-YMIN;
 
 % block setup
-nBlockInRow = 15;
-nRow        = 3;
-blockHeight = height/20;
-blockMargin = height/12;            % space above top row of blocks
-pointsPerBlock  = 5;
+nBlockInRow         = 15;
+nRow                = 3;
+blockHeight         = height/20;
+blockMargin         = height/10;        % space above top row of blocks
+pointsPerBlock      = 5;
 
 % paddle setup
-paddleWidth       = width/12;
-paddleBaseHeight  = height/30;
-paddleCornerSlope = 10;             % deg, away from horizontal
-paddleMargin      = height/22;      % space below paddle
+paddleWidth         = width/12;
+paddleBaseHeight    = height/30;
+paddleCornerSlope   = 10;               % deg, away from horizontal
+paddleMargin        = height/100;       % space below paddle
 
 % ball
-ballVel     = [0 -1000];
-ballRadius  = height/60;
-ballFillClr = [255 255 255];
-ballAccel   = 0.015;
+ballVel             = [0 -1000];
+ballRadius          = height/60;
+ballFillClr         = [255 255 255];
+ballAccel           = 0.015;
 
 % look
-bgclr           = 255/2;
-blockFillClr    = [112 146 190];
-blockEdgeClr    = [ 81 121 176];
-paddleFillClr   = [208   0   0];
+bgclr               = 255/2;
+blockFillClr        = [112 146 190];
+blockEdgeClr        = [ 81 121 176];
+paddleFillClr       = [208   0   0];
 
 
 %% gen world
