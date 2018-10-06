@@ -114,8 +114,7 @@ try
     Screen('Preference', 'TextRenderer', 1);
     
     % do calibration
-    smi.calVal{1}   = EThndl.calibrate(wpnt,true);     % clear recoding buffer to make sure any lingering shit from a previous session is removed
-    
+    calValInfo = EThndl.calibrate(wpnt,true);     % clear recoding buffer to make sure any lingering shit from a previous session is removed
     EThndl.startRecording();
     
     paddlePos = XMAX/2;     % start in center of screen horizontally
