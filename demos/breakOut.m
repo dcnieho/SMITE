@@ -5,6 +5,12 @@ addpath(genpath(fullfile(cd,'..')));
 
 qDEBUG = 0;
 
+% look
+bgclr               = 255/2;
+blockFillClr        = [112 146 190];
+blockEdgeClr        = [ 81 121 176];
+paddleFillClr       = [208   0   0];
+
 % setup eye tracker
 settings = SMITE.getDefaults('RED250');
 settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
@@ -43,12 +49,6 @@ ballVel             = [0 -1000];
 ballRadius          = height/60;
 ballFillClr         = [255 255 255];
 ballAccel           = 0.015;
-
-% look
-bgclr               = 255/2;
-blockFillClr        = [112 146 190];
-blockEdgeClr        = [ 81 121 176];
-paddleFillClr       = [208   0   0];
 
 
 %% gen world
