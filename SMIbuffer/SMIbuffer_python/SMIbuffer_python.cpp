@@ -97,16 +97,26 @@ struct EventConverter {
 EventConverter convertEvents;
 
 
-list getEvents(SMIbuffer& smib_) {
-    return convertEvents .get(smib_.getEvents());
+list consumeEvents(SMIbuffer& smib_, size_t firstN_ = SMIbuff::g_consumeDefaultAmount) {
+    return convertEvents.get(smib_.consumeEvents(firstN_));
 }
-list getSamples(SMIbuffer& smib_) {
-    return convertSamples.get(smib_.getSamples());
+list peekEvents(SMIbuffer& smib_, size_t lastN_ = SMIbuff::g_peekDefaultAmount) {
+    return convertEvents.get(smib_.peekEvents(lastN_));
+}
+list consumeSamples(SMIbuffer& smib_, size_t firstN_ = SMIbuff::g_consumeDefaultAmount) {
+    return convertSamples.get(smib_.consumeSamples(firstN_));
+}
+list peekSamples(SMIbuffer& smib_, size_t lastN_ = SMIbuff::g_peekDefaultAmount) {
+    return convertSamples.get(smib_.peekSamples(lastN_));
 }
 
 // tell boost.python about functions with optional arguments
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(startSampleBuffering_overloads, SMIbuffer::startSampleBuffering, 0, 1);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS( startEventBuffering_overloads, SMIbuffer:: startEventBuffering, 0, 1);
+BOOST_PYTHON_FUNCTION_OVERLOADS( consumeEvents_overloads,  consumeEvents, 1, 2);
+BOOST_PYTHON_FUNCTION_OVERLOADS(    peekEvents_overloads,     peekEvents, 1, 2);
+BOOST_PYTHON_FUNCTION_OVERLOADS(consumeSamples_overloads, consumeSamples, 1, 2);
+BOOST_PYTHON_FUNCTION_OVERLOADS(   peekSamples_overloads,    peekSamples, 1, 2);
 // start module scope
 BOOST_PYTHON_MODULE(SMIbuffer_python)
 {
@@ -119,7 +129,9 @@ BOOST_PYTHON_MODULE(SMIbuffer_python)
         .def("stopEventBuffering" , &SMIbuffer:: stopEventBuffering)
 
         // get the data and command messages received since the last call to this function
-        .def("getSamples", getSamples)
-        .def("getEvents" , getEvents)
+        .def("consumeSamples", consumeSamples, consumeSamples_overloads())
+        .def("peekSamples", peekSamples, peekSamples_overloads())
+        .def("consumeEvents", consumeEvents, consumeEvents_overloads())
+        .def("peekEvents", peekEvents, peekEvents_overloads())
         ;
 }
