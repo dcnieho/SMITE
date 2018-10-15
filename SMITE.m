@@ -31,9 +31,6 @@ classdef SMITE < handle
         rawSMI;         % get naked iViewXAPI instance
         rawBuffers;     % get naked SMIbuffer instance
     end
-    properties (Dependent)
-        options;    % subset of settings that can actually be changed. contents differ based on state of class (once inited, much less can be set)
-    end
     
     methods
         function obj = SMITE(settingsOrETName)
@@ -41,9 +38,9 @@ classdef SMITE < handle
             if ischar(settingsOrETName)
                 % only eye-tracker name provided, load defaults for this
                 % tracker
-                obj.options = obj.getDefaults(settingsOrETName);
+                obj.setOptions(obj.getDefaults(settingsOrETName));
             else
-                obj.options = settingsOrETName;
+                obj.setOptions(settingsOrETName);
             end
         end
         
@@ -64,7 +61,7 @@ classdef SMITE < handle
             out = obj.sampEvtBuffers;
         end
         
-        function out = get.options(obj)
+        function out = getOptions(obj)
             if ~obj.isInitialized
                 % return all settings
                 out = obj.settings;
@@ -77,7 +74,7 @@ classdef SMITE < handle
             end
         end
         
-        function set.options(obj,settings)
+        function setOptions(obj,settings)
             if obj.isInitialized
                 % only a subset of settings is allowed. Hardcode here, and
                 % copy over if exist. Ignore all others silently
@@ -106,6 +103,8 @@ classdef SMITE < handle
                 % input is fine, just copy it over
                 obj.settings = settings;
             end
+            
+            %%% process settings
             % setup colors
             obj.settings.cal.bgColor        = color2RGBA(obj.settings.cal.bgColor);
             obj.settings.cal.fixBackColor   = color2RGBA(obj.settings.cal.fixBackColor);
@@ -505,7 +504,12 @@ classdef SMITE < handle
             obj.processError(ret,'SMITE: Error starting sample buffer');
         end
         
-        function data = getBufferData(obj)
+        function data = consumeBufferData(obj)
+            data = obj.sampEvtBuffers.getSamples();
+        end
+        
+        function data = peekBufferData(obj)
+            % TODO make separate peek and consume in mex file
             data = obj.sampEvtBuffers.getSamples();
         end
         
