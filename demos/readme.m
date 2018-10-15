@@ -76,7 +76,7 @@ try
     
     
     % stopping and saving
-    data = EThndl.getBufferData();
+    data = EThndl.consumeBufferData();
     EThndl.stopRecording();
     EThndl.stopBuffer();
     WaitSecs(0.5);
