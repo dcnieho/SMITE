@@ -12,7 +12,6 @@ namespace {
     // List actions
     enum class Action
     {
-        Touch,
         New,
         Delete,
 
@@ -32,7 +31,6 @@ namespace {
     // Map string (first input argument to mexFunction) to an Action
     const std::map<std::string, Action> actionTypeMap =
     {
-        { "touch",					Action::Touch },
         { "new",					Action::New },
         { "delete",					Action::Delete },
 
@@ -69,9 +67,6 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     // Call the various class methods
     switch (action)
     {
-        case Action::Touch:
-            // no-op
-            break;
         case Action::New:
         {
             if (nlhs < 0 || nrhs < 2)
