@@ -20,9 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SMIbuffer\mpmcBoundedQueue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SMIbuffer\SMIbuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
