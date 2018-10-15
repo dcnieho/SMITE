@@ -28,7 +28,7 @@ classdef SMITE < handle
     
     % computed properties (so not actual properties)
     properties (Dependent, SetAccess = private)
-        rawET;          % get naked iViewXAPI instance
+        rawSMI;         % get naked iViewXAPI instance
         rawBuffers;     % get naked SMIbuffer instance
     end
     properties (Dependent)
@@ -56,7 +56,7 @@ classdef SMITE < handle
             out = SMITEDummyMode(obj);
         end
         
-        function out = get.rawET(obj)
+        function out = get.rawSMI(obj)
             out = obj.iView;
         end
         
@@ -604,16 +604,16 @@ classdef SMITE < handle
             
             % send command
             if isempty(duration)
-                obj.rawET.sendCommand(sprintf('ET_EVB %d "%s" "%s"\n',format,file,path));
+                obj.rawSMI.sendCommand(sprintf('ET_EVB %d "%s" "%s"\n',format,file,path));
             else
-                obj.rawET.sendCommand(sprintf('ET_EVB %d "%s" "%s" %d\n',format,file,path,duration));
+                obj.rawSMI.sendCommand(sprintf('ET_EVB %d "%s" "%s" %d\n',format,file,path,duration));
             end
         end
         
         function stopEyeImageRecording(obj)
             % if no duration specified when calling recordEyeImages, call
             % this function to stop eye image recording
-            obj.rawET.sendCommand('ET_EVE\n');
+            obj.rawSMI.sendCommand('ET_EVE\n');
         end
         
         function saveData(obj,filename, user, description, doAppendVersion)
