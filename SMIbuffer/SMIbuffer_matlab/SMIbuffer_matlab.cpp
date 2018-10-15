@@ -1,7 +1,6 @@
 #include "SMIbuffer/SMIbuffer.h"
 #define DLL_EXPORT_SYM __declspec(dllexport)
 #include "mex.h"
-#include "strHash.h"
 
 #include <map>
 
