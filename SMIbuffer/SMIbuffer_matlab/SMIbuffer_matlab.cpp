@@ -5,27 +5,76 @@
 
 #include <cwchar>
 #include <algorithm>
+#include <map>
 
 namespace {
-    SMIbuffer* SMIbufferClassInstance=nullptr;  // as there can only be one instance (it gets reused), we can just store a ref to it in a global pointer
+    SMIbuffer* SMIbufferClassInstance = nullptr;  // as there can only be one instance (it gets reused), we can just store a ref to it in a global pointer
     // C++ object is of minimal size and does not have to be destroyed once created other than at mex unload
-}
 
-mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_);
-mxArray* EventVectorToMatlab(std::vector<EventStruct> data_);
+    // List actions
+    enum class Action
+    {
+        Touch,
+        New,
+        Delete,
+
+        StartSampleBuffering,
+        ClearSampleBuffer,
+        StopSampleBuffering,
+        ConsumeSamples,
+        PeekSamples,
+
+        StartEventBuffering,
+        ClearEventBuffer,
+        StopEventBuffering,
+        ConsumeEvents,
+        PeekEvents
+    };
+
+    // Map string (first input argument to mexFunction) to an Action
+    const std::map<std::string, Action> actionTypeMap =
+    {
+        { "touch",					Action::Touch },
+        { "new",					Action::New },
+        { "delete",					Action::Delete },
+
+        { "startSampleBuffering",	Action::StartSampleBuffering },
+        { "clearSampleBuffer",		Action::ClearSampleBuffer },
+        { "stopSampleBuffering",	Action::StopSampleBuffering },
+        { "consumeSamples",			Action::ConsumeSamples },
+        { "peekSamples",			Action::PeekSamples },
+
+        { "startEventBuffering",	Action::StartEventBuffering },
+        { "clearEventBuffer",	    Action::ClearEventBuffer },
+        { "stopEventBuffering",		Action::StopEventBuffering },
+        { "consumeEvents",		    Action::ConsumeEvents },
+        { "peekEvents",				Action::PeekEvents },
+    };
+
+    // forward declare
+    mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_);
+    mxArray* EventVectorToMatlab(std::vector<EventStruct> data_);
+}
 
 void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-    // Get the command string
-    char cmd[64] = {0};
-    if (nrhs < 1 || mxGetString(prhs[0], cmd, sizeof(cmd)))
-        mexErrMsgTxt("First input should be a command string less than 64 characters long.");
-    size_t nChar = std::min(strlen(cmd),size_t(64));
+    // get action string
+    char *actionCstr = mxArrayToString(prhs[0]);
+    std::string actionStr(actionCstr);
+    mxFree(actionCstr);
+
+    // get corresponding action
+    if (actionTypeMap.count(actionStr) == 0)
+        mexErrMsgTxt(("Unrecognized action (not in actionTypeMap): " + actionStr).c_str());
+    Action action = actionTypeMap.at(actionStr);
 
     // Call the various class methods
-    switch (rt::crc32(cmd, nChar))
+    switch (action)
     {
-        case ct::crc32("new"):
+        case Action::Touch:
+            // no-op
+            break;
+        case Action::New:
         {
             if (nlhs < 0 || nrhs < 2)
                 mexErrMsgTxt("new: Expected needsEyeSwap input.");
@@ -44,7 +93,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             }
             return;
         }
-        case ct::crc32("delete"):
+        case Action::Delete:
             // reset instance (deletes buffers, clears registered callbacks)
             SMIbufferClassInstance->stopEventBuffering(true);
             SMIbufferClassInstance->stopSampleBuffering(true);
@@ -52,7 +101,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             if (nrhs != 1)
                 mexWarnMsgTxt("Delete: Unexpected arguments ignored.");
             return;
-        case ct::crc32("startSampleBuffering"):
+        case Action::StartSampleBuffering:
         {
             int ret;
             if (nrhs > 1 && !mxIsEmpty(prhs[1]))
@@ -69,7 +118,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             plhs[0] = mxCreateDoubleScalar(ret);
             return;
         }
-        case ct::crc32("startEventBuffering"):
+        case Action::StartEventBuffering:
         {
             int ret;
             if (nrhs > 1 && !mxIsEmpty(prhs[1]))
@@ -86,15 +135,15 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             plhs[0] = mxCreateDoubleScalar(ret);
             return;
         }
-        case ct::crc32("clearSampleBuffer"):
+        case Action::ClearSampleBuffer:
             // Call the method
             SMIbufferClassInstance->clearSampleBuffer();
             return;
-        case ct::crc32("clearEventBuffer"):
+        case Action::ClearEventBuffer:
             // Call the method
             SMIbufferClassInstance->clearEventBuffer();
             return;
-        case ct::crc32("stopSampleBuffering"):
+        case Action::StopSampleBuffering:
         {
             // Check parameters
             if (nlhs < 0 || nrhs < 2)
@@ -106,7 +155,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             SMIbufferClassInstance->stopSampleBuffering(deleteBuffer);
             return;
         }
-        case ct::crc32("stopEventBuffering"):
+        case Action::StopEventBuffering:
         {
             // Check parameters
             if (nlhs < 0 || nrhs < 2)
@@ -118,11 +167,11 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             SMIbufferClassInstance->stopEventBuffering(deleteBuffer);
             return;
         }
-        case ct::crc32("getSamples"):
+        case Action::ConsumeSamples:
             // Call the method
             plhs[0] = SampleVectorToMatlab(SMIbufferClassInstance->getSamples());
             return;
-        case ct::crc32("getEvents"):
+        case Action::ConsumeEvents:
             // Call the method
             plhs[0] = EventVectorToMatlab(SMIbufferClassInstance->getEvents());
             return;
@@ -160,35 +209,39 @@ mxArray* EventVectorToMatlab(std::vector<EventStruct> data_)
     return out;
 }
 
-mxArray* EyeDataStructToMatlab(const EyeDataStruct& data_)
+// helpers
+namespace
 {
-    const char* fieldNames[] = {"gazeX","gazeY","diam","eyePositionX","eyePositionY","eyePositionZ"};
-    mxArray* out = mxCreateStructMatrix(1, 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
-    mxSetFieldByNumber(out, 0, 0, mxCreateDoubleScalar(data_.gazeX));
-    mxSetFieldByNumber(out, 0, 1, mxCreateDoubleScalar(data_.gazeY));
-    mxSetFieldByNumber(out, 0, 2, mxCreateDoubleScalar(data_.diam));
-    mxSetFieldByNumber(out, 0, 3, mxCreateDoubleScalar(data_.eyePositionX));
-    mxSetFieldByNumber(out, 0, 4, mxCreateDoubleScalar(data_.eyePositionY));
-    mxSetFieldByNumber(out, 0, 5, mxCreateDoubleScalar(data_.eyePositionZ));
-    return out;
-}
-
-mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
-{
-    if (data_.empty())
-        return mxCreateDoubleMatrix(0, 0, mxREAL);
-
-    const char* fieldNames[] = {"timestamp","leftEye","rightEye"};
-    mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
-    size_t i = 0;
-    for (auto &samp : data_)
+    mxArray* EyeDataStructToMatlab(const EyeDataStruct& data_)
     {
-        mxArray *temp;
-        mxSetFieldByNumber(out, i, 0, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
-        *static_cast<long long*>(mxGetData(temp)) = samp.timestamp;
-        mxSetFieldByNumber(out, i, 1, EyeDataStructToMatlab(samp.leftEye));
-        mxSetFieldByNumber(out, i, 2, EyeDataStructToMatlab(samp.rightEye));
-        i++;
+        const char* fieldNames[] = {"gazeX","gazeY","diam","eyePositionX","eyePositionY","eyePositionZ"};
+        mxArray* out = mxCreateStructMatrix(1, 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
+        mxSetFieldByNumber(out, 0, 0, mxCreateDoubleScalar(data_.gazeX));
+        mxSetFieldByNumber(out, 0, 1, mxCreateDoubleScalar(data_.gazeY));
+        mxSetFieldByNumber(out, 0, 2, mxCreateDoubleScalar(data_.diam));
+        mxSetFieldByNumber(out, 0, 3, mxCreateDoubleScalar(data_.eyePositionX));
+        mxSetFieldByNumber(out, 0, 4, mxCreateDoubleScalar(data_.eyePositionY));
+        mxSetFieldByNumber(out, 0, 5, mxCreateDoubleScalar(data_.eyePositionZ));
+        return out;
     }
-    return out;
+
+    mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
+    {
+        if (data_.empty())
+            return mxCreateDoubleMatrix(0, 0, mxREAL);
+
+        const char* fieldNames[] = {"timestamp","leftEye","rightEye"};
+        mxArray* out = mxCreateStructMatrix(data_.size(), 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
+        size_t i = 0;
+        for (auto &samp : data_)
+        {
+            mxArray *temp;
+            mxSetFieldByNumber(out, i, 0, temp = mxCreateUninitNumericMatrix(1, 1, mxINT64_CLASS, mxREAL));
+            *static_cast<long long*>(mxGetData(temp)) = samp.timestamp;
+            mxSetFieldByNumber(out, i, 1, EyeDataStructToMatlab(samp.leftEye));
+            mxSetFieldByNumber(out, i, 2, EyeDataStructToMatlab(samp.rightEye));
+            i++;
+        }
+        return out;
+    }
 }

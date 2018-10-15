@@ -93,6 +93,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\.;C:\Program Files (x86)\MATLAB\R2015b\extern\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -107,6 +108,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\.;C:\Program Files\MATLAB\R2018a\extern\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -124,6 +126,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\.;C:\Program Files (x86)\MATLAB\R2015b\extern\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -142,6 +145,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\.;C:\Program Files\MATLAB\R2018a\extern\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -153,10 +157,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="SMIbuffer_matlab.cpp" />
-    <ClCompile Include="strHash.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="strHash.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SMIbuffer.m" />
