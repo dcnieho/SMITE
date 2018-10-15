@@ -55,36 +55,82 @@ classdef SMIbuffer < handle
         end
 
         %% methods
-        % get the data and command messages received since the last call to this function
-        function data = getSamples(this)
-            data = this.mexHndl('getSamples');
-        end
-        function events = getEvents(this)
-            events = this.mexHndl('getEvents');
-        end
-        function success = startSampleBuffering(this,varargin)
+        function success = startSampleBuffering(this,initialBufferSize)
             % optional buffer size input
-            success = this.mexHndl('startSampleBuffering', varargin{:});
-        end
-        function success = startEventBuffering(this,varargin)
-            % optional buffer size input
-            success = this.mexHndl('startEventBuffering', varargin{:});
+            if nargin>1
+                success = this.mexHndl('startSampleBuffering',uint64(initialBufferSize));
+            else
+                success = this.mexHndl('startSampleBuffering');
+            end
         end
         function clearSampleBuffer(this)
             this.mexHndl('clearSampleBuffer');
         end
+        function stopSampleBuffering(this,doDeleteBuffer)
+            % optional boolean input indicating whether buffer should be
+            % deleted
+            if nargin>1
+                this.mexHndl('stopSampleBuffering',logical(doDeleteBuffer));
+            else
+                this.mexHndl('stopSampleBuffering');
+            end
+        end
+        function data = consumeSamples(this,firstN)
+            % optional input indicating how many samples to read from the
+            % beginning of buffer. Default: all
+            if nargin>1
+                data = this.mexHndl('consumeSamples',uint64(firstN));
+            else
+                data = this.mexHndl('consumeSamples');
+            end
+        end
+        function data = peekSamples(this,lastN)
+            % optional input indicating how many samples to read from the
+            % end of buffer. Default: 1
+            if nargin>1
+                data = this.mexHndl('peekSamples',uint64(lastN));
+            else
+                data = this.mexHndl('peekSamples');
+            end
+        end
+        
+        function success = startEventBuffering(this,initialBufferSize)
+            % optional buffer size input
+            if nargin>1
+                success = this.mexHndl('startEventBuffering',uint64(initialBufferSize));
+            else
+                success = this.mexHndl('startEventBuffering');
+            end
+        end
         function clearEventBuffer(this)
             this.mexHndl('clearEventBuffer');
         end
-        function stopSampleBuffering(this,doDeleteBuffer)
-            % required boolean input indicating whether buffer should be
-            % deleted
-            this.mexHndl('stopSampleBuffering', doDeleteBuffer);
-        end
         function stopEventBuffering(this,doDeleteBuffer)
-            % required boolean input indicating whether buffer should be
+            % optional boolean input indicating whether buffer should be
             % deleted
-            this.mexHndl('stopEventBuffering', doDeleteBuffer);
+            if nargin>1
+                this.mexHndl('stopEventBuffering',logical(doDeleteBuffer));
+            else
+                this.mexHndl('stopEventBuffering');
+            end
+        end
+        function data = consumeEvents(this,firstN)
+            % optional input indicating how many events to read from the
+            % beginning of buffer. Default: all
+            if nargin>1
+                data = this.mexHndl('consumeEvents',uint64(firstN));
+            else
+                data = this.mexHndl('consumeEvents');
+            end
+        end
+        function data = peekEvents(this,lastN)
+            % optional input indicating how many events to read from the
+            % end of buffer. Default: 1
+            if nargin>1
+                data = this.mexHndl('peekEvents',uint64(lastN));
+            else
+                data = this.mexHndl('peekEvents');
+            end
         end
     end
 end
