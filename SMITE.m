@@ -496,21 +496,21 @@ classdef SMITE < handle
             pause(.1); % give it some time to get started. not needed according to doc, but never hurts
         end
         
-        function startBuffer(obj,size)
-            if nargin<2
-                size = [];
-            end
-            ret = obj.sampEvtBuffers.startSampleBuffering(size);
+        function startBuffer(obj,varargin)
+            ret = obj.sampEvtBuffers.startSampleBuffering(varargin{:});
             obj.processError(ret,'SMITE: Error starting sample buffer');
         end
         
-        function data = consumeBufferData(obj)
-            data = obj.sampEvtBuffers.getSamples();
+        function data = consumeBufferData(obj,varargin)
+            % optional input argument firstN: how many samples to consume
+            % from start. Default: all
+            data = obj.sampEvtBuffers.consumeSamples(varargin{:});
         end
         
-        function data = peekBufferData(obj)
-            % TODO make separate peek and consume in mex file
-            data = obj.sampEvtBuffers.getSamples();
+        function data = peekBufferData(objvarargin)
+            % optional input argument lastN: how many samples to peek from
+            % end. Default: 1. To get all, ask for -1 samples
+            data = obj.sampEvtBuffers.peekSamples(varargin{:});
         end
         
         function sample = getLatestSample(obj)
@@ -521,11 +521,11 @@ classdef SMITE < handle
             end
         end
         
-        function stopBuffer(obj,doDeleteBuffer)
-            if nargin<2
-                doDeleteBuffer = false;
+        function stopBuffer(obj,doClearBuffer)
+            if nargin<2 || isempty(doClearBuffer)
+                doClearBuffer = false;
             end
-            obj.sampEvtBuffers.stopSampleBuffering(doDeleteBuffer);
+            obj.sampEvtBuffers.stopSampleBuffering(doClearBuffer);
         end
         
         function stopRecording(obj)
