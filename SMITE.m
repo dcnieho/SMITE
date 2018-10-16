@@ -507,7 +507,7 @@ classdef SMITE < handle
             data = obj.sampEvtBuffers.consumeSamples(varargin{:});
         end
         
-        function data = peekBufferData(objvarargin)
+        function data = peekBufferData(obj,varargin)
             % optional input argument lastN: how many samples to peek from
             % end. Default: 1. To get all, ask for -1 samples
             data = obj.sampEvtBuffers.peekSamples(varargin{:});
