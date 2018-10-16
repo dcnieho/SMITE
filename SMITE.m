@@ -2090,7 +2090,7 @@ classdef SMITE < handle
                     if obj.usingFTGLTextRenderer
                         DrawFormattedText2(valText,'win',wpnt,'sx','center','xalign','center','sy',100,'baseColor',255,'vSpacing',obj.settings.text.vSpacing);
                     else
-                        DrawMonospacedText(wpnt,valText,'center',100,255,[],obj.settings.text.vSpacing);
+                        DrawFormattedText2GDI(wpnt,valText,'center','center',100,'center','left',0,[],obj.settings.text.vSpacing);
                     end
                     % draw buttons
                     Screen('FillRect',wpnt,[150 0 0],recalButRect);
