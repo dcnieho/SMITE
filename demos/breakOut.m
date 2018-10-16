@@ -116,6 +116,7 @@ try
     % do calibration
     calValInfo = EThndl.calibrate(wpnt,true);     % clear recoding buffer to make sure any lingering shit from a previous session is removed
     EThndl.startRecording();
+    EThndl.startBuffer();
     
     paddlePos = XMAX/2;     % start in center of screen horizontally
     paddle.translate([paddlePos 0]);
@@ -147,9 +148,21 @@ try
         
         % update paddle
         % 1. get eye data, determine how far to move
-        samp    = EThndl.getLatestSample();
-        if samp.leftEye.gazeX~=0 || samp.leftEye.gazeY~=0
-            trans   = samp.leftEye.gazeX-paddlePos;
+        samp    = EThndl.consumeBufferData();
+        i = 0;
+        if ~isempty(samp)
+            i = length(samp);
+            while i>=1
+                if (samp(i).leftEye.gazeX && samp(i).leftEye.gazeY) || (samp(i).rightEye.gazeX && samp(i).rightEye.gazeY)
+                    break;
+                end
+                i = i-1;
+            end
+        end
+        if i>0
+            gazeX   = [samp(i).leftEye.gazeX samp(i).rightEye.gazeX];
+            gazeX   = mean(gazeX(gazeX~=0));
+            trans   = gazeX-paddlePos;
             % 2. clamp paddle position to play area
             if paddlePos+trans-paddleWidth/2<XMIN
                 add = XMIN-(paddlePos+trans-paddleWidth/2);
@@ -178,6 +191,7 @@ try
     end
     
     % stopping
+    EThndl.stopBuffer();
     EThndl.stopRecording();
     
     % show performance feedback
