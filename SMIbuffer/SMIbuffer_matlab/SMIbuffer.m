@@ -28,7 +28,7 @@ classdef SMIbuffer < handle
             end
             % try to construct SMIBuffer C++ class instance
             try
-                this.mexHndl('new');
+                this.mexHndl('new',needsEyeSwap);
             catch %#ok<CTCH>
                 % constructor failed. Most likely cause would be "invalid
                 % MEX file error" due to missing iViewXAPI DLL's.

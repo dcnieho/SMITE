@@ -78,7 +78,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
                 SMIbufferClassInstance = new SMIbuffer(needsEyeSwap);
             else
             {
-                // reset instance (deletes buffers, clears registered callbacks)
+                // reset instance (clears buffers, clears registered callbacks)
                 SMIbufferClassInstance->stopEventBuffering(true);
                 SMIbufferClassInstance->stopSampleBuffering(true);
                 SMIbufferClassInstance->setEyeSwap(needsEyeSwap);
@@ -86,7 +86,7 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
             return;
         }
         case Action::Delete:
-            // reset instance (deletes buffers, clears registered callbacks)
+            // reset instance (clears buffers, clears registered callbacks)
             SMIbufferClassInstance->stopEventBuffering(true);
             SMIbufferClassInstance->stopSampleBuffering(true);
             // Warn if other commands were ignored
