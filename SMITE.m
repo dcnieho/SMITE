@@ -1760,7 +1760,7 @@ classdef SMITE < handle
                 % if we have data from both eyes, check the averaging setting
                 % is correct
                 sample = obj.getSample();
-                if (sample.leftEye.gazeX~=0 && sample.leftEye.gazeY~=0) && ~isnan(sample.rightEye.gazeX~=0 && sample.rightEye.gazeY~=0)
+                if (sample.leftEye.gazeX~=0 || sample.leftEye.gazeY~=0) && (sample.rightEye.gazeX~=0 || sample.rightEye.gazeY~=0)
                     qSame = sample.leftEye.gazeX==sample.rightEye.gazeX && sample.leftEye.gazeY==sample.rightEye.gazeY;
                     if obj.settings.doAverageEyes~=qSame
                         if obj.settings.doAverageEyes
