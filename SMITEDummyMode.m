@@ -115,7 +115,16 @@ classdef SMITEDummyMode < SMITE
             obj.isBuffering = true;
         end
         
-        function data = getBufferData(obj)
+        function data = consumeBufferData(obj,varargin)
+            % at least returns one sample all the time...
+            if obj.isBuffering
+                data = obj.getMouseSample();
+            else
+                data = [];
+            end
+        end
+        
+        function data = peekBufferData(obj,varargin)
             % at least returns one sample all the time...
             if obj.isBuffering
                 data = obj.getMouseSample();
