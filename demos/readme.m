@@ -1,6 +1,9 @@
 sca
-qDEBUG = 0;
-bgclr  = 255/2;
+qDEBUG      = 0;
+bgclr       = 255/2;
+fixClr      = 0;
+fixTime     = .5;
+imageTime   = 2;
 
 addpath(genpath(fullfile(cd,'..')));
 
@@ -33,7 +36,8 @@ try
         Screen('Preference', 'Verbosity', 2);
     end
     Screen('Preference', 'SyncTestSettings', 0.002);    % the systems are a little noisy, give the test a little more leeway
-    wpnt = PsychImaging('OpenWindow', 0, bgclr);
+    [wpnt,winRect] = PsychImaging('OpenWindow', 0, bgclr);
+    hz=Screen('NominalFrameRate', wpnt);
     Priority(1);
     Screen('BlendFunction', wpnt, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     Screen('Preference', 'TextAlphaBlending', 1);
@@ -56,23 +60,61 @@ try
     % send message into ET data file
     EThndl.sendMessage('test');
     
-    % periodically check if the tracker is still working (NB: has been flaky with RED250, check fails, but tracking is fine...: you may want to skip it)
+    % periodically check if the tracker is still working (NB: has been flaky with RED250: check fails, but tracking is fine...: you may want to skip it)
     EThndl.processError(EThndl.isConnected(),'No longer connected to eye tracker');
     
-    EThndl.setBegazeTrialImage('test1.jpg');
-    % record 2 seconds of data
-    WaitSecs(1);
+    % First draw a fixation point
+    Screen('gluDisk',wpnt,0,winRect(3)/2,winRect(4)/2,round(winRect(3)/100));
+    startT = Screen('Flip',wpnt);
+    
+    % read in konijntjes image (may want to preload this before the trial
+    % to ensure good timing)
+    im = imread(fullfile(PsychtoolboxRoot,'PsychHardware','EyelinkToolbox','EyelinkDemos','GazeContingentDemos','konijntjes1024x768.jpg'));
+    tex = Screen('MakeTexture',wpnt,im);
+    
+    % show on screen and once shown, immediately set trial image to
+    % indicate start of part of trial that should be analyzed.
+    % NB: by setting a deadline for the flip, we ensure that the previous
+    % screen (fixation point) stays visible for the indicated amount of
+    % time. See PsychToolbox demos for further elaboration on this way of
+    % timing your script.
+    Screen('DrawTexture',wpnt,tex);
+    imgT = Screen('Flip',wpnt,startT+fixTime-1/hz/2);   % bit of slack to make sure requested presentation time can be achieved
+    EThndl.setBegazeTrialImage('konijntjes1024x768.jpg');
+    
+    % record x seconda of data, clear screen. Stop the recording
+    % immediately after to indicate that trial is finished
+    Screen('Flip',wpnt,imgT+imageTime-1/hz/2);
     EThndl.stopRecording();
+    
+    % slightly less precise ISI is fine..., about 1s give or take a frame
     WaitSecs(1);
     
+    
+    % next trial, start recording again
     EThndl.startRecording();
-    EThndl.setBegazeTrialImage('test2.jpg');
-    WaitSecs(.8);
+    
+    % repeat the above but show a different image
+    % 1. fixation point
+    Screen('gluDisk',wpnt,0,winRect(3)/2,winRect(4)/2,round(winRect(3)/100));
+    startT = Screen('Flip',wpnt);
+    % 2. image
+    im = imread(fullfile(PsychtoolboxRoot,'PsychHardware','EyelinkToolbox','EyelinkDemos','GazeContingentDemos','konijntjes1024x768blur.jpg'));
+    tex = Screen('MakeTexture',wpnt,im);
+    Screen('DrawTexture',wpnt,tex);
+    imgT = Screen('Flip',wpnt,startT+fixTime-1/hz/2);   % bit of slack to make sure requested presentation time can be achieved
+    EThndl.setBegazeTrialImage('konijntjes1024x768blur.jpg');
+    
+    % 3. now fake a key press and a mouse press
+    WaitSecs(imageTime*.4);
     EThndl.setBegazeKeyPress('testme');
-    sample = EThndl.getLatestSample();
-    WaitSecs(.8);
+    sample = EThndl.getLatestSample();  % test this function 
+    WaitSecs(imageTime*.4);
     EThndl.setBegazeMouseClick('left',300,500);
-    WaitSecs(.8);
+    
+    % 4. end recording after x seconds of data again, clear screen.
+    Screen('Flip',wpnt,imgT+imageTime-1/hz/2);
+    EThndl.stopRecording();
     
     
     % stopping and saving
