@@ -190,9 +190,9 @@ classdef SMITE < handle
                 [~,sysInfo] = obj.iView.getSystemInfo();
                 qErr = false;
                 switch obj.settings.tracker
-                    case {'HiSpeed'}
+                    case 'HiSpeed'
                         qErr = ~strcmp(sysInfo.iV_ETDevice,'HiSpeed');
-                    case {'RED500','RED250','RED120','RED60'}
+                    case 'RED'
                         qErr = ~strcmp(sysInfo.iV_ETDevice,'RED');
                 end
                 assert(~qErr,'SMITE: Connected tracker is a "%s", not the "%s" you specified',sysInfo.iV_ETDevice,obj.settings.tracker)
@@ -209,7 +209,7 @@ classdef SMITE < handle
                 [~,obj.geom]    = obj.iView.getCurrentREDGeometry();
                 obj.geom.setupName = char(obj.geom.setupName(obj.geom.setupName~=0));
                 out.geom        = obj.geom;
-                if ismember(obj.settings.tracker,{'RED500','RED250','RED120','RED60'})
+                if strcmp(obj.settings.tracker,'RED')
                     % check correct geometry is set in iViewX (NB:
                     % technically, if iViewX is set to standalone mode,
                     % selectREDGeometry() would work to select the profile.
@@ -777,7 +777,7 @@ classdef SMITE < handle
             
             % which app to iV_Start()
             switch tracker
-                case {'HiSpeed','RED500','RED250','RED120','RED60'}
+                case {'HiSpeed','RED'}
                     settings.etApp              = 'iViewX';
                 case 'RED-m'
                     settings.etApp              = 'iViewXOEM';
@@ -795,7 +795,7 @@ classdef SMITE < handle
                     % NB: for RED NG trackers, it is also supported to
                     % supply only the remote endpoint, like:
                     % settings.connectInfo        = {'ipETComputer',4444};
-                case {'HiSpeed','RED500','RED250','RED120','RED60'}
+                case {'HiSpeed','RED'}
                     % template IPs, default ports
                     settings.connectInfo        = {'ipETComputer',4444,'ipThis',5555};
             end
@@ -817,18 +817,14 @@ classdef SMITE < handle
                     settings.trackEye               = 'EYE_LEFT';
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = false;
-                    settings.setup.eyeImageSize     = [160 640];    % 160x224 for monocular at 1250 an 500
+                    settings.setup.eyeImageSize     = [160 640];    % 160x224 for monocular at 1250 and 500
                     settings.freq                   = 1250;
-                case {'RED500','RED250','RED120','RED60'}
+                case 'RED'
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = false;
-                    settings.setup.headBox          = [40 20];  % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    if strcmp(tracker,'RED500')
-                        settings.setup.eyeImageSize     = [ 80 344];
-                    else
-                        settings.setup.eyeImageSize     = [160 496];
-                    end
-                    settings.freq                   = str2double(tracker(4:end));   % tracker sampling frequency is the number at the end of the tracker name
+                    settings.setup.headBox          = [40 20];      % at 70 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = [160 496];    % NB: at 500Hz, its [80 344]
+                    settings.freq                   = 250;
                     settings.doFlipEye              = false;
                 case 'RED-m'
                     settings.trackEye               = 'EYE_BOTH';
@@ -836,7 +832,7 @@ classdef SMITE < handle
                     settings.freq                   = 120;
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
-                    settings.setup.headBox          = [31 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.headBox          = [31 21];      % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
                     settings.setup.eyeImageSize     = [220 496];
                 case 'RED250mobile'
                     settings.trackEye               = 'EYE_BOTH';
@@ -844,7 +840,7 @@ classdef SMITE < handle
                     settings.freq                   = 250;
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
-                    settings.setup.headBox          = [32 21];  % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.headBox          = [32 21];      % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
                     settings.setup.eyeImageSize     = [160 496];
                 case 'REDn'
                     settings.trackEye               = 'EYE_BOTH';
@@ -852,13 +848,13 @@ classdef SMITE < handle
                     settings.freq                   = 60;
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
-                    settings.setup.headBox          = [50 30];  % at 65 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    settings.setup.eyeImageSize     = [160 496]; % TODO, this is just a (probably wrong) guess
+                    settings.setup.headBox          = [50 30];      % at 65 cm. Doesn't matter what distance, is just for getting aspect ratio
+                    settings.setup.eyeImageSize     = [160 496];    % TODO, this is just a (probably wrong) guess
             end
             
             % some settings only for remotes
             switch tracker
-                case {'RED500','RED250','RED120','RED60'}
+                case 'RED'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomMode         = 'monitorIntegrated';  % monitorIntegrated or standalone
                     % only when in monitorIntegrated mode:
@@ -874,10 +870,10 @@ classdef SMITE < handle
                 case 'RED-m'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Desktop 22in Monitor';
-                case {'RED250mobile'}
+                case 'RED250mobile'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Default Profile';
-                case {'REDn'}
+                case 'REDn'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Default Profile';    % TODO, is it the correct name?
             end
@@ -988,13 +984,14 @@ classdef SMITE < handle
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
-                case {'RED500','RED250','RED120','RED60','RED-m','RED250mobile','REDn'}
+                case {'RED','RED-m','RED250mobile','REDn'}
                     obj.caps.hasREDGeometry     = true;
             end
-            % indicate for which trackers the eye identities are flipped
-            % (also position in headbox needs a flip)
+            % indicate for which trackers the eye identities could be
+            % flipped--an iViewX problem (also position in headbox needs a
+            % flip)
             switch obj.settings.tracker
-                case {'HiSpeed','RED500','RED250','RED120','RED60'}
+                case {'HiSpeed','RED'}
                     obj.caps.mayNeedEyeFlip     = true;
             end
             % setting only for hispeed
@@ -1004,16 +1001,16 @@ classdef SMITE < handle
             end
             % supported number of calibration points
             switch obj.settings.tracker
-                case {'RED-m'}
+                case 'RED-m'
                     % RED-m: 0, 1, 2, 5, 9 (I will not support 0)
                     obj.caps.nCalibrationPoints = [1 2 5 9];
                 case {'RED250mobile','REDn'}
                     % RED NG: 0, 1, 2, 5, 9 or 13 (I will not support 0)
                     obj.caps.nCalibrationPoints = [1 2 5 9 13];
-                case {'RED500','RED250','RED120','RED60'}
+                case 'RED'
                     % old REDs: 2, 5 or 9 points
                     obj.caps.nCalibrationPoints = [2 5 9];
-                case {'HiSpeed'}
+                case 'HiSpeed'
                     % Hispeed 1250: 5, 9, or 13 points
                     obj.caps.nCalibrationPoints = [5 9 13];
             end

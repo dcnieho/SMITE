@@ -9,7 +9,7 @@ addpath(genpath(fullfile(cd,'..')));
 
 try
     % get setup struct, edit to change settings
-    settings = SMITE.getDefaults('RED250');
+    settings = SMITE.getDefaults('RED');
     settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
     settings.doAverageEyes  = false;
     settings.cal.bgColor    = bgclr;
