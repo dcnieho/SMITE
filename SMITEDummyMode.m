@@ -39,7 +39,8 @@ classdef SMITEDummyMode < SMITE
                 superMethods = thisInfo.SuperclassList.MethodList;
                 superMethods(~strcmp({superMethods.Access},'public') | (~~[superMethods.Static])) = [];
                 thisMethods = thisInfo.MethodList;
-                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | ismember({thisMethods.Name},{'SMITEDummyMode','delete'})) = [];
+                % delete, getOptions and setOptions still work in dummy mode
+                thisMethods(~strcmp({thisMethods.Access},'public') | (~~[thisMethods.Static]) | ismember({thisMethods.Name},{'SMITEDummyMode','delete','getOptions','setOptions'})) = [];
                 
                 % now check for problems:
                 % 1. any methods we define here that are not in superclass?
