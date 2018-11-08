@@ -26,7 +26,8 @@ As demonstrated in the demo scripts, the toolbox is configured through
 the following interface:
 1. retrieve (default) settings for eye tracker of interest: `settings =
 SMITE.getDefaults('trackerName');` Supported tracker Names are `HiSpeed`,
-`RED`, `RED-m`, `RED250mobile`, and `REDn`.
+`RED`, `RED-m`, `RED250mobile`, `REDn Scientific`, and `REDn
+Professional`.
 2. edit settings if wanted (see below)
 3. initialize SMITE using this settings struct: `EThndl = SMITE(settings);`
 
