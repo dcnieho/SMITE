@@ -781,14 +781,14 @@ classdef SMITE < handle
                     settings.etApp              = 'iViewX';
                 case 'RED-m'
                     settings.etApp              = 'iViewXOEM';
-                case {'RED250mobile','REDn'}
+                case {'RED250mobile','REDn Scientific','REDn Professional'}
                     settings.etApp              = 'iViewNG';
                 otherwise
                     error('SMITE: tracker "%s" not known/supported.\nSupported are: HiSpeed, RED500, RED250, RED120, RED60, RED-m, RED250mobile, REDn.\nNB: correct capitalization in the name is important.',tracker);
             end
             % connection info
             switch tracker
-                case {'RED-m','RED250mobile','REDn'}
+                case {'RED-m','RED250mobile','REDn Scientific','REDn Professional'}
                     % likely one-computer setup, connectLocal() should
                     % work, so default is:
                     settings.connectInfo        = {};
@@ -842,14 +842,14 @@ classdef SMITE < handle
                     settings.doAverageEyes          = true;
                     settings.setup.headBox          = [32 21];      % at 60 cm. Doesn't matter what distance, is just for getting aspect ratio
                     settings.setup.eyeImageSize     = [160 496];
-                case 'REDn'
+                case {'REDn Scientific','REDn Professional'}
                     settings.trackEye               = 'EYE_BOTH';
                     settings.trackMode              = 'SMARTBINOCULAR';
                     settings.freq                   = 60;
                     settings.cal.nPoint             = 5;
                     settings.doAverageEyes          = true;
                     settings.setup.headBox          = [50 30];      % at 65 cm. Doesn't matter what distance, is just for getting aspect ratio
-                    settings.setup.eyeImageSize     = [160 496];    % TODO, this is just a (probably wrong) guess
+                    settings.setup.eyeImageSize     = [240 300];
             end
             
             % some settings only for remotes
@@ -873,7 +873,7 @@ classdef SMITE < handle
                 case 'RED250mobile'
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Default Profile';
-                case 'REDn'
+                case {'REDn Scientific','REDn Professional'}
                     settings.setup.viewingDist      = 65;
                     settings.setup.geomProfile      = 'Default Profile';    % TODO, is it the correct name?
             end
@@ -967,24 +967,28 @@ classdef SMITE < handle
             
             % RED-m and newer functionality
             switch obj.settings.tracker
-                case {'RED-m','RED250mobile','REDn'}
+                case {'RED-m','RED250mobile','REDn Scientific','REDn Professional'}
                     obj.caps.connectLocal       = true;
-                    obj.caps.configureFilter    = true;
                     obj.caps.enableHighPerfMode = true;
                     obj.caps.deviceName         = true;
                     obj.caps.serialNumber       = true;
                     obj.caps.setREDGeometry     = true;
                     obj.caps.setTrackingMode    = true;
             end
+            % REM-m and newer but not RED Professional functionality
+            switch obj.settings.tracker
+                case {'RED-m','RED250mobile','REDn Scientific'}
+                    obj.caps.configureFilter    = true;
+            end
             % RED NG only functionality
             switch obj.settings.tracker
-                case {'RED250mobile','REDn'}
+                case {'RED250mobile','REDn Scientific','REDn Professional'}
                     obj.caps.connectOnlyRemote  = true;
                     obj.caps.setSpeedMode       = true;
             end
             % functionality not for hiSpeeds
             switch obj.settings.tracker
-                case {'RED','RED-m','RED250mobile','REDn'}
+                case {'RED','RED-m','RED250mobile','REDn Scientific','REDn Professional'}
                     obj.caps.hasREDGeometry     = true;
             end
             % indicate for which trackers the eye identities could be
@@ -1004,7 +1008,7 @@ classdef SMITE < handle
                 case 'RED-m'
                     % RED-m: 0, 1, 2, 5, 9 (I will not support 0)
                     obj.caps.nCalibrationPoints = [1 2 5 9];
-                case {'RED250mobile','REDn'}
+                case {'RED250mobile','REDn Scientific','REDn Professional'}
                     % RED NG: 0, 1, 2, 5, 9 or 13 (I will not support 0)
                     obj.caps.nCalibrationPoints = [1 2 5 9 13];
                 case 'RED'
