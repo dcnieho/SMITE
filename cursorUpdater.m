@@ -15,7 +15,7 @@ if usingPoly
     nElemPerAOI = ones(1,nAOI);
 else
     cursorRects = [cursors.rect{:}];
-    nAOI        = lenght(cursors.rect);
+    nAOI        = length(cursors.rect);
     nElemPerAOI = cellfun(@(x) size(x,2),cursors.rect);
 end
 % cursor looks are numbered IDs as eaten by ShowMouse. -1 means hide cursor
