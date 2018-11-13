@@ -928,6 +928,7 @@ classdef SMITE < handle
         function allowed = getAllowedOptions(obj)
             allowed = {...
                 'setup','startScreen'
+                'setup','simpleShowEyes'
                 'cal','autoPace'
                 'cal','nPoint'
                 'cal','bgColor'
