@@ -883,6 +883,7 @@ classdef SMITE < handle
             % the rest here are general defaults. Many are hard to set...
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, iView always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
             settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
+            settings.setup.simpleShowEyes = true;
             settings.cal.autoPace       = 1;                                % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
             settings.cal.bgColor        = 127;
             settings.cal.fixBackSize    = 20;
@@ -1100,6 +1101,9 @@ classdef SMITE < handle
                 headFillClr = [headClr .3*255];
                 % setup head position visualization
                 distGain    = 1.5;
+                eyeClr      = [255 255 255];
+                eyeSzFac    = .25;
+                eyeMarginFac= .25;
             end
 
             % setup buttons
@@ -1178,6 +1182,8 @@ classdef SMITE < handle
                         % determine size of oval, based on distance from reference distance
                         fac     = avgDist/obj.settings.setup.viewingDist;
                         headSz  = refSz - refSz*(fac-1)*distGain;
+                        eyeSz   = eyeSzFac*headSz;
+                        eyeMargin = eyeMarginFac*headSz*2;  %*2 because all sizes are radii
                         % move
                         headPos = pos.*obj.scrInfo.resolution./2+obj.scrInfo.center;
                     else
@@ -1190,6 +1196,24 @@ classdef SMITE < handle
                     obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
                     if ~isempty(headPos)
                         obj.drawCircle(wpnt,headClr,headPos,headSz,5,headFillClr);
+                        if obj.settings.setup.simpleShowEyes
+                            % left eye
+                            pos = headPos; pos(1) = pos(1)-eyeMargin;
+                            if pTrackingStatus.leftEye.validity
+                                obj.drawCircle(wpnt,[],pos,eyeSz,0,eyeClr);
+                            else
+                                rect = CenterRectOnPointd([-eyeSz -eyeSz/5 eyeSz eyeSz/5],pos(1),pos(2));
+                                Screen('FillRect', wpnt, eyeClr, rect);
+                            end
+                            % right eye
+                            pos(1) = pos(1)+eyeMargin*2;
+                            if pTrackingStatus.rightEye.validity
+                                obj.drawCircle(wpnt,[],pos,eyeSz,0,eyeClr);
+                            else
+                                rect = CenterRectOnPointd([-eyeSz -eyeSz/5 eyeSz eyeSz/5],pos(1),pos(2));
+                                Screen('FillRect', wpnt, eyeClr, rect);
+                            end
+                        end
                     end
                     % draw buttons
                     Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
@@ -1650,15 +1674,17 @@ classdef SMITE < handle
             tex = Screen('MakeTexture',wpnt,image,[],8);   % 8 to prevent mipmap generation, we don't need it
         end
         
-        function drawCircle(~,wpnt,refClr,center,refSz,lineWidth,headFillClr)
+        function drawCircle(~,wpnt,clr,center,sz,lineWidth,fillClr)
             nStep = 200;
             alpha = linspace(0,2*pi,nStep);
             alpha = [alpha(1:end-1); alpha(2:end)]; alpha = alpha(:).';
-            xy = refSz.*[cos(alpha); sin(alpha)];
+            xy    = sz.*[cos(alpha); sin(alpha)];
             if nargin>=7
-                Screen('FillPoly', wpnt, headFillClr, xy.'+repmat(center(:).',size(alpha,2),1), 1);
+                Screen('FillPoly', wpnt, fillClr, xy.'+repmat(center(:).',size(alpha,2),1), 1);
             end
-            Screen('DrawLines', wpnt, xy, lineWidth ,refClr ,center,2);
+            if lineWidth && ~isempty(clr)
+                Screen('DrawLines', wpnt, xy, lineWidth ,clr ,center,2);
+            end
         end
         
         function cache = getButtonTextCache(obj,wpnt,lbl,rect)
