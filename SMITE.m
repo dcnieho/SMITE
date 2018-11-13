@@ -1093,12 +1093,13 @@ classdef SMITE < handle
             
             if obj.caps.hasHeadbox
                 % setup ovals
-                ovalVSz = .15;
-                refSz   = ovalVSz*obj.scrInfo.resolution(2);
-                refClr  = [0 0 255];
-                headClr = [255 255 0];
+                ovalVSz     = .15;
+                refSz       = ovalVSz*obj.scrInfo.resolution(2);
+                refClr      = [0 0 255];
+                headClr     = [255 255 0];
+                headFillClr = [headClr .3*255];
                 % setup head position visualization
-                distGain= 1.5;
+                distGain    = 1.5;
             end
 
             % setup buttons
@@ -1188,7 +1189,7 @@ classdef SMITE < handle
                     % draw ovals
                     obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
                     if ~isempty(headPos)
-                        obj.drawCircle(wpnt,headClr,headPos,headSz,5);
+                        obj.drawCircle(wpnt,headClr,headPos,headSz,5,headFillClr);
                     end
                     % draw buttons
                     Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
@@ -1649,11 +1650,14 @@ classdef SMITE < handle
             tex = Screen('MakeTexture',wpnt,image,[],8);   % 8 to prevent mipmap generation, we don't need it
         end
         
-        function drawCircle(~,wpnt,refClr,center,refSz,lineWidth)
+        function drawCircle(~,wpnt,refClr,center,refSz,lineWidth,headFillClr)
             nStep = 200;
             alpha = linspace(0,2*pi,nStep);
             alpha = [alpha(1:end-1); alpha(2:end)]; alpha = alpha(:).';
             xy = refSz.*[cos(alpha); sin(alpha)];
+            if nargin>=7
+                Screen('FillPoly', wpnt, headFillClr, xy.'+repmat(center(:).',size(alpha,2),1), 1);
+            end
             Screen('DrawLines', wpnt, xy, lineWidth ,refClr ,center,2);
         end
         
