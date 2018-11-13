@@ -50,7 +50,7 @@ try
     KbName('UnifyKeyNames')
     
     % do calibration
-    smi.calVal{1}   = EThndl.calibrate(wpnt,true);     % clear recoding buffer to make sure any lingering shit from a previous session is removed
+    smi.calVal{1}   = EThndl.calibrate(wpnt,true);     % clear recording buffer to make sure any lingering shit from a previous session is removed
     
     % later:
     EThndl.startRecording();
@@ -119,7 +119,6 @@ try
     
     % stopping and saving
     data = EThndl.consumeBufferData();
-    EThndl.stopRecording();
     EThndl.stopBuffer();
     WaitSecs(0.5);
     DrawFormattedText(wpnt,'Saving data...','center','center',0);
