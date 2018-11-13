@@ -495,7 +495,6 @@ classdef SMITE < handle
             end
             ret = obj.iView.startRecording();
             obj.processError(ret,'SMITE: Error starting recording');
-            pause(.1); % give it some time to get started. not needed according to doc, but never hurts
         end
         
         function startBuffer(obj,varargin)
