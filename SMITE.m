@@ -399,7 +399,7 @@ classdef SMITE < handle
                 
                 %%% 2b: calibrate and validate
                 if ~qGoToValidationViewer
-                    [out.attempt{kCal}.calStatus,temp] = obj.DoCalAndVal(wpnt,qClearBuffer);
+                    [out.attempt{kCal}.calStatus,temp] = obj.DoCalAndVal(wpnt,qClearBuffer,kCal);
                     warning('off','catstruct:DuplicatesFound')  % field already exists but is empty, will be overwritten with the output from the function here
                     out.attempt{kCal} = catstruct(out.attempt{kCal},temp);
                     % qClearbuffer should now become false even if it was true,
@@ -1748,7 +1748,7 @@ classdef SMITE < handle
             end
         end
         
-        function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer)
+        function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer,kCal)
             % make sure calibration settings are correct (they may have
             % been changed below before a previous validation)
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: this sets the background color, because fullscreen fillrect sets new clear color in PTB
@@ -1768,11 +1768,11 @@ classdef SMITE < handle
             % calibrate
             obj.startRecording(qClearBuffer);
             % enter calibration mode
-            obj.sendMessage('CALIBRATION START');
+            obj.sendMessage(sprintf('CALIBRATION START %d',kCal));
             obj.iView.calibrate();
             % show display
             [status,out.cal,tick] = obj.DoCalPointDisplay(wpnt,-1,true);
-            obj.sendMessage('CALIBRATION END');
+            obj.sendMessage(sprintf('CALIBRATION END %d',kCal));
             if status~=1
                 if status~=-1
                     % -1 means restart calibration from start. if we do not
@@ -1831,11 +1831,11 @@ classdef SMITE < handle
             
             % validate
             % enter validation mode
-            obj.sendMessage('VALIDATION START');
+            obj.sendMessage(sprintf('VALIDATION START %d',kCal));
             obj.iView.validate();
             % show display
             [status,out.val] = obj.DoCalPointDisplay(wpnt,tick,false,out.cal.flips(end));
-            obj.sendMessage('VALIDATION END');
+            obj.sendMessage(sprintf('VALIDATION END %d',kCal));
             obj.stopRecording();
             
             if status~=-1   % see comment above about why not when -1
