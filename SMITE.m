@@ -1017,11 +1017,11 @@ classdef SMITE < handle
             % supported number of calibration points
             switch obj.settings.tracker
                 case 'RED-m'
-                    % RED-m: 0, 1, 2, 5, 9 (I will not support 0)
-                    obj.caps.nCalibrationPoints = [1 2 5 9];
+                    % RED-m: 0, 1, 2, 5, 9
+                    obj.caps.nCalibrationPoints = [0 1 2 5 9];
                 case {'RED250mobile','REDn Scientific','REDn Professional'}
-                    % RED NG: 0, 1, 2, 5, 9 or 13 (I will not support 0)
-                    obj.caps.nCalibrationPoints = [1 2 5 9 13];
+                    % RED NG: 0, 1, 2, 5, 9 or 13
+                    obj.caps.nCalibrationPoints = [0 1 2 5 9 13];
                 case 'RED'
                     % old REDs: 2, 5 or 9 points
                     obj.caps.nCalibrationPoints = [2 5 9];
