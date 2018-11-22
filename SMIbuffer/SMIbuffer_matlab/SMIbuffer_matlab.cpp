@@ -212,11 +212,11 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
 // helpers
 namespace
 {
-    template <typename D, typename O, typename T>
-    mxArray* FieldToMatlab(std::vector<D> data_, mxClassID type_, T O::*field1)
+    template <typename D, typename O, typename T, typename U=T>
+    mxArray* FieldToMatlab(std::vector<D> data_, mxClassID type_, T O::*field1, U = U{})
     {
         mxArray* temp;
-        auto storage = static_cast<T*>(mxGetData(temp = mxCreateUninitNumericMatrix(1, data_.size(), type_, mxREAL)));
+        auto storage = static_cast<U*>(mxGetData(temp = mxCreateUninitNumericMatrix(1, data_.size(), type_, mxREAL)));
         size_t i = 0;
         for (auto &samp : data_)
             storage[i++] = samp.*field1;
@@ -240,8 +240,8 @@ namespace
     {
         const char* fieldNames[] = {"eventType","eye","startTime","endTime","duration","positionX","positionY"};
         mxArray* out = mxCreateStructMatrix(1, 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
-        mxSetFieldByNumber(out, 0, 0, FieldToMatlab(data_, mxCHAR_CLASS, &EventStruct::eventType));
-        mxSetFieldByNumber(out, 0, 1, FieldToMatlab(data_, mxCHAR_CLASS, &EventStruct::eye));
+        mxSetFieldByNumber(out, 0, 0, FieldToMatlab(data_, mxCHAR_CLASS, &EventStruct::eventType, mxChar{}));
+        mxSetFieldByNumber(out, 0, 1, FieldToMatlab(data_, mxCHAR_CLASS, &EventStruct::eye, mxChar{}));
         mxSetFieldByNumber(out, 0, 2, FieldToMatlab(data_, mxINT64_CLASS, &EventStruct::startTime));
         mxSetFieldByNumber(out, 0, 3, FieldToMatlab(data_, mxINT64_CLASS, &EventStruct::endTime));
         mxSetFieldByNumber(out, 0, 4, FieldToMatlab(data_, mxINT64_CLASS, &EventStruct::duration));
