@@ -47,7 +47,7 @@ try
     % renderer is the default on all operating systems, so this is more of
     % a "better safe than sorry" setting.
     Screen('Preference', 'TextRenderer', 1);
-    KbName('UnifyKeyNames')
+    KbName('UnifyKeyNames');    % for correct operation of the setup/calibration interface, calling this is required
     
     % do calibration
     smi.calVal{1}   = EThndl.calibrate(wpnt,true);     % clear recording buffer to make sure any lingering shit from a previous session is removed
