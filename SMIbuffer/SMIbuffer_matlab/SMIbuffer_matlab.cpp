@@ -239,9 +239,6 @@ namespace
 
     mxArray* EventVectorToMatlab(std::vector<EventStruct> data_)
     {
-        if (data_.empty())
-            return mxCreateDoubleMatrix(0, 0, mxREAL);
-
         const char* fieldNames[] = {"eventType","eye","startTime","endTime","duration","positionX","positionY"};
         mxArray* out = mxCreateStructMatrix(1, 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
         mxSetFieldByNumber(out, 0, 0, FieldToMatlab(data_, mxCHAR_CLASS, &EventStruct::eventType));
@@ -269,9 +266,6 @@ namespace
 
     mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
     {
-        if (data_.empty())
-            return mxCreateDoubleMatrix(0, 0, mxREAL);
-
         // NB: planeNumber field is not provided by any of the supported eye tracker, so I ignore it here.
 
         const char* fieldNames[] = {"timestamp","leftEye","rightEye"};
