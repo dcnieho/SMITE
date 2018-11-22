@@ -116,7 +116,6 @@ try
     Screen('Flip',wpnt,imgT+imageTime-1/hz/2);
     EThndl.stopRecording();
     
-    
     % stopping and saving
     data = EThndl.consumeBufferData();
     EThndl.stopBuffer();
@@ -124,11 +123,10 @@ try
     DrawFormattedText(wpnt,'Saving data...','center','center',0);
     Screen('Flip',wpnt);
     EThndl.saveData(fullfile(cd,'t'), 'Subject01', 'testExpt', true);
-    
-    % shut down
-    EThndl.deInit(true);
 catch me
     sca
     rethrow(me)
 end
+% shut down
 sca
+EThndl.deInit(true);
