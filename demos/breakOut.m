@@ -149,18 +149,16 @@ try
         % update paddle
         % 1. get eye data, determine how far to move
         samp    = EThndl.consumeBufferData();
-        i = 0;
-        if ~isempty(samp)
-            i = length(samp);
-            while i>=1
-                if (samp(i).leftEye.gazeX && samp(i).leftEye.gazeY) || (samp(i).rightEye.gazeX && samp(i).rightEye.gazeY)
-                    break;
-                end
-                i = i-1;
-            end
+        % see if have a sample with both eyes
+        qSelect = samp.leftEye.gazeX & samp.leftEye.gazeY & samp.rightEye.gazeX & samp.rightEye.gazeY;
+        if ~any(qSelect)
+            % if not, see if have sample for one of the eyes
+            qSelect = (samp.leftEye.gazeX & samp.leftEye.gazeY) | (samp.rightEye.gazeX & samp.rightEye.gazeY);
         end
-        if i>0
-            gazeX   = [samp(i).leftEye.gazeX samp(i).rightEye.gazeX];
+        i = find(qSelect,1,'last');
+        % if have some form of eye position, update paddle position
+        if ~isempty(i)
+            gazeX   = [samp.leftEye.gazeX(i) samp.rightEye.gazeX(i)];
             gazeX   = mean(gazeX(gazeX~=0));
             trans   = gazeX-paddlePos;
             % 2. clamp paddle position to play area
