@@ -39,7 +39,7 @@ blockMargin         = height/10;        % space above top row of blocks
 pointsPerBlock      = 5;
 
 % paddle setup
-paddleWidth         = width/12;
+paddleWidth         = width/10;
 paddleBaseHeight    = height/30;
 paddleCornerSlope   = 10;               % deg, away from horizontal
 paddleMargin        = height/100;       % space below paddle
