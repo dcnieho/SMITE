@@ -1064,7 +1064,7 @@ classdef SMITE < handle
             %  2: skip calibration and continue with task (shift+s)
             % -3: go to validation screen (p) -- only if there are already
             %     completed calibrations
-            % -4: Exit completely (control+escape)
+            % -4: Exit completely (shift+escape)
             % (NB: no -1 for this function)
             
             % init
@@ -1241,7 +1241,7 @@ classdef SMITE < handle
                 
                 
                 % get user response
-                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
+                [mx,my,buttons,keyCode,shiftIsDown] = obj.getNewMouseKeyPress(wpnt);
                 % update cursor look if needed
                 cursor.update(mx,my);
                 if any(buttons)
@@ -1269,10 +1269,10 @@ classdef SMITE < handle
                     elseif any(strcmpi(keys,'p')) && qHaveValidCalibrations
                         status = -3;
                         break;
-                    elseif any(strcmpi(keys,'escape')) && haveShift
+                    elseif any(strcmpi(keys,'escape')) && shiftIsDown
                         status = -4;
                         break;
-                    elseif any(strcmpi(keys,'s')) && haveShift
+                    elseif any(strcmpi(keys,'s')) && shiftIsDown
                         % skip calibration
                         obj.iView.abortCalibration();
                         status = 2;
@@ -1596,7 +1596,7 @@ classdef SMITE < handle
                 Screen('Flip',wpnt);
                 
                 % get user response
-                [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
+                [mx,my,buttons,keyCode,shiftIsDown] = obj.getNewMouseKeyPress(wpnt);
                 % update cursor look if needed
                 cursor.update(mx,my);
                 if any(buttons)
@@ -1635,10 +1635,10 @@ classdef SMITE < handle
                     elseif any(strcmpi(keys,'p')) && qHaveValidCalibrations
                         status = -3;
                         break;
-                    elseif any(strcmpi(keys,'escape')) && haveShift
+                    elseif any(strcmpi(keys,'escape')) && shiftIsDown
                         status = -4;
                         break;
-                    elseif any(strcmpi(keys,'s')) && haveShift
+                    elseif any(strcmpi(keys,'s')) && shiftIsDown
                         % skip calibration
                         obj.iView.abortCalibration();
                         status = 2;
@@ -1863,7 +1863,7 @@ classdef SMITE < handle
             %  2: skip calibration and continue with task (shift+s)
             % -1: restart calibration (r)
             % -2: abort calibration and go back to setup (escape key)
-            % -4: Exit completely (control+escape)
+            % -4: exit completely (shift+escape)
             qFirst = nargin<5;
             
             % clear screen, anchor timing, get ready for displaying calibration points
@@ -1940,7 +1940,7 @@ classdef SMITE < handle
                 end
                 
                 % get user response
-                [~,~,~,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
+                [~,~,~,keyCode,shiftIsDown] = obj.getNewMouseKeyPress(wpnt);
                 if any(keyCode)
                     keys = KbName(keyCode);
                     if any(strcmpi(keys,'space')) && qAllowAcceptKey && ~haveAccepted
@@ -1964,7 +1964,7 @@ classdef SMITE < handle
                             status = -2;
                         end
                         break;
-                    elseif any(strcmpi(keys,'s')) && haveShift
+                    elseif any(strcmpi(keys,'s')) && shiftIsDown
                         % skip calibration
                         obj.iView.abortCalibration();
                         status = 2;
@@ -1985,7 +1985,7 @@ classdef SMITE < handle
             %  2: just continue with task (shift+s)
             % -1: restart calibration (escape key)
             % -2: go back to setup (s)
-            % -4: Exit completely (control+escape)
+            % -4: exit completely (shift+escape)
             %
             % additional buttons
             % c: chose other calibration (if have more than one valid)
@@ -2182,7 +2182,7 @@ classdef SMITE < handle
                     Screen('Flip',wpnt);
                     
                     % get user response
-                    [mx,my,buttons,keyCode,haveShift] = obj.getNewMouseKeyPress(wpnt);
+                    [mx,my,buttons,keyCode,shiftIsDown] = obj.getNewMouseKeyPress(wpnt);
                     % update cursor look if needed
                     cursor.update(mx,my);
                     if any(buttons)
@@ -2238,11 +2238,11 @@ classdef SMITE < handle
                                 status = 1;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'escape')) && ~haveShift
+                            elseif any(strcmpi(keys,'escape')) && ~shiftIsDown
                                 status = -1;
                                 qDoneCalibSelection = true;
                                 break;
-                            elseif any(strcmpi(keys,'s')) && ~haveShift
+                            elseif any(strcmpi(keys,'s')) && ~shiftIsDown
                                 status = -2;
                                 qDoneCalibSelection = true;
                                 break;
@@ -2256,11 +2256,11 @@ classdef SMITE < handle
                         end
                         
                         % these two key combinations should always be available
-                        if any(strcmpi(keys,'escape')) && haveShift
+                        if any(strcmpi(keys,'escape')) && shiftIsDown
                             status = -4;
                             qDoneCalibSelection = true;
                             break;
-                        elseif any(strcmpi(keys,'s')) && haveShift
+                        elseif any(strcmpi(keys,'s')) && shiftIsDown
                             % skip calibration
                             obj.iView.abortCalibration();
                             status = 2;
@@ -2296,7 +2296,7 @@ classdef SMITE < handle
             out = length(obj.settings.connectInfo)==4 && ~strcmp(obj.settings.connectInfo{1},obj.settings.connectInfo{3});
         end
         
-        function [mx,my,mouse,key,haveShift] = getNewMouseKeyPress(obj,wpnt)
+        function [mx,my,mouse,key,shiftIsDown] = getNewMouseKeyPress(obj,wpnt)
             % function that only returns key depress state changes in the
             % down direction, not keys that are held down or anything else
             % NB: before using this, make sure internal state is up to
@@ -2310,7 +2310,7 @@ classdef SMITE < handle
             mouse   = buttons & ~obj.mouseState;
             
             % get if shift key is currently down
-            haveShift = ~~keyCode(obj.shiftKey);
+            shiftIsDown = ~~keyCode(obj.shiftKey);
             
             % store to state
             obj.keyState    = keyCode;
