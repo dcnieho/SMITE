@@ -87,8 +87,6 @@ ball.drag   = -ballAccel;
 
 
 %% run
-addpath(genpath(fullfile(cd,'theToolbox')));
-
 try 
     % init
     EThndl         = SMITE(settings);
