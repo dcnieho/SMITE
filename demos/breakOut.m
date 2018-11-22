@@ -68,7 +68,7 @@ for r=nRow:-1:1
 end
 % paddle
 stepSz  = 5;
-nStep   = paddleWidth/2/stepSz;
+nStep   = floor(paddleWidth/2/stepSz);
 angles  = linspace(paddleCornerSlope,0,nStep+1); angles(end) = [];
 segments= [stepSz*ones(1,nStep); stepSz*tand(angles)];
 segments= [[0;0] cumsum(segments,2)];
