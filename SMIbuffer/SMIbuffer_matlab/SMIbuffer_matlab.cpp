@@ -212,7 +212,6 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
 // helpers
 namespace
 {
-
     template <typename D, typename O, typename T>
     mxArray* FieldToMatlab(std::vector<D> data_, mxClassID type_, T O::*field1)
     {
@@ -266,13 +265,12 @@ namespace
 
     mxArray* SampleVectorToMatlab(std::vector<SampleStruct> data_)
     {
-        // NB: planeNumber field is not provided by any of the supported eye tracker, so I ignore it here.
-
         const char* fieldNames[] = {"timestamp","leftEye","rightEye"};
         mxArray* out = mxCreateStructMatrix(1, 1, sizeof(fieldNames) / sizeof(*fieldNames), fieldNames);
         mxSetFieldByNumber(out, 0, 0, FieldToMatlab(data_, mxINT64_CLASS, &SampleStruct::timestamp));
         mxSetFieldByNumber(out, 0, 1, EyeDataStructToMatlab(data_, &SampleStruct::leftEye));
         mxSetFieldByNumber(out, 0, 2, EyeDataStructToMatlab(data_, &SampleStruct::rightEye));
+        // NB: planeNumber field is not provided by any of the supported eye tracker, so I ignore it here.
 
         return out;
     }
