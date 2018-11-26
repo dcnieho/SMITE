@@ -11,6 +11,7 @@ classdef SMITE < handle
         shiftKey;
         mouseState;
         needsCheckAveraging = false;    % for systems that do not support setting averaging of eye data
+        isRecording = false;
         
         % settings and external info
         settings;
@@ -503,6 +504,7 @@ classdef SMITE < handle
             end
             ret = obj.iView.startRecording();
             obj.processError(ret,'SMITE: Error starting recording');
+            obj.isRecording = true;
         end
         
         function startBuffer(obj,varargin)
@@ -538,8 +540,11 @@ classdef SMITE < handle
         end
         
         function stopRecording(obj)
-            ret = obj.iView.stopRecording();
-            obj.processError(ret,'SMITE: Error stopping recording');
+            if obj.isRecording
+                ret = obj.iView.stopRecording();
+                obj.processError(ret,'SMITE: Error stopping recording');
+                obj.isRecording = false;
+            end
         end
         
         function out = isConnected(obj)
@@ -553,6 +558,13 @@ classdef SMITE < handle
             % significant, but better be safe than sorry)
             % consider using that directly in your code for best timing
             % ret = obj.iView.sendImageMessage(str);
+            if ~obj.isRecording
+                % messages are only stored when in recording mode, so no
+                % need to pass them on here when not recording. On some
+                % systems (e.g. RED250mobile) sending messages when not
+                % recording is an error, so this check is important
+                return;
+            end
             ret = calllib('iViewXAPI','iV_SendImageMessage',str);
             obj.processError(ret,'SMITE: Error sending message to data file');
             if obj.settings.debugMode
@@ -773,6 +785,7 @@ classdef SMITE < handle
             
             % mark as deinited
             obj.isInitialized = false;
+            obj.isRecording = false;
         end
     end
     
