@@ -1,11 +1,31 @@
+% SMIStructEnum provides a nice interface to the structs and enumeration
+% data types defined in iViewXAPIHeader
+%
+% Part of the SMITE toolbox (https://github.com/dcnieho/SMITE), but can be
+% used independently. When using this convenience interface (which is
+% recommended because of several fixes that have been made compared to the
+% code released by SMI, see below), please cite the following paper:
+% Niehorster, D.C., & Nyström, M., (submitted). SMITE: The definitive
+% toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
+% trackers.
+%
+% fixes/enhancements:
+% - provides proper default initialization of the returned data type
+% - documentation of the interface and tips for best usage
+% - some declarations of the underlying data type have been fixed,
+%   importantly in the image struct where the data buffer was defined as
+%   char, not uint8, which lead to errors reading out the buffer if the
+%   value 0 was encountered in the buffer.
+%
+% for memory efficiency, it is good to call this function once for each
+% type and then reuse what you get in return. However, you can have
+% multiple instances of each if you want.
+% note that this is especially important when you use structs with pointer
+% members (notably ImageStruct). Matlab does not seem to free memory
+% correctly, so you'll quickly run out. The functions in the iViewXAPI
+% wrapper are designed to allow reuse of the structs.
+
 classdef SMIStructEnum < handle
-    % for memory efficiency, it is good to call this function once for each
-    % type and then reuse what you get in return. However, you can have
-    % multiple instances of each if you want.
-    % note that this is especially important when you use structs with
-    % pointer members (notably ImageStruct). Matlab does not seem to free
-    % memory correctly, so you'll quickly run out. The functions in the
-    % iViewXAPI wrapper are designed to allow reuse of the structs.
     
     methods (Access = private)
         %% Constructor.
@@ -121,7 +141,7 @@ if ismember(type,{'SystemInfoStruct','SpeedModeStruct','CalibrationPointStruct',
     % use libstruct to construct the C structure. Default constructed
     % (fields are 0/NULL/etc) unless specified otherwise below here. The
     % output type has an interface that matches normal MATLAB structs and
-    % can be converted to a MATLAB struct by simply struct(out)
+    % can be converted to a MATLAB struct by calling "struct(out)"
     switch type
         case 'CalibrationStruct'
             % for this struct it is better to not use default init (all 0),

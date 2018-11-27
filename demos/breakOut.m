@@ -1,3 +1,12 @@
+% this demo code is part of SMITE, a toolbox providing convenient access to
+% eye tracking functionality using SMI eye trackers
+%
+% SMITE can be found at https://github.com/dcnieho/SMITE. When using SMITE,
+% please cite the following paper:
+% Niehorster, D.C., & Nyström, M., (submitted). SMITE: The definitive
+% toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
+% trackers.
+
 sca
 clear variables
 
