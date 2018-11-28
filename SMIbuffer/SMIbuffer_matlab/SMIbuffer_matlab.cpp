@@ -59,9 +59,16 @@ void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     mxFree(actionCstr);
 
     // get corresponding action
-    if (actionTypeMap.count(actionStr) == 0)
+    auto it = actionTypeMap.find(actionStr);
+    if (it==actionTypeMap.end())
         mexErrMsgTxt(("Unrecognized action (not in actionTypeMap): " + actionStr).c_str());
-    Action action = actionTypeMap.at(actionStr);
+    Action action = it->second;
+
+    // Check we have a valid handle, if needed
+    if (!SMIbufferClassInstance && action != Action::New)
+    {
+        mexErrMsgTxt(("Called action: " + actionStr + ", but no SMIbuffer class.").c_str());    // it seems this can happen when loading a workspace including this object from file.
+    }
 
     // Call the various class methods
     switch (action)
