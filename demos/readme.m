@@ -91,10 +91,11 @@ try
     imgT = Screen('Flip',wpnt,startT+fixTime-1/hz/2);   % bit of slack to make sure requested presentation time can be achieved
     EThndl.setBegazeTrialImage('konijntjes1024x768.jpg');
     
-    % record x seconda of data, clear screen. Stop the recording
+    % record x seconds of data, clear screen. Stop the recording
     % immediately after to indicate that trial is finished
     Screen('Flip',wpnt,imgT+imageTime-1/hz/2);
     EThndl.stopRecording();
+    Screen('Close',tex);
     
     % slightly less precise ISI is fine..., about 1s give or take a frame
     WaitSecs(1);
@@ -124,6 +125,7 @@ try
     % 4. end recording after x seconds of data again, clear screen.
     Screen('Flip',wpnt,imgT+imageTime-1/hz/2);
     EThndl.stopRecording();
+    Screen('Close',tex);
     
     % stopping and saving
     data = EThndl.consumeBufferData();
