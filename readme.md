@@ -34,7 +34,7 @@ Professional`.
 
 Supported options (depending on eye tracker model):
 
-| Command | Explanation |
+| Option name | Explanation |
 | --- | --- |
 | settings.trackEye              | `'EYE_LEFT'`, `'EYE_RIGHT'`, or `'EYE_BOTH'` |
 | settings.trackMode             | `'MONOCULAR'`, `'BINOCULAR'`, `'SMARTBINOCULAR'`, or `'SMARTTRACKING'` |
