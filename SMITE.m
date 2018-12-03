@@ -452,7 +452,7 @@ classdef SMITE < handle
                 %%% 2c: show calibration results
                 % get info about accuracy of calibration
                 [~,out.attempt{kCal}.validateAccuracy] = obj.iView.getAccuracy([], 0);
-                % dump info to idf file
+                % dump validation accuracy info to idf file
                 obj.startRecording();
                 obj.sendMessage(sprintf('VALIDATION %d quality: LX %.3f, LY %.3f, RX %.3f, RY %.3f',kCal,out.attempt{kCal}.validateAccuracy.deviationLX,out.attempt{kCal}.validateAccuracy.deviationLY,out.attempt{kCal}.validateAccuracy.deviationRX,out.attempt{kCal}.validateAccuracy.deviationRY));
                 obj.stopRecording();
@@ -487,9 +487,11 @@ classdef SMITE < handle
             Screen('Flip',wpnt);
             Screen('BlendFunction', wpnt, osf,odf,ocm);
             % log to idf file which calibration was selected
-            obj.startRecording();
-            obj.sendMessage(sprintf('Selected calibration %d',out.attempt{kCal}.calSelection));
-            obj.stopRecording();
+            if isfield(out,'attempt') && isfield(out.attempt{kCal},'calSelection')
+                obj.startRecording();
+                obj.sendMessage(sprintf('Selected calibration %d',out.attempt{kCal}.calSelection));
+                obj.stopRecording();
+            end
             
             % store calibration info in calibration history, for later
             % retrieval if wanted
