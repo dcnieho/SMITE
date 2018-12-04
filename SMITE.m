@@ -116,9 +116,14 @@ classdef SMITE < handle
             
             %%% process settings
             % setup colors
-            obj.settings.cal.bgColor        = color2RGBA(obj.settings.cal.bgColor);
-            obj.settings.cal.fixBackColor   = color2RGBA(obj.settings.cal.fixBackColor);
-            obj.settings.cal.fixFrontColor  = color2RGBA(obj.settings.cal.fixFrontColor);
+            obj.settings.cal.bgColor                = color2RGBA(obj.settings.cal.bgColor);
+            obj.settings.cal.fixBackColor           = color2RGBA(obj.settings.cal.fixBackColor);
+            obj.settings.cal.fixFrontColor          = color2RGBA(obj.settings.cal.fixFrontColor);
+            obj.settings.setup.basicRefColor        = color2RGBA(obj.settings.setup.basicRefColor);
+            obj.settings.setup.basicHeadEdgeColor   = color2RGBA(obj.settings.setup.basicHeadEdgeColor);
+            obj.settings.setup.basicHeadFillColor   = color2RGBA(obj.settings.setup.basicHeadFillColor);
+            obj.settings.setup.basicEyeColor        = color2RGBA(obj.settings.setup.basicEyeColor);
+            obj.settings.setup.valAccuracyTextColor = color2RGBA(obj.settings.setup.valAccuracyTextColor);
         end
         
         function out = init(obj)
@@ -913,28 +918,34 @@ classdef SMITE < handle
             
             % the rest here are general defaults. Many are hard to set...
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, iView always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
-            settings.setup.startScreen  = 1;                                % 0. skip head positioning, go straight to calibration; 1. start with simple head positioning interface; 2. start with advanced head positioning interface
-            settings.setup.simpleShowEyes = true;
-            settings.cal.autoPace       = 1;                                % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
-            settings.cal.bgColor        = 127;
-            settings.cal.fixBackSize    = 20;
-            settings.cal.fixFrontSize   = 5;
-            settings.cal.fixBackColor   = 0;
-            settings.cal.fixFrontColor  = 255;
-            settings.cal.drawFunction   = [];
-            settings.logFileName        = 'iView_log.txt';
-            settings.text.font          = 'Consolas';
-            settings.text.style         = 0;                                % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
-            settings.text.wrapAt        = 62;
-            settings.text.vSpacing      = 1;
+            settings.setup.startScreen          = 1;                        % 0: skip head positioning, go straight to calibration; 1: start with simple head positioning interface; 2: start with advanced head positioning interface
+            settings.setup.basicRefColor        = [0 0 255];                % basic head position visualization: color of reference circle
+            settings.setup.basicHeadEdgeColor   = [255 255 0];              % basic head position visualization: color of egde of disk representing head
+            settings.setup.basicHeadFillColor   = [255 255 0];              % basic head position visualization: color of fill of disk representing head
+            settings.setup.basicHeadFillOpacity = .3;                       % basic head position visualization: opacity of disk representing head
+            settings.setup.basicShowEyes        = true;                     % basic head position visualization: show eyes?
+            settings.setup.basicEyeColor        = [255 255 255];            % basic head position visualization: color of eyes in head
+            settings.setup.valAccuracyTextColor = [0 0 0];                  % color of text displaying accuracy number on validation feedback screen
+            settings.cal.autoPace               = 1;                        % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
+            settings.cal.bgColor                = 127;
+            settings.cal.fixBackSize            = 20;
+            settings.cal.fixFrontSize           = 5;
+            settings.cal.fixBackColor           = 0;
+            settings.cal.fixFrontColor          = 255;
+            settings.cal.drawFunction           = [];
+            settings.logFileName                = 'iView_log.txt';
+            settings.text.font                  = 'Consolas';
+            settings.text.style                 = 0;                        % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
+            settings.text.wrapAt                = 62;
+            settings.text.vSpacing              = 1;
             if ~exist('libptbdrawtext_ftgl64.dll','file') % if old text renderer, we have different defaults and an extra settings
-                settings.text.size          = 20;
-                settings.text.lineCentOff   = 3;                                % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
+                settings.text.size                  = 20;
+                settings.text.lineCentOff           = 3;                    % amount (pixels) to move single line text down so that it is visually centered on requested coordinate
             else
-                settings.text.size          = 24;
+                settings.text.size                  = 24;
             end
             settings.string.simplePositionInstruction = 'Position yourself such that the two circles overlap.\nDistance: %.0f cm';
-            settings.debugMode          = false;                            % for use together with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
+            settings.debugMode                  = false;                    % for use together with PTB's PsychDebugWindowConfiguration. e.g. does not hide cursor
             % SDK log Level:
             % no logs at all:               0
             % LOG_LEVEL_BUG                 1
@@ -944,7 +955,7 @@ classdef SMITE < handle
             % LOG_LEVEL_RECV_IV_COMMAND     16
             % You can request multiple types of log by adding them
             % together, e.g. logLevel = 1+4+8+16
-            settings.logLevel           = 1;
+            settings.logLevel                   = 1;
         end
         
         function processError(returnCode,errorString)
@@ -959,7 +970,13 @@ classdef SMITE < handle
         function allowed = getAllowedOptions(obj)
             allowed = {...
                 'setup','startScreen'
-                'setup','simpleShowEyes'
+                'setup','basicRefColor'
+                'setup','basicHeadEdgeColor'
+                'setup','basicHeadFillColor'
+                'setup','basicHeadFillOpacity'
+                'setup','basicShowEyes'
+                'setup','basicEyeColor'
+                'setup','valAccuracyTextColor'
                 'cal','autoPace'
                 'cal','nPoint'
                 'cal','bgColor'
@@ -1128,12 +1145,13 @@ classdef SMITE < handle
                 % setup ovals
                 ovalVSz     = .15;
                 refSz       = ovalVSz*obj.scrInfo.resolution(2);
-                refClr      = [0 0 255];
-                headClr     = [255 255 0];
-                headFillClr = [headClr .3*255];
+                refClr      = obj.settings.setup.basicRefColor;
+                headClr     = obj.settings.setup.basicHeadEdgeColor;
+                headFillClr = obj.settings.setup.basicHeadFillColor;
+                headFillClr(4) = obj.settings.setup.basicHeadFillOpacity*255;
                 % setup head position visualization
                 distGain    = 1.5;
-                eyeClr      = [255 255 255];
+                eyeClr      = obj.settings.setup.basicEyeColor;
                 eyeSzFac    = .25;
                 eyeMarginFac= .25;
             end
@@ -1228,7 +1246,7 @@ classdef SMITE < handle
                     obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
                     if ~isempty(headPos)
                         obj.drawCircle(wpnt,headClr,headPos,headSz,5,headFillClr);
-                        if obj.settings.setup.simpleShowEyes
+                        if obj.settings.setup.basicShowEyes
                             % left eye
                             pos = headPos; pos(1) = pos(1)-eyeMargin;
                             if pTrackingStatus.leftEye.validity
@@ -2141,15 +2159,16 @@ classdef SMITE < handle
                     Screen('TextSize',  wpnt, obj.settings.text.size);
                     Screen('TextStyle', wpnt, obj.settings.text.style);
                     % draw text with validation accuracy info
+                    valTxtClr = reshape(dec2hex(obj.settings.setup.valAccuracyTextColor(1:3),2).',1,[]);
                     if qIsLeft
-                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
+                        valText = sprintf('<color=%s><font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°',valTxtClr,cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
                     elseif qIsRight
-                        valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+                        valText = sprintf('<color=%s><font=Consolas><size=20>accuracy   X       Y\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',valTxtClr,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
                     elseif qIsBinoc
                         if qAveragedEyes
-                            valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n<color=ff0000>Average<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
+                            valText = sprintf('<color=%s><font=Consolas><size=20>accuracy   X       Y\n<color=ff0000>Average<color>: %2.2f°  %2.2f°',valTxtClr,cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY);
                         else
-                            valText = sprintf('<font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
+                            valText = sprintf('<color=%s><font=Consolas><size=20>accuracy   X       Y\n   <color=ff0000>Left<color>: %2.2f°  %2.2f°\n  <color=00ff00>Right<color>: %2.2f°  %2.2f°',valTxtClr,cal{selection}.validateAccuracy.deviationLX,cal{selection}.validateAccuracy.deviationLY,cal{selection}.validateAccuracy.deviationRX,cal{selection}.validateAccuracy.deviationRY);
                         end
                     end
                     if obj.usingFTGLTextRenderer

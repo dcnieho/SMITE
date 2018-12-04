@@ -53,6 +53,13 @@ Supported options (depending on eye tracker model):
 | settings.setup.REDInclAngle    | for REDs in standalone mode |
 | settings.start.removeTempDataFile | when calling `iV_Start`, iView always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup |
 | settings.setup.startScreen     | 0: skip head positioning, go straight to calibration; 1: start with simple head positioning interface; 2: start with advanced head positioning interface |
+| settings.setup.basicRefColor   |  basic head position visualization: color of reference circle
+| settings.setup.basicHeadEdgeColor | basic head position visualization: color of egde of disk representing head
+| settings.setup.basicHeadFillColor | basic head position visualization: color of fill of disk representing head
+| settings.setup.basicHeadFillOpacity | basic head position visualization: opacity of disk representing head
+| settings.setup.basicShowEyes | basic head position visualization: show eyes?
+| settings.setup.basicEyeColor | basic head position visualization: color of eyes in head
+| settings.setup.valAccuracyTextColor | color of text displaying accuracy number on validation feedback screen
 | settings.cal.autoPace          | 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted |
 | settings.cal.bgColor           | RGB (0-255) background color for setup/calibration |
 | settings.cal.fixBackSize       | size (pixels) of large circle in fixation cross |
@@ -66,3 +73,5 @@ Supported options (depending on eye tracker model):
 | settings.text.vSpacing         | vertical space between lines. 1 is normal |
 | settings.text.size             | text size (pt) |
 | settings.string.simplePositionInstruction  | text shown on simple head positioning interface |
+| settings.logFileName           | filename where SMI log is stored |
+| settings.debugMode             | only for SMITE developer use |
