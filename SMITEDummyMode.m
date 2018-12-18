@@ -9,7 +9,6 @@
 
 classdef SMITEDummyMode < SMITE
     properties
-        isRecording = false;
         isBuffering = false;
     end
     
