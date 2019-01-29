@@ -367,8 +367,6 @@ classdef SMITE < handle
             % previously
             obj.iView.resetCalibrationPoints();
             
-            % TODO: HiSpeed only: set calibration/validation points
-            
             % get where the calibration points are
             pCalibrationPoint = SMIStructEnum.CalibrationPoint;
             out.calibrationPoints = struct('X',zeros(1,obj.settings.cal.nPoint),'Y',zeros(1,obj.settings.cal.nPoint));
@@ -376,6 +374,42 @@ classdef SMITE < handle
                 obj.iView.getCalibrationPoint(p, pCalibrationPoint);
                 out.calibrationPoints.X(p) = pCalibrationPoint.positionX;
                 out.calibrationPoints.Y(p) = pCalibrationPoint.positionY;
+            end
+            
+            % if requested by user, place the calibration points elsewhere
+            if ~isempty(obj.settings.cal.rangeX) || ~isempty(obj.settings.cal.rangeY)
+                if isempty(obj.settings.cal.rangeX)
+                    obj.settings.cal.rangeX = obj.scrInfo.resolution(1);
+                end
+                if isempty(obj.settings.cal.rangeY)
+                    obj.settings.cal.rangeY = obj.scrInfo.resolution(2);
+                end
+                % check we do not end up off screen
+                if obj.settings.cal.offsetX<0 || obj.settings.cal.offsetX+obj.settings.cal.rangeX > obj.scrInfo.resolution(1)
+                    warning('SMITE: setup in settings.cal.rangeX and settings.cal.offsetX creates a calibration area that is partially offscreen')
+                end
+                if obj.settings.cal.offsetY<0 || obj.settings.cal.offsetY+obj.settings.cal.rangeY > obj.scrInfo.resolution(2)
+                    warning('SMITE: setup in settings.cal.rangeY and settings.cal.offsetY creates a calibration area that is partially offscreen')
+                end
+                
+                % normalize calibration points, so we can scale and move
+                % them
+                pointsX = out.calibrationPoints.X./obj.scrInfo.resolution(1);
+                pointsY = out.calibrationPoints.Y./obj.scrInfo.resolution(2);
+                
+                % now rescale and offset
+                pointsX = round(pointsX.*obj.settings.cal.rangeX + obj.settings.cal.offsetX);
+                pointsY = round(pointsY.*obj.settings.cal.rangeY + obj.settings.cal.offsetY);
+                
+                % apply
+                for p=1:obj.settings.cal.nPoint
+                    ret = obj.iView.changeCalibrationPoint(p, pointsX(p) , pointsY(p));
+                    obj.processError(ret,sprintf('SMITE: Error setting calibration point %d to (%d,%d)',p, pointsX(p) , pointsY(p)));
+                end
+                
+                % store to output
+                out.calibrationPoints.X = pointsX;
+                out.calibrationPoints.Y = pointsY;
             end
             
             %%% 2: enter the screens, from setup to validation results
@@ -934,6 +968,10 @@ classdef SMITE < handle
             settings.cal.fixBackColor           = 0;
             settings.cal.fixFrontColor          = 255;
             settings.cal.drawFunction           = [];
+            settings.cal.rangeX                 = [];                       % horizontal extent of calibration area, defaults to whole screen (when empty)
+            settings.cal.rangeY                 = [];                       % vertical extent of calibration area, defaults to whole screen (when empty)
+            settings.cal.offsetX                = 0;                        % location of left of calibration area in pixels, defaults to edge of screen (0)
+            settings.cal.offsetY                = 0;                        % location of top of calibration area in pixels, defaults to edge of screen (0)
             settings.logFileName                = 'iView_log.txt';
             settings.text.font                  = 'Consolas';
             settings.text.style                 = 0;                        % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
@@ -986,6 +1024,10 @@ classdef SMITE < handle
                 'cal','fixBackColor'
                 'cal','fixFrontColor'
                 'cal','drawFunction'
+                'cal','rangeX'
+                'cal','rangeY'
+                'cal','offsetX'
+                'cal','offsetY'
                 'text','font'
                 'text','size'
                 'text','style'

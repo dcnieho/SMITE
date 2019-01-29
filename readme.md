@@ -106,6 +106,10 @@ Which of the below options are available depends on the eye tracker model. The `
 | settings.cal.fixBackColor      | color (RGB, 0-255) of large circle in fixation cross |
 | settings.cal.fixFrontColor     | color (RGB, 0-255) of large circle in fixation cross |
 | settings.cal.drawFunction      | function to be called to draw calibration screen. See the `AnimatedCalibrationDisplay` class packaged with SMITE for an example |
+| settings.cal.rangeX            | horizontal extent of calibration area, defaults to whole screen |
+| settings.cal.rangeY            | vertical extent of calibration area, defaults to whole screen |
+| settings.cal.offsetX           | location of left of calibration area in pixels, defaults to edge of screen |
+| settings.cal.offsetY           | location of top of calibration area in pixels, defaults to edge of screen |
 | settings.text.font             | font name for text in interface, e.g. `'Consolas'` |
 | settings.text.style            | style for text in interface. The following can ORed together: 0=normal, 1=bold, 2=italic, 4=underline, 8=outline, 32=condense, 64=extend |
 | settings.text.wrapAt           | long texts in interface will be wrapped at this many characters |
