@@ -313,7 +313,7 @@ classdef SMITE < handle
             obj.isInitialized = true;
         end
         
-        function out = calibrate(obj,wpnt,qClearBuffer)
+        function out = calibrate(obj,wpnt,qClearIDFfileBuffer)
             % this function does all setup, draws the interface, etc
             % this and the functions called by this function are the only
             % part of this toolbox that depend on PsychToolbox
@@ -322,7 +322,7 @@ classdef SMITE < handle
             % that when recalibrating, e.g. in the middle of the trial, or at
             % second attempt
             if nargin<2
-                qClearBuffer = false;
+                qClearIDFfileBuffer = false;
             end
             
             %%% 1: set up calibration
@@ -414,12 +414,12 @@ classdef SMITE < handle
                 
                 %%% 2b: calibrate and validate
                 if ~qGoToValidationViewer
-                    [out.attempt{kCal}.calStatus,temp] = obj.DoCalAndVal(wpnt,qClearBuffer,kCal);
+                    [out.attempt{kCal}.calStatus,temp] = obj.DoCalAndVal(wpnt,qClearIDFfileBuffer,kCal);
                     warning('off','catstruct:DuplicatesFound')  % field already exists but is empty, will be overwritten with the output from the function here
                     out.attempt{kCal} = catstruct(out.attempt{kCal},temp);
                     % qClearbuffer should now become false even if it was true,
                     % as buffer has been cleared in calibration lines above
-                    qClearBuffer = false;
+                    qClearIDFfileBuffer = false;
                     % check returned action state
                     switch out.attempt{kCal}.calStatus
                         case 1
@@ -507,15 +507,15 @@ classdef SMITE < handle
             end
         end
         
-        function startRecording(obj,qClearFileBuffer)
+        function startRecording(obj,qClearIDFfileBuffer)
             % by default do not clear recording buffer. For SMI, by the time
             % user calls startRecording, we already have data recorded during
             % calibration and validation in the buffer
-            if nargin<2 || isempty(qClearFileBuffer)
-                qClearFileBuffer = false;
+            if nargin<2 || isempty(qClearIDFfileBuffer)
+                qClearIDFfileBuffer = false;
             end
             obj.iView.stopRecording();      % make sure we're not already recording when we startRecording(), or we get an error. Ignore error return code here
-            if qClearFileBuffer
+            if qClearIDFfileBuffer
                 obj.iView.clearRecordingBuffer();
             end
             ret = obj.iView.startRecording();
@@ -1797,7 +1797,7 @@ classdef SMITE < handle
             end
         end
         
-        function [status,out] = DoCalAndVal(obj,wpnt,qClearBuffer,kCal)
+        function [status,out] = DoCalAndVal(obj,wpnt,qClearIDFfileBuffer,kCal)
             % make sure calibration settings are correct (they may have
             % been changed below before a previous validation)
             Screen('FillRect', wpnt, obj.settings.cal.bgColor); % NB: this sets the background color, because fullscreen fillrect sets new clear color in PTB
@@ -1815,7 +1815,7 @@ classdef SMITE < handle
             obj.processError(ret,'SMITE: Error setting up calibration');
             
             % calibrate
-            obj.startRecording(qClearBuffer);
+            obj.startRecording(qClearIDFfileBuffer);
             % enter calibration mode
             obj.sendMessage(sprintf('CALIBRATION START %d',kCal));
             obj.iView.calibrate();
