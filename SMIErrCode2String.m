@@ -1,5 +1,10 @@
-function err = SMIErrCode2String(code)
+% Part of the SMITE toolbox (https://github.com/dcnieho/SMITE), but can be
+% used independently. When using this file, please cite the following
+% paper:
+% Niehorster, D.C., & Nyström, M., (submitted). SMITE: A toolbox for
+% creating Psychtoolbox and Psychopy experiments with SMI eye trackers.
 
+function err = SMIErrCode2String(code)
 errMap = {
 'RET_SUCCESS',1
 'RET_NO_VALID_DATA',2

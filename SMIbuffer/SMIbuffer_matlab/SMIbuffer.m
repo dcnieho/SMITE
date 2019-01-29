@@ -2,6 +2,12 @@
 % NB: there should only be one instance of this class at a time. Creating a
 % new instance when one already exists simple resets the first, at no
 % benefit
+%
+% Part of the SMITE toolbox (https://github.com/dcnieho/SMITE), but can be
+% used independently. When using this file, please cite the following
+% paper:
+% Niehorster, D.C., & Nyström, M., (submitted). SMITE: A toolbox for
+% creating Psychtoolbox and Psychopy experiments with SMI eye trackers.
 
 classdef SMIbuffer < handle
     properties (Access = private, Hidden = true)

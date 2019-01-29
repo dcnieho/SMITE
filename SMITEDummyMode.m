@@ -3,9 +3,8 @@
 %
 % SMITE can be found at https://github.com/dcnieho/SMITE. When using SMITE,
 % please cite the following paper:
-% Niehorster, D.C., & Nyström, M., (submitted). SMITE: The definitive
-% toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
-% trackers.
+% Niehorster, D.C., & Nyström, M., (submitted). SMITE: A toolbox for
+% creating Psychtoolbox and Psychopy experiments with SMI eye trackers.
 
 classdef SMITEDummyMode < SMITE
     properties
