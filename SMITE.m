@@ -579,6 +579,7 @@ classdef SMITE < handle
                 % need to pass them on here when not recording. On some
                 % systems (e.g. RED250mobile) sending messages when not
                 % recording is an error, so this check is important
+                warning('SMITE::sendMessage: you attempted to send a message to file while not in recording mode. This will not work: your message would either silently be dropped or cause an error depending on the eye tracker model')
                 return;
             end
             ret = calllib('iViewXAPI','iV_SendImageMessage',str);
