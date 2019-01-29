@@ -38,7 +38,7 @@ The below method can be called on a SMITE instance or on the SMITE class directl
 
 |Call|inputs|outputs|description|
 | --- | --- | --- | --- |
-|`getDefaults`|<ol><li>`tracker`: one of the supported eye tracker model names</li></ol>|<ol><li>`settings`: struct with all supported settings for a specific model of eyeTracker</li></ol>|Gets all supported settings with defaulted values for the indicated eyeTracker, can be modified and used for constructing an instance of SMITE. See the supported options section below.|
+|`getDefaults`|<ol><li>`tracker`: one of the supported eye tracker model names</li></ol>|<ol><li>`settings`: struct with all supported settings for a specific model of eyeTracker</li></ol>|Gets all supported settings with defaulted values for the indicated eyeTracker, can be modified and used for constructing an instance of SMITE. See the [supported options](#supported-options) section below.|
 
 #### Construction
 An instance of SMITE is constructed by calling `SMITE()` with either the name of a specific supported eye tracker model (in which case default settings for this model will be used) or with a settings struct retrieved from `SMITE.getDefaults()`, possibly with changed settings (passing the settings struct unchanged is equivalent to using the eye tracker model name as input argument).
@@ -48,31 +48,30 @@ The following method calls are available on a SMITE instance
 
 |Call|inputs|outputs|description|
 | --- | --- | --- | --- |
-|`getOptions()`|||Get active settings, returns only those that can be changed in the current state (which is a subset of all settings once `init()` has been called)|
-|`setOptions()`|||Change active settings|
-|`init()`|| |Connects to the SMI eye tracker and initializes it according to the requested settings|
-|`isConnected()`|| |Reports status of the connection to the eye tracker|
-|`calibrate()`|| |Starts participant setup and calibration|
-|`startRecording()`|| |Starts recording eye-movement data to idf file|
-|`startBuffer()`|| |Starts recording data into buffer for online use|
-|`sendMessage()`|| |Inserts message into idf file|
-|`getLatestSample()`|| |Returns most recent data sample|
-|`consumeBufferData()`|| |Returns data in the online buffer and clears it|
-|`peekBufferData()`|| |Returns data in the online buffer without clearing it|
-|`stopBuffer()`|| |Stop recording data into buffer|
-|`stopRecording()`|| |Stop recording data into idf file|
-|`saveData()`|| |Saves idf file to specified location|
-|`deInit()`|| |Closes connection to the eye tracker and cleans up|
-|`setBegazeTrialImage()`|| |Put specially prepared message in idf file to notify BeGaze what stimulus image/video belongs to a trial|
-|`setBegazeKeyPress()`|| |Put specially prepared message in idf file that shows up as keypress in BeGaze|
-|`setBegazeMouseClick()`|| |Put specially prepared message in idf file that shows up as mouse click in BeGaze|
-|`startEyeImageRecording()`|| |Starts recording eye images to file|
-|`stopEyeImageRecording()`|| |Stop recording eye images to file|
-|`setDummyMode()`|| |Enable dummy mode, which allows running the program without an eye tracker connected|
-
+|`getOptions()`||<ol><li>`settings`: struct with current settings</li></ol>|Get active settings, returns only those that can be changed in the current state (which is a subset of all settings once `init()` has been called)|
+|`setOptions()`|<ol><li>`settings`: struct with updated settings</li></ol>||Change active settings. First use `getOptions()` to get an up-to-date settings struct, then edit the wanted settings and use this function to set them|
+|`init()`|||Connect to the SMI eye tracker and initialize it according to the requested settings|
+|`isConnected()`||<ol><li>`status`: SMI status code (int). For their meaning, see the iView API documentation and the free function `SMIErrCode2String()` that is packaged with SMITE</li></ol>|Report status of the connection to the eye tracker|
+|`calibrate()`|<ol><li>`wpnt`: window pointer to PsychToolbox screen where the calibration stimulus should be shown. See `PsychImaging('OpenWindow')` or `Screen('OpenWindow')`</li><li>`doClearIDFfileBuffer`: optional. Boolean indicating whether the IDF file buffer should be cleared before calibration starts or not. This clears all already recorded data from the idf file, so set to `true` with caution</li></ol>|<ol><li>`calibrationAttempt`: struct containing information about the calibration/validation run</li></ol>|Do participant setup and calibration|
+|`startRecording()`|<ol><li>`doClearIDFfileBuffer`: optional. Boolean indicating whether the IDF file buffer should be cleared before calibration starts or not. This clears all already recorded data from the idf file, so set to `true` with caution</li></ol>||Start recording eye-movement data to idf file|
+|`startBuffer()`|<ol><li>`initialBufferSize`: optional. Initial size in number of samples of recording buffer. Will grow until memory limits are hit</li></ol>||Start recording eye-movement data into buffer for online use|
+|`sendMessage()`|<ol><li>`message`: Message to be written into idf file</li></ol>||Insert message into idf file|
+|`getLatestSample()`|||Get most recent data sample|
+|`consumeBufferData()`|<ol><li>`firstN`: Number of samples to consume from the front of the buffer (oldest samples)</li></ol>|<ol><li>`samples`: struct array of samples, may be empty if no samples in the buffer</li></ol>|Get data from the online buffer. The returned samples are removed from the buffer|
+|`peekBufferData()`|<ol><li>`lastN`: Number of samples to copy from the end of the buffer (newest samples)</li></ol>|<ol><li>`samples`: struct array of samples, may be empty if no samples in the buffer</li></ol>|Get data from the online buffer. The returned samples remain in the buffer|
+|`stopBuffer()`|<ol><li>`doClearBuffer`: optional. Boolean indicating whether the online buffer should be cleared</li></ol>||Stop recording data into buffer|
+|`stopRecording()`|||Stop recording data into idf file|
+|`saveData()`|<ol><li>`filename`: filename (including path) where idf file will be stored</li><li>`user`: optional. Indentifier that gets placed in idf file header</li><li>`description`: optional. Description that gets placed in idf file header</li><li>`doAppendVersion`: optional. Boolean indicating whether version numbers (`_1`, `_2`, etc) will automatically get appended to the filename if the destination file already exists</li></ol>||Save idf file to specified location|
+|`deInit()`|<ol><li>`doQuit`: optional. Boolean indicating whether the iView eye tracker server should be shut down</li></ol>||Close connection to the eye tracker and clean up|
+|`setBegazeTrialImage()`|<ol><li>`filename`: filename of stimulus that is shown on this trial. Must have one of the following extentions: `.png`, `.jpg`, `.jpeg`, `.bmp`, or `.avi`</li></ol>||Put specially prepared message in idf file to notify BeGaze what stimulus image/video belongs to a trial|
+|`setBegazeKeyPress()`|<ol><li>`string`: string that will show up on BeGaze's event timeline. Can be name of a key, but also other arbitrary string</li></ol>||Put specially prepared message in idf file that shows up as keypress in BeGaze|
+|`setBegazeMouseClick()`|<ol><li>`which`: string indicating which mouse button, `left` or `right`</li><li>`x`: horizontal pixel coordinate of mouse click</li><li>`y`: vertical coordinate of mouse click</li></ol>||Put specially prepared message in idf file that shows up as mouse click in BeGaze|
+|`startEyeImageRecording()`|<ol><li>`filename`: filename where recorded eye images will be saved</li><li>`format`: format to store eye images in, must be one of: `jpg`, `bmp`, `xvid`, `huffyuv`, `alpary`, `xmp4`</li><li>`duration`: optional. If provided, runs eye image recording for this many seconds</li></ol>||Start recording eye images to file. Not supported on `RED250mobile`, `REDn Scientific`, and `REDn Professional`|
+|`stopEyeImageRecording()`|||Stop recording eye images to file|
+|`setDummyMode()`||<ol><li>`instance`: `SMITEDummyMode` instance</li></ol>|Enable dummy mode, which allows running the program without an eye tracker connected|
 
 ### Supported options
-Which of the below options are available depends on the eye tracker model. The `getDefaults` and `getOptions` method calls return the appropriate set of options for the indicated eye tracker.
+Which of the below options are available depends on the eye tracker model. The `getDefaults()` and `getOptions()` method calls return the appropriate set of options for the indicated eye tracker.
 
 | Option name | Explanation |
 | --- | --- |
@@ -106,7 +105,7 @@ Which of the below options are available depends on the eye tracker model. The `
 | settings.cal.fixFrontSize      | size (pixels) of small circle in fixation cross |
 | settings.cal.fixBackColor      | color (RGB, 0-255) of large circle in fixation cross |
 | settings.cal.fixFrontColor     | color (RGB, 0-255) of large circle in fixation cross |
-| settings.cal.drawFunction      | function to be called to draw calibration screen. See `AnimatedCalibrationDisplay` for an example |
+| settings.cal.drawFunction      | function to be called to draw calibration screen. See the `AnimatedCalibrationDisplay` class packaged with SMITE for an example |
 | settings.text.font             | font name for text in interface, e.g. `'Consolas'` |
 | settings.text.style            | style for text in interface. The following can ORed together: 0=normal, 1=bold, 2=italic, 4=underline, 8=outline, 32=condense, 64=extend |
 | settings.text.wrapAt           | long texts in interface will be wrapped at this many characters |
