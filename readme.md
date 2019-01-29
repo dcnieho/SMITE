@@ -1,10 +1,10 @@
-﻿SMITE is a toolbox for using eye trackers from SMI GmbH with Matlab,
-specifically offering integration with PsychToolbox. A python version
+SMITE is a toolbox for using eye trackers from SMI GmbH with MATLAB,
+specifically offering integration with [PsychToolbox](http://psychtoolbox.org/). A Python version
 that integrates with PsychoPy is also available from
 www.github.com/marcus-nystrom/SMITE
 
 Cite as:
-Niehorster, D.C., & Nyström, M., (in prep). SMITE: The definitive
+Niehorster, D.C., & Nyström, M., (in revision). SMITE: A
 toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
 trackers.
 
@@ -25,14 +25,54 @@ Tested on MATLAB R2015b & R2018a. Octave is currently not supported.
 ## Usage
 As demonstrated in the demo scripts, the toolbox is configured through
 the following interface:
-1. retrieve (default) settings for eye tracker of interest: `settings =
-SMITE.getDefaults('trackerName');` Supported tracker Names are `HiSpeed`,
+1. Retrieve (default) settings for eye tracker of interest: `settings =
+SMITE.getDefaults('trackerName');` Supported tracker model names are `HiSpeed`,
 `RED`, `RED-m`, `RED250mobile`, `REDn Scientific`, and `REDn
 Professional`.
-2. edit settings if wanted (see below)
-3. initialize SMITE using this settings struct: `EThndl = SMITE(settings);`
+2. Change settings from their defaults if wanted (see [supported options](#supported-options) section below)
+3. Create a SMITE instance using this settings struct: `EThndl = SMITE(settings);`
 
-Supported options (depending on eye tracker model):
+### API
+#### Static methods
+The below method can be called on a SMITE instance or on the SMITE class directly.
+
+|Call|inputs|outputs|description|
+| --- | --- | --- | --- |
+|`getDefaults`|<ol><li>`tracker`: one of the supported eye tracker model names</li></ol>|<ol><li>`settings`: struct with all supported settings for a specific model of eyeTracker</li></ol>|Gets all supported settings with defaulted values for the indicated eyeTracker, can be modified and used for constructing an instance of SMITE. See the supported options section below.|
+
+#### Construction
+An instance of SMITE is constructed by calling `SMITE()` with either the name of a specific supported eye tracker model (in which case default settings for this model will be used) or with a settings struct retrieved from `SMITE.getDefaults()`, possibly with changed settings (passing the settings struct unchanged is equivalent to using the eye tracker model name as input argument).
+
+#### Methods
+The following method calls are available on a SMITE instance
+
+|Call|inputs|outputs|description|
+| --- | --- | --- | --- |
+|`getOptions()`|||Get active settings, returns only those that can be changed in the current state (which is a subset of all settings once `init()` has been called)|
+|`setOptions()`|||Change active settings|
+|`init()`|| |Connects to the SMI eye tracker and initializes it according to the requested settings|
+|`isConnected()`|| |Reports status of the connection to the eye tracker|
+|`calibrate()`|| |Starts participant setup and calibration|
+|`startRecording()`|| |Starts recording eye-movement data to idf file|
+|`startBuffer()`|| |Starts recording data into buffer for online use|
+|`sendMessage()`|| |Inserts message into idf file|
+|`getLatestSample()`|| |Returns most recent data sample|
+|`consumeBufferData()`|| |Returns data in the online buffer and clears it|
+|`peekBufferData()`|| |Returns data in the online buffer without clearing it|
+|`stopBuffer()`|| |Stop recording data into buffer|
+|`stopRecording()`|| |Stop recording data into idf file|
+|`saveData()`|| |Saves idf file to specified location|
+|`deInit()`|| |Closes connection to the eye tracker and cleans up|
+|`setBegazeTrialImage()`|| |Put specially prepared message in idf file to notify BeGaze what stimulus image/video belongs to a trial|
+|`setBegazeKeyPress()`|| |Put specially prepared message in idf file that shows up as keypress in BeGaze|
+|`setBegazeMouseClick()`|| |Put specially prepared message in idf file that shows up as mouse click in BeGaze|
+|`startEyeImageRecording()`|| |Starts recording eye images to file|
+|`stopEyeImageRecording()`|| |Stop recording eye images to file|
+|`setDummyMode()`|| |Enable dummy mode, which allows running the program without an eye tracker connected|
+
+
+### Supported options
+Which of the below options are available depends on the eye tracker model. The `getDefaults` and `getOptions` method calls return the appropriate set of options for the indicated eye tracker.
 
 | Option name | Explanation |
 | --- | --- |
@@ -41,7 +81,7 @@ Supported options (depending on eye tracker model):
 | settings.freq                  | sampling frequency |
 | settings.cal.nPoint            | number of calibration points |
 | settings.doAverageEyes         | average the gaze position of the two eyes? |
-| settings.setup.viewingDist     | for all remotes: desider view distance indicated during setup |
+| settings.setup.viewingDist     | for all remotes: set reference view distance used during setup |
 | settings.setup.geomMode        | for REDs, monitorIntegrated or standalone |
 | settings.setup.monitorSize     | inch, for REDs in monitorIntegrated mode |
 | settings.setup.geomProfile     | `'profileName'`, for REDs in standalone mode, and for RED-m, RED250mobile and REDn |
