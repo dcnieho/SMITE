@@ -13,15 +13,26 @@ bgclr       = 255/2;
 fixClr      = 0;
 fixTime     = .5;
 imageTime   = 2;
+scr         = max(Screen('Screens'));
 
 addpath(genpath(fullfile(cd,'..')));
 
 try
     % get setup struct, edit to change settings
-    settings = SMITE.getDefaults('RED');
-    settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
+    settings = SMITE.getDefaults('RED-m');
+    %settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
     settings.doAverageEyes  = false;
     settings.cal.bgColor    = bgclr;
+    if 0
+        % calibrate only lower-right quadrant of screen. Not that position
+        % of validation points cannot be set, and these will thus cover the
+        % whole screen and show bad accuracy outside the calibrated area
+        scrSz = Screen('Rect',scr);
+        settings.cal.rangeX     = scrSz(3)/2;
+        settings.cal.rangeY     = scrSz(4)/2;
+        settings.cal.offsetX    = scrSz(3)/2;
+        settings.cal.offsetY    = scrSz(4)/2;
+    end
     % custom calibration drawer
     calViz = AnimatedCalibrationDisplay();
     settings.cal.drawFunction = @calViz.doDraw;
@@ -45,7 +56,6 @@ try
         Screen('Preference', 'Verbosity', 2);
     end
     Screen('Preference', 'SyncTestSettings', 0.002);    % the systems are a little noisy, give the test a little more leeway
-    scr = max(Screen('Screens'));
     [wpnt,winRect] = PsychImaging('OpenWindow', scr, bgclr);
     hz=Screen('NominalFrameRate', wpnt);
     Priority(1);
