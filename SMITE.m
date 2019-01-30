@@ -384,22 +384,24 @@ classdef SMITE < handle
                 if isempty(obj.settings.cal.rangeY)
                     obj.settings.cal.rangeY = obj.scrInfo.resolution(2);
                 end
-                % check we do not end up off screen
-                if obj.settings.cal.offsetX<0 || obj.settings.cal.offsetX+obj.settings.cal.rangeX > obj.scrInfo.resolution(1)
-                    warning('SMITE: setup in settings.cal.rangeX and settings.cal.offsetX creates a calibration area that is partially offscreen')
-                end
-                if obj.settings.cal.offsetY<0 || obj.settings.cal.offsetY+obj.settings.cal.rangeY > obj.scrInfo.resolution(2)
-                    warning('SMITE: setup in settings.cal.rangeY and settings.cal.offsetY creates a calibration area that is partially offscreen')
-                end
                 
-                % normalize calibration points, so we can scale and move
-                % them
-                pointsX = out.calibrationPoints.X./obj.scrInfo.resolution(1);
-                pointsY = out.calibrationPoints.Y./obj.scrInfo.resolution(2);
+                % center and normalize calibration points, so we can scale
+                % and move them
+                scrMid  = obj.scrInfo.resolution/2;
+                pointsX = (out.calibrationPoints.X-scrMid(1))./obj.scrInfo.resolution(1);
+                pointsY = (out.calibrationPoints.Y-scrMid(2))./obj.scrInfo.resolution(2);
                 
                 % now rescale and offset
-                pointsX = round(pointsX.*obj.settings.cal.rangeX + obj.settings.cal.offsetX);
-                pointsY = round(pointsY.*obj.settings.cal.rangeY + obj.settings.cal.offsetY);
+                pointsX = round(pointsX.*obj.settings.cal.rangeX + scrMid(1) + obj.settings.cal.offsetX);
+                pointsY = round(pointsY.*obj.settings.cal.rangeY + scrMid(2) + obj.settings.cal.offsetY);
+                
+                % check we do not end up off screen
+                if any(pointsX<0 | pointsX>obj.scrInfo.resolution(1))
+                    warning('SMITE: setup in settings.cal.rangeX and settings.cal.offsetX leads to some of teh calibration points being placed offscreen')
+                end
+                if any(pointsY<0 | pointsY>obj.scrInfo.resolution(2))
+                    warning('SMITE: setup in settings.cal.rangeY and settings.cal.offsetY leads to some of teh calibration points being placed offscreen')
+                end
                 
                 % apply
                 for p=1:obj.settings.cal.nPoint
@@ -970,8 +972,8 @@ classdef SMITE < handle
             settings.cal.drawFunction           = [];
             settings.cal.rangeX                 = [];                       % horizontal extent of calibration area, defaults to whole screen (when empty)
             settings.cal.rangeY                 = [];                       % vertical extent of calibration area, defaults to whole screen (when empty)
-            settings.cal.offsetX                = 0;                        % location of left of calibration area in pixels, defaults to edge of screen (0)
-            settings.cal.offsetY                = 0;                        % location of top of calibration area in pixels, defaults to edge of screen (0)
+            settings.cal.offsetX                = 0;                        % location of left of calibration area in pixels, defaults to calibration area that is centered on the screen (0). negative is leftward, positive rightward offset
+            settings.cal.offsetY                = 0;                        % location of top of calibration area in pixels, defaults to calibration area that is centered on the screen (0). negative is upward, positive downward offset
             settings.logFileName                = 'iView_log.txt';
             settings.text.font                  = 'Consolas';
             settings.text.style                 = 0;                        % can OR together, 0=normal,1=bold,2=italic,4=underline,8=outline,32=condense,64=extend.
