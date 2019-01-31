@@ -24,14 +24,16 @@ try
     settings.doAverageEyes  = false;
     settings.cal.bgColor    = bgclr;
     if 0
-        % calibrate only lower-right quadrant of screen. Not that position
+        % calibrate only lower-right quadrant of screen. Achieved by scale
+        % to half of screen size, and then offsetting from centered on
+        % screen to fitting in lower-right corner. Note that the position
         % of validation points cannot be set, and these will thus cover the
         % whole screen and show bad accuracy outside the calibrated area
         scrSz = Screen('Rect',scr);
         settings.cal.rangeX     = scrSz(3)/2;
         settings.cal.rangeY     = scrSz(4)/2;
-        settings.cal.offsetX    = scrSz(3)/2;
-        settings.cal.offsetY    = scrSz(4)/2;
+        settings.cal.offsetX    = scrSz(3)/4;
+        settings.cal.offsetY    = scrSz(4)/4;
     end
     % custom calibration drawer
     calViz = AnimatedCalibrationDisplay();
