@@ -6,8 +6,9 @@ function [fcns,structs,enuminfo,ThunkLibName]=iViewXAPIHeader
 % used independently. When using this fixed interface (see below for a list
 % of fixes compared to the code released by SMI), please cite the following
 % paper:
-% Niehorster, D.C., & Nyström, M., (submitted). SMITE: A toolbox for
-% creating Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% Niehorster, D.C., & Nyström, M., (2019). SMITE: A toolbox for creating
+% Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% doi: 10.3758/s13428-019-01226-0.
 %
 % The following fixes have been implemented in this function:
 % 1. image struct needs data member declared as uint8, not char

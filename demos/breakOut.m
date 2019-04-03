@@ -3,9 +3,9 @@
 %
 % SMITE can be found at https://github.com/dcnieho/SMITE. When using SMITE,
 % please cite the following paper:
-% Niehorster, D.C., & Nyström, M., (submitted). SMITE: The definitive
-% toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
-% trackers.
+% Niehorster, D.C., & Nyström, M., (2019). SMITE: A toolbox for creating
+% Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% doi: 10.3758/s13428-019-01226-0.
 
 sca
 clear variables

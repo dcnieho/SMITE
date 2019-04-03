@@ -5,8 +5,9 @@
 % used independently. When using this convenience interface (which is
 % recommended because of several fixes that have been made compared to the
 % code released by SMI), please cite the following paper:
-% Niehorster, D.C., & Nyström, M., (submitted). SMITE: A toolbox for
-% creating Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% Niehorster, D.C., & Nyström, M., (2019). SMITE: A toolbox for creating
+% Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% doi: 10.3758/s13428-019-01226-0.
 
 classdef iViewXAPI < handle
     methods

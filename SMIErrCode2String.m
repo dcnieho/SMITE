@@ -1,8 +1,9 @@
 % Part of the SMITE toolbox (https://github.com/dcnieho/SMITE), but can be
 % used independently. When using this file, please cite the following
 % paper:
-% Niehorster, D.C., & Nyström, M., (submitted). SMITE: A toolbox for
-% creating Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% Niehorster, D.C., & Nyström, M., (2019). SMITE: A toolbox for creating
+% Psychtoolbox and Psychopy experiments with SMI eye trackers.
+% doi: 10.3758/s13428-019-01226-0.
 
 function err = SMIErrCode2String(code)
 errMap = {

@@ -4,9 +4,9 @@ that integrates with PsychoPy is also available from
 www.github.com/marcus-nystrom/SMITE
 
 Cite as:
-Niehorster, D.C., & NystrÃ¶m, M., (in revision). SMITE: A
+[Niehorster, D.C., & Nyström, M., (2019). SMITE: A
 toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
-trackers.
+trackers. doi: 10.3758/s13428-019-01226-0.](https://doi.org/10.3758/s13428-019-01226-0)
 
 For questions, bug reports or to check for updates, please visit
 www.github.com/dcnieho/SMITE. 
