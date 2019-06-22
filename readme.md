@@ -1,10 +1,10 @@
 SMITE is a toolbox for using eye trackers from SMI GmbH with MATLAB,
 specifically offering integration with [PsychToolbox](http://psychtoolbox.org/). A Python version
 that integrates with PsychoPy is also available from
-www.github.com/marcus-nystrom/SMITE
+www.github.com/marcus-nystrom/SMITE. For a similar toolbox for Tobii eye trackers, please see www.github.com/dcnieho/Titta.
 
 Cite as:
-[Niehorster, D.C., & Nyström, M., (2019). SMITE: A
+[Niehorster, D.C., & NystrÃ¶m, M., (2019). SMITE: A
 toolbox for creating Psychtoolbox and Psychopy experiments with SMI eye
 trackers. doi: 10.3758/s13428-019-01226-0.](https://doi.org/10.3758/s13428-019-01226-0)
 
