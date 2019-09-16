@@ -963,11 +963,12 @@ classdef SMITE < handle
             settings.setup.basicHeadEdgeColor   = [255 255 0];              % basic head position visualization: color of egde of disk representing head
             settings.setup.basicHeadFillColor   = [255 255 0];              % basic head position visualization: color of fill of disk representing head
             settings.setup.basicHeadFillOpacity = .3;                       % basic head position visualization: opacity of disk representing head
+            settings.setup.basicShowYaw         = true;                     % basic head position visualization: show yaw of head?
             settings.setup.basicShowEyes        = true;                     % basic head position visualization: show eyes?
             settings.setup.basicEyeColor        = [255 255 255];            % basic head position visualization: color of eyes in head
-            settings.setup.basicShowPupils      = true;
-            settings.setup.basicPupilColor      = [0 0 0];
-            settings.setup.basicCrossClr        = [255 0 0];
+            settings.setup.basicShowPupils      = true;                     % basic head position visualization: show pupils?
+            settings.setup.basicPupilColor      = [0 0 0];                  % basic head position visualization: color of pupils in eye
+            settings.setup.basicCrossClr        = [255 0 0];                % basic head position visualization: color of cross in head denoting untracked eye
             settings.setup.valAccuracyTextColor = [0 0 0];                  % color of text displaying accuracy number on validation feedback screen
             settings.cal.autoPace               = 1;                        % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
             settings.cal.bgColor                = 127;
@@ -1021,6 +1022,7 @@ classdef SMITE < handle
                 'setup','basicHeadEdgeColor'
                 'setup','basicHeadFillColor'
                 'setup','basicHeadFillOpacity'
+                'setup','basicShowYaw'
                 'setup','basicShowEyes'
                 'setup','basicEyeColor'
                 'setup','basicShowPupils'
@@ -1208,6 +1210,7 @@ classdef SMITE < handle
                 headFillClr(4)          = obj.settings.setup.basicHeadFillOpacity*255;
                 head.headCircleFillClr  = headFillClr;
                 head.headCircleEdgeClr  = obj.settings.setup.basicHeadEdgeColor;
+                head.showYaw            = obj.settings.setup.basicShowYaw;
                 head.showEyes           = obj.settings.setup.basicShowEyes;
                 head.showPupils         = obj.settings.setup.basicShowPupils;
                 head.eyeClr             = obj.settings.setup.basicEyeColor;
