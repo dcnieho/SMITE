@@ -21,8 +21,8 @@ blockEdgeClr        = [ 81 121 176];
 paddleFillClr       = [208   0   0];
 
 % setup eye tracker
-settings = SMITE.getDefaults('RED');
-settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
+settings = SMITE.getDefaults('RED-m');
+%settings.connectInfo    = {'192.168.0.1',4444,'192.168.0.2',5555};
 settings.doAverageEyes  = true;
 settings.cal.bgColor    = bgclr;
 % custom calibration drawer
