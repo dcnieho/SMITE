@@ -124,6 +124,8 @@ classdef SMITE < handle
             obj.settings.setup.basicHeadEdgeColor   = color2RGBA(obj.settings.setup.basicHeadEdgeColor);
             obj.settings.setup.basicHeadFillColor   = color2RGBA(obj.settings.setup.basicHeadFillColor);
             obj.settings.setup.basicEyeColor        = color2RGBA(obj.settings.setup.basicEyeColor);
+            obj.settings.setup.basicPupilColor      = color2RGBA(obj.settings.setup.basicPupilColor);
+            obj.settings.setup.basicCrossClr        = color2RGBA(obj.settings.setup.basicCrossClr);
             obj.settings.setup.valAccuracyTextColor = color2RGBA(obj.settings.setup.valAccuracyTextColor);
         end
         
@@ -963,6 +965,9 @@ classdef SMITE < handle
             settings.setup.basicHeadFillOpacity = .3;                       % basic head position visualization: opacity of disk representing head
             settings.setup.basicShowEyes        = true;                     % basic head position visualization: show eyes?
             settings.setup.basicEyeColor        = [255 255 255];            % basic head position visualization: color of eyes in head
+            settings.setup.basicShowPupils      = true;
+            settings.setup.basicPupilColor      = [0 0 0];
+            settings.setup.basicCrossClr        = [255 0 0];
             settings.setup.valAccuracyTextColor = [0 0 0];                  % color of text displaying accuracy number on validation feedback screen
             settings.cal.autoPace               = 1;                        % 0: manually confirm each calibration point. 1: only manually confirm the first point, the rest will be autoaccepted. 2: all calibration points will be auto-accepted
             settings.cal.bgColor                = 127;
@@ -1018,6 +1023,9 @@ classdef SMITE < handle
                 'setup','basicHeadFillOpacity'
                 'setup','basicShowEyes'
                 'setup','basicEyeColor'
+                'setup','basicShowPupils'
+                'setup','basicPupilColor'
+                'setup','basicCrossClr'
                 'setup','valAccuracyTextColor'
                 'cal','autoPace'
                 'cal','nPoint'
@@ -1192,14 +1200,32 @@ classdef SMITE < handle
                 ovalVSz     = .15;
                 refSz       = ovalVSz*obj.scrInfo.resolution(2);
                 refClr      = obj.settings.setup.basicRefColor;
-                headClr     = obj.settings.setup.basicHeadEdgeColor;
-                headFillClr = obj.settings.setup.basicHeadFillColor;
-                headFillClr(4) = obj.settings.setup.basicHeadFillOpacity*255;
                 % setup head position visualization
-                distGain    = 1.5;
-                eyeClr      = obj.settings.setup.basicEyeColor;
-                eyeSzFac    = .25;
-                eyeMarginFac= .25;
+                head                    = ETHead(wpnt,obj.settings.setup.headBox(1)/2,obj.settings.setup.headBox(2)/2);
+                head.refSz              = refSz;
+                head.rectWH             = obj.scrInfo.resolution;
+                headFillClr             = obj.settings.setup.basicHeadFillColor;
+                headFillClr(4)          = obj.settings.setup.basicHeadFillOpacity*255;
+                head.headCircleFillClr  = headFillClr;
+                head.headCircleEdgeClr  = obj.settings.setup.basicHeadEdgeColor;
+                head.showEyes           = obj.settings.setup.basicShowEyes;
+                head.showPupils         = obj.settings.setup.basicShowPupils;
+                head.eyeClr             = obj.settings.setup.basicEyeColor;
+                head.pupilClr           = obj.settings.setup.basicPupilColor;
+                
+                if ~isfield(obj.settings,'trackEye')
+                    qIsLeft  = false;
+                    qIsRight = false;
+                else
+                    qIsLeft  = strcmp(obj.settings.trackEye,'EYE_LEFT');
+                    qIsRight = strcmp(obj.settings.trackEye,'EYE_RIGHT');
+                end
+                if qIsLeft || qIsRight
+                    head.crossEye           = (~qIsLeft)*1+(~qIsRight)*2;   % will be 0, 1 or 2 (as we must calibrate at least one eye)
+                end
+                head.crossClr           = obj.settings.setup.basicCrossClr;
+                
+                head.referencePos       = [0 0 obj.settings.setup.viewingDist];
             end
 
             % setup buttons
@@ -1263,54 +1289,16 @@ classdef SMITE < handle
                     % get tracking status info
                     pTrackingStatus = obj.getTrackingStatus(pTrackingStatusS);  % for position in headbox
                     pSample         = obj.getSample(pSampleS);                  % for distance
-
-                    % get average eye distance. use distance from one eye if only one eye
-                    % available
-                    distL   = pSample.leftEye .eyePositionZ/10;
-                    distR   = pSample.rightEye.eyePositionZ/10;
-                    dists   = [distL distR];
-                    avgDist = mean(dists(~isnan(dists)));
-
-                    % scale up size of oval. define size/rect at standard distance, have a
-                    % gain for how much to scale as distance changes
-                    if pTrackingStatus.leftEye.validity || pTrackingStatus.rightEye.validity
-                        pos     = [pTrackingStatus.total.relativePositionX -pTrackingStatus.total.relativePositionY];  %-Y as +1 is upper and -1 is lower edge. needs to be reflected for screen drawing
-                        % determine size of oval, based on distance from reference distance
-                        fac     = avgDist/obj.settings.setup.viewingDist;
-                        headSz  = refSz - refSz*(fac-1)*distGain;
-                        eyeSz   = eyeSzFac*headSz;
-                        eyeMargin = eyeMarginFac*headSz*2;  %*2 because all sizes are radii
-                        % move
-                        headPos = pos.*obj.scrInfo.resolution./2+obj.scrInfo.center;
-                    else
-                        headPos = [];
-                    end
-
+                    
+                    head.update(...
+                        pTrackingStatus. leftEye.validity, [pSample. leftEye.eyePositionX pSample. leftEye.eyePositionY pSample. leftEye.eyePositionZ], pSample. leftEye.diam,...
+                        pTrackingStatus.rightEye.validity, [pSample.rightEye.eyePositionX pSample.rightEye.eyePositionY pSample.rightEye.eyePositionZ], pSample.rightEye.diam);
+                    
                     % draw distance info
-                    DrawFormattedText(wpnt,sprintf(obj.settings.string.simplePositionInstruction,avgDist),'center',fixPos(1,2)-.03*obj.scrInfo.resolution(2),255,[],[],[],1.5);
+                    DrawFormattedText(wpnt,sprintf(obj.settings.string.simplePositionInstruction,head.avgDist),'center',fixPos(1,2)-.03*obj.scrInfo.resolution(2),255,[],[],[],1.5);
                     % draw ovals
                     obj.drawCircle(wpnt,refClr,obj.scrInfo.center,refSz,5);
-                    if ~isempty(headPos)
-                        obj.drawCircle(wpnt,headClr,headPos,headSz,5,headFillClr);
-                        if obj.settings.setup.basicShowEyes
-                            % left eye
-                            pos = headPos; pos(1) = pos(1)-eyeMargin;
-                            if pTrackingStatus.leftEye.validity
-                                obj.drawCircle(wpnt,[],pos,eyeSz,0,eyeClr);
-                            else
-                                rect = CenterRectOnPointd([-eyeSz -eyeSz/5 eyeSz eyeSz/5],pos(1),pos(2));
-                                Screen('FillRect', wpnt, eyeClr, rect);
-                            end
-                            % right eye
-                            pos(1) = pos(1)+eyeMargin*2;
-                            if pTrackingStatus.rightEye.validity
-                                obj.drawCircle(wpnt,[],pos,eyeSz,0,eyeClr);
-                            else
-                                rect = CenterRectOnPointd([-eyeSz -eyeSz/5 eyeSz eyeSz/5],pos(1),pos(2));
-                                Screen('FillRect', wpnt, eyeClr, rect);
-                            end
-                        end
-                    end
+                    head.draw();
                     % draw buttons
                     Screen('FillRect',wpnt,[ 37  97 163],advancedButRect);
                     obj.drawCachedText(advancedButTextCache);
