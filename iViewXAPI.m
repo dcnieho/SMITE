@@ -36,7 +36,7 @@ classdef iViewXAPI < handle
                     elseif exist('C:\Program Files (x86)\SMI\iView X SDK\bin','dir')
                         temppath = 'C:\Program Files (x86)\SMI\iView X SDK\bin';
                     else
-                        warning('failed to load %s, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable',libfile);
+                        error('failed to load %s, and cannot find it in common locations. Please make sure the iView X SDK is installed and that it''s bin directory is in the Windows path variable',libfile);
                     end
                     addpath(temppath);
                     loadlibrary(libfile, input{:});
