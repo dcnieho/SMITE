@@ -21,33 +21,33 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2C6137C2-382B-4A3E-B06D-38DC4F6E5EE7}</ProjectGuid>
     <RootNamespace>SMIbuffer_python</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>SMIbuffer_python_cpp</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -112,12 +112,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\.;C:\dat\software\dependencies\boost;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\include;$(PROGRAMFILES)\SMI\iView X SDK\include;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\.;$(PROGRAMFILES)\SMI\iView X SDK\include;$(PYTHON_ROOT)\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\dat\software\dependencies\boost\stage\$(Platform)\lib;..\64bitImportLib;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PYTHON_ROOT)\libs;..\64bitImportLib</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -146,13 +146,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\.;C:\dat\software\dependencies\boost;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\include;$(PROGRAMFILES)\SMI\iView X SDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\.;$(PROGRAMFILES)\SMI\iView X SDK\include;$(PYTHON_ROOT)\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\dat\software\dependencies\boost\stage\$(Platform)\lib;..\64bitImportLib;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda2_86\libs</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PYTHON_ROOT)\libs;..\64bitImportLib</AdditionalLibraryDirectories>
       <AdditionalDependencies>..\$(IntDir)SMIbuffer.lib;iViewXAPI64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

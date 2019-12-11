@@ -1,8 +1,10 @@
-#include "SMIbuffer/SMIbuffer.h"
-#define DLL_EXPORT_SYM __declspec(dllexport)
-#include "mex.h"
-
 #include <map>
+#include <string>
+#include <vector>
+
+#include "SMIbuffer/SMIbuffer.h"
+
+#include "include_matlab.h"
 
 namespace {
     SMIbuffer* SMIbufferClassInstance = nullptr;  // as there can only be one instance (it gets reused), we can just store a ref to it in a global pointer
@@ -51,7 +53,7 @@ namespace {
     mxArray* EventVectorToMatlab(std::vector<EventStruct> data_);
 }
 
-void DLL_EXPORT_SYM mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     // get action string
     char *actionCstr = mxArrayToString(prhs[0]);

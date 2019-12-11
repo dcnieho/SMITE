@@ -13,7 +13,7 @@
     <OutputPath>.</OutputPath>
     <Name>SMIbuffer_python_py</Name>
     <RootNamespace>SMIbuffer_python</RootNamespace>
-    <InterpreterId>Global|PythonCore|2.7-32</InterpreterId>
+    <InterpreterId>Global|VisualStudio|PsychoPy3</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <IsWindowsApplication>False</IsWindowsApplication>
@@ -40,10 +40,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|PythonCore|2.7-32" />
+    <InterpreterReference Include="Global|VisualStudio|PsychoPy3" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="C:\dat\projects\SMI toolbox\theToolbox\SMIbuffer\SMIbuffer_python\SMIbuffer\" />
     <Folder Include="SMIbuffer\" />
     <Folder Include="SMIbuffer\x86\" />
     <Folder Include="SMIbuffer\x64\" />
