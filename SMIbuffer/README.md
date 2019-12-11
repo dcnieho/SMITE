@@ -20,26 +20,25 @@ for the Python wrapper, first install the PsychoPy version you want to work with
    a. At `<vcpkg root>\ports\boost-python`, open the file `CONTROL`. Remove `, python3` from the `Build-Depends:` line. Save.
    
    b. At `<vcpkg root>\ports\boost-python`, open the file `portfile.cmake`. Apply the following patch
+   ```diff
+    )
 
-```diff
- )
+    # Find Python. Can't use find_package here, but we already know where everything is
+   -file(GLOB PYTHON_INCLUDE_PATH "${CURRENT_INSTALLED_DIR}/include/python[0-9.]*")
+   -set(PYTHONLIBS_RELEASE "${CURRENT_INSTALLED_DIR}/lib")
+   -set(PYTHONLIBS_DEBUG "${CURRENT_INSTALLED_DIR}/debug/lib")
+   -string(REGEX REPLACE ".*python([0-9\.]+)$" "\\1" PYTHON_VERSION "${PYTHON_INCLUDE_PATH}")
+   +set(PYTHON_INCLUDE_PATH "C:/Program Files/PsychoPy3/include")^M
+   +set(PYTHONLIBS_RELEASE "C:/Program Files/PsychoPy3/Libs")^M
+   +set(PYTHONLIBS_DEBUG "C:/Program Files/PsychoPy3/Libs")^M
+   +set(PYTHON_VERSION "3.6")^M
+    include(${CURRENT_INSTALLED_DIR}/share/boost-build/boost-modular-build.cmake)
+    boost_modular_build(SOURCE_PATH ${SOURCE_PATH})
+    include(${CURRENT_INSTALLED_DIR}/share/boost-vcpkg-helpers/boost-modular-headers.cmake)
+   ```
+   Save the file and close it.
 
- # Find Python. Can't use find_package here, but we already know where everything is
--file(GLOB PYTHON_INCLUDE_PATH "${CURRENT_INSTALLED_DIR}/include/python[0-9.]*")
--set(PYTHONLIBS_RELEASE "${CURRENT_INSTALLED_DIR}/lib")
--set(PYTHONLIBS_DEBUG "${CURRENT_INSTALLED_DIR}/debug/lib")
--string(REGEX REPLACE ".*python([0-9\.]+)$" "\\1" PYTHON_VERSION "${PYTHON_INCLUDE_PATH}")
-+set(PYTHON_INCLUDE_PATH "C:/Program Files/PsychoPy3/include")^M
-+set(PYTHONLIBS_RELEASE "C:/Program Files/PsychoPy3/Libs")^M
-+set(PYTHONLIBS_DEBUG "C:/Program Files/PsychoPy3/Libs")^M
-+set(PYTHON_VERSION "3.6")^M
- include(${CURRENT_INSTALLED_DIR}/share/boost-build/boost-modular-build.cmake)
- boost_modular_build(SOURCE_PATH ${SOURCE_PATH})
- include(${CURRENT_INSTALLED_DIR}/share/boost-vcpkg-helpers/boost-modular-headers.cmake)
-```
-Save file and close it.
-
-Now you are ready to install boost-python, issue:
+3. Now you are ready to install boost-python, issue:
 `vcpkg install boost-python:x64-windows`
 
 ## Environment variables
