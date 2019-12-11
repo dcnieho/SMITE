@@ -44,7 +44,7 @@ for the Python wrapper, first install the PsychoPy version you want to work with
 ## Environment variables
 Furthermore, some environment variables must be set. Here are the values i used:
 - `MATLAB_ROOT`: `C:\Program Files\MATLAB\R2019b`
-- `MATLAB32_ROOT`: `C:\Program Files (x86)\MATLAB\R2019b`
+- `MATLAB32_ROOT`: `C:\Program Files (x86)\MATLAB\R2015b`
 - `PYTHON_ROOT`: `C:\Program Files\PsychoPy3`
 
 ## set up python environment for Visual Studio Python integration
