@@ -963,7 +963,7 @@ classdef SMITE < handle
             settings.setup.basicHeadEdgeColor   = [255 255 0];              % basic head position visualization: color of egde of disk representing head
             settings.setup.basicHeadFillColor   = [255 255 0];              % basic head position visualization: color of fill of disk representing head
             settings.setup.basicHeadFillOpacity = .3;                       % basic head position visualization: opacity of disk representing head
-            settings.setup.basicShowYaw         = true;                     % basic head position visualization: show yaw of head?
+            settings.setup.basicShowYaw         = false;                    % basic head position visualization: show yaw of head?
             settings.setup.basicShowEyes        = true;                     % basic head position visualization: show eyes?
             settings.setup.basicEyeColor        = [255 255 255];            % basic head position visualization: color of eyes in head
             settings.setup.basicShowPupils      = true;                     % basic head position visualization: show pupils?
