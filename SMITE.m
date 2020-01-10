@@ -739,7 +739,7 @@ classdef SMITE < handle
             % construct full filename
             filename = fullfile(path,file);
             
-            if obj.isTwoComputerSetup()
+            if obj.isTwoComputerSetup() && obj.settings.save.allowFileTransfer
                 % Two computer setup: file gets saved on eye-tracker
                 % computer (do so with without path info and allowing
                 % overwrite). Transfer the file using the
@@ -958,6 +958,7 @@ classdef SMITE < handle
             
             % the rest here are general defaults. Many are hard to set...
             settings.start.removeTempDataFile   = true;                     % when calling iV_Start, iView always complains with a popup if there is some unsaved recorded data in iView's temp location. The popup can really mess with visual timing of PTB, so its best to remove it. Not relevant for a two computer setup
+            settings.save.allowFileTransfer     = true;                     % if true, will attempt transfer of idf file to experiment computer when on two computer setup. if false, will just save on host computer
             settings.setup.startScreen          = 1;                        % 0: skip head positioning, go straight to calibration; 1: start with simple head positioning interface; 2: start with advanced head positioning interface
             settings.setup.basicRefColor        = [0 0 255];                % basic head position visualization: color of reference circle
             settings.setup.basicHeadEdgeColor   = [255 255 0];              % basic head position visualization: color of egde of disk representing head
@@ -1017,6 +1018,7 @@ classdef SMITE < handle
     methods (Access = private, Hidden)
         function allowed = getAllowedOptions(obj)
             allowed = {...
+                'save','allowFileTransfer'
                 'setup','startScreen'
                 'setup','basicRefColor'
                 'setup','basicHeadEdgeColor'
