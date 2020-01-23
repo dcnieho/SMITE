@@ -498,7 +498,9 @@ classdef SMITE < handle
                 [~,out.attempt{kCal}.validateAccuracy] = obj.iView.getAccuracy([], 0);
                 % dump validation accuracy info to idf file
                 obj.startRecording();
-                obj.sendMessage(sprintf('VALIDATION %d quality: LX %.3f, LY %.3f, RX %.3f, RY %.3f',kCal,out.attempt{kCal}.validateAccuracy.deviationLX,out.attempt{kCal}.validateAccuracy.deviationLY,out.attempt{kCal}.validateAccuracy.deviationRX,out.attempt{kCal}.validateAccuracy.deviationRY));
+                valMsg = sprintf('VALIDATION %d quality: LX %.3f, LY %.3f, RX %.3f, RY %.3f',kCal,out.attempt{kCal}.validateAccuracy.deviationLX,out.attempt{kCal}.validateAccuracy.deviationLY,out.attempt{kCal}.validateAccuracy.deviationRX,out.attempt{kCal}.validateAccuracy.deviationRY);
+                fprintf('%s\n',valMsg);
+                obj.sendMessage(valMsg);
                 obj.stopRecording();
                 % get validation image
                 [~,out.attempt{kCal}.validateImage] = obj.iView.getAccuracyImage();
