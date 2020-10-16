@@ -400,10 +400,10 @@ classdef SMITE < handle
                 
                 % check we do not end up off screen
                 if any(pointsX<0 | pointsX>obj.scrInfo.resolution(1))
-                    warning('SMITE: setup in settings.cal.rangeX and settings.cal.offsetX leads to some of teh calibration points being placed offscreen')
+                    warning('SMITE: setup in settings.cal.rangeX and settings.cal.offsetX leads to some of the calibration points being placed offscreen')
                 end
                 if any(pointsY<0 | pointsY>obj.scrInfo.resolution(2))
-                    warning('SMITE: setup in settings.cal.rangeY and settings.cal.offsetY leads to some of teh calibration points being placed offscreen')
+                    warning('SMITE: setup in settings.cal.rangeY and settings.cal.offsetY leads to some of the calibration points being placed offscreen')
                 end
                 
                 % apply
