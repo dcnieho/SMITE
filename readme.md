@@ -1,5 +1,5 @@
 [![Citation Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fapi.juleskreuer.eu%2Fcitation-badge.php%3Fshield%26doi%3D10.3758%2Fs13428-019-01226-0&color=blue)](https://scholar.google.com/citations?view_op=view_citation&citation_for_view=uRUYoVgAAAAJ:k_IJM867U9cC)
-[![DOI](https://zenodo.org/badge/DOI/10.3758/s13428-019-01226-0.svg)](https://doi.org/10.3758/s13428-019-01226-0)
+[![DOI](https://img.shields.io/badge/DOI-10.3758%2Fs13428--019--01226--0-blue.svg)](https://doi.org/10.3758/s13428-019-01226-0)
 
 SMITE is a toolbox for using eye trackers from SMI GmbH with MATLAB,
 specifically offering integration with [PsychToolbox](http://psychtoolbox.org/). A Python version
@@ -20,7 +20,8 @@ SMITE is licensed under the Creative Commons Attribution 4.0 (CC BY 4.0) license
 functionality.
 
 To run the toolbox, it is required to install the SMI iViewX SDK version
-4.4.26. An up-to-date version of PsychToolbox is recommended. Make sure
+4.4.26. Contact the authors if you cannot find SMI's SDK version 4.4.26.
+An up-to-date version of PsychToolbox is recommended. Make sure
 PsychToolbox's GStreamer dependency is installed.
 
 Tested on MATLAB R2015b & R2018a. Octave is currently not supported.
